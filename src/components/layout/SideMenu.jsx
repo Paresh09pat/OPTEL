@@ -11,7 +11,7 @@ const SideMenu = () => {
   }
 
   return (
-    <div className="w-80 h-screen bg-gray-50 flex flex-col shadow-lg">
+    <div className="w-80 h-screen bg-[#EDF6F9] flex flex-col shadow-lg fixed left-0 top-0 z-40">
       {/* Logo Section */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-center space-x-3">
@@ -22,38 +22,36 @@ const SideMenu = () => {
 
       {/* Navigation Items */}
       <div className="flex-1 px-4 py-6 overflow-y-auto scrollbar-hide">
-  <nav className="space-y-2">
-    {navigationItems.map((item) => {
-      const IconComponent = item.icon
-      const active = isActive(item.path)
+        <nav className="space-y-2">
+          {navigationItems.map((item) => {
+            const IconComponent = item.icon
+            const active = isActive(item.path)
 
-      return (
-        <Link
-          key={item.id}
-          to={item.path}
-          className={`flex items-center space-x-4 p-3 rounded-lg transition-colors duration-200 ${
-            active
-              ? 'bg-blue-50 border-l-4 border-blue-500'
-              : 'hover:bg-gray-100'
-          }`}
-        >
-          <div
-            className={`w-10 h-10 ${item.color} rounded-lg flex items-center justify-center`}
-          >
-            <IconComponent className="text-white text-lg" />
-          </div>
-          <span
-            className={`font-medium ${
-              active ? 'text-blue-600' : 'text-gray-700'
-            }`}
-          >
-            {item.name}
-          </span>
-        </Link>
-      )
-    })}
-  </nav>
-</div>
+            return (
+              <Link
+                key={item.id}
+                to={item.path}
+                className={`flex items-center space-x-4 p-3 rounded-lg transition-colors duration-200 ${active
+                    ? 'bg-blue-50 border-l-4 border-blue-500'
+                    : 'hover:bg-gray-100'
+                  }`}
+              >
+                <div
+                  className={`w-10 h-10 ${item.color} rounded-lg flex items-center justify-center`}
+                >
+                  <IconComponent className="text-white text-lg" />
+                </div>
+                <span
+                  className={`font-medium ${active ? 'text-blue-600' : 'text-gray-700'
+                    }`}
+                >
+                  {item.name}
+                </span>
+              </Link>
+            )
+          })}
+        </nav>
+      </div>
 
 
       {/* Create Post Button */}
@@ -69,7 +67,7 @@ const SideMenu = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <img
-              src="https://via.placeholder.com/40x40/6B7280/FFFFFF?text=AS"
+              src="/perimg.png"
               alt="User Avatar"
               className="w-10 h-10 rounded-full"
             />
