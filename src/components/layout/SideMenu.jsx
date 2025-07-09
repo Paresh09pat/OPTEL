@@ -17,7 +17,7 @@ const SideMenu = ({ onClose, isMobile = false }) => {
   }
 
   return (
-    <div className={`${isMobile ? 'w-full' : 'w-80'} h-screen bg-[#EDF6F9] flex flex-col shadow-lg`}>
+    <div className={`${isMobile ? 'w-full' : 'w-80'} h-screen bg-[#EDF6F9] flex flex-col shadow-lg stable-layout`}>
       {/* Logo Section */}
       <div className="p-6 border-b border-gray-200 flex items-center justify-between">
         <div className="flex items-center justify-center space-x-3 flex-1">
@@ -27,7 +27,7 @@ const SideMenu = ({ onClose, isMobile = false }) => {
         {isMobile && (
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-gray-200 transition-colors lg:hidden"
+            className="p-2 rounded-lg hover:bg-gray-200 transition-colors lg:hidden will-change-transform"
           >
             <FaTimes className="w-5 h-5 text-gray-600" />
           </button>
@@ -35,7 +35,7 @@ const SideMenu = ({ onClose, isMobile = false }) => {
       </div>
 
       {/* Navigation Items */}
-      <div className="flex-1 px-4 py-6 overflow-y-auto scrollbar-hide">
+      <div className="flex-1 px-4 py-6 overflow-y-auto scrollbar-hide smooth-scroll">
         <nav className="space-y-2">
           {navigationItems.map((item) => {
             const IconComponent = item.icon
@@ -46,14 +46,14 @@ const SideMenu = ({ onClose, isMobile = false }) => {
                 key={item.id}
                 to={item.path}
                 onClick={handleLinkClick}
-                className={`flex items-center space-x-4 p-3 rounded-lg transition-colors duration-200 ${
+                className={`flex items-center space-x-4 p-3 rounded-lg transition-colors duration-200 will-change-transform ${
                   active
                     ? 'bg-blue-50 border-l-4 border-blue-500'
                     : 'hover:bg-gray-100'
                 }`}
               >
                 <div
-                  className={`w-10 h-10 ${item.color} rounded-lg flex items-center justify-center flex-shrink-0`}
+                  className={`w-10 h-10 ${item.color} rounded-lg flex items-center justify-center flex-shrink-0 will-change-transform`}
                 >
                   <IconComponent className="text-white text-lg" />
                 </div>
@@ -74,7 +74,7 @@ const SideMenu = ({ onClose, isMobile = false }) => {
       <div className="px-4 py-4">
         <button 
           onClick={handleLinkClick}
-          className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-3 px-4 rounded-full flex items-center justify-between transition-colors duration-200"
+          className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-3 px-4 rounded-full flex items-center justify-between transition-colors duration-200 will-change-transform"
         >
           <span>Create post</span>
           <FaArrowRight className="text-sm" />
@@ -82,21 +82,19 @@ const SideMenu = ({ onClose, isMobile = false }) => {
       </div>
 
       {/* User Profile Section */}
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3 flex-1 min-w-0">
-            <img
-              src="/perimg.png"
-              alt="User Avatar"
-              className="w-10 h-10 rounded-full flex-shrink-0"
-            />
-            <div className="min-w-0 flex-1">
-              <p className="font-medium text-gray-800 truncate">Aman Shaikh</p>
-              <p className="text-sm text-gray-500 truncate">@_amu_456</p>
-            </div>
+      <div className="px-4 py-4 border-t border-gray-200">
+        <div className="flex items-center space-x-3 p-3 bg-white rounded-lg hover:bg-gray-50 cursor-pointer transition-colors will-change-transform">
+          <img
+            src="/perimg.png"
+            alt="User Profile"
+            className="w-12 h-12 rounded-full object-cover"
+          />
+          <div className="flex-1">
+            <p className="font-semibold text-gray-900">John Doe</p>
+            <p className="text-sm text-gray-500">@johndoe</p>
           </div>
-          <button className="text-gray-400 hover:text-gray-600 flex-shrink-0 p-1">
-            <FaEllipsisV />
+          <button className="text-gray-400 hover:text-gray-600 will-change-transform">
+            <FaEllipsisV className="text-sm" />
           </button>
         </div>
       </div>

@@ -10,10 +10,52 @@ body {
   -moz-osx-font-smoothing: grayscale;
 } 
 
+/* Smooth scrolling optimizations */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Optimized scrollbar hiding */
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* Performance optimizations for smooth scrolling */
+.smooth-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
+}
+
+/* Optimize transforms for better performance */
+.will-change-transform {
+  will-change: transform;
+}
+
+/* Prevent layout shifts during scroll */
+.stable-layout {
+  contain: layout style;
+}
+
+/* Optimized sticky positioning */
+.sticky-optimized {
+  position: sticky;
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Smooth transitions for dynamic content */
+.smooth-content-transition {
+  transition: all 0.2s ease-out;
+}
+
+/* Prevent scroll bounce on iOS */
+body {
+  overscroll-behavior-y: none;
 }

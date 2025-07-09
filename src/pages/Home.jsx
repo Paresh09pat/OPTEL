@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { BiBarChartAlt2 } from "react-icons/bi";
 import { CiCirclePlus } from "react-icons/ci";
 import { Icon } from '@iconify/react';
@@ -52,11 +52,15 @@ const ScrollableSection = ({ children, title }) => {
   const scrollRef = useRef(null);
 
   return (
-    <div className="relative">
+    <div className="relative stable-layout">
       <div
         ref={scrollRef}
-        className="flex space-x-4 overflow-x-auto scrollbar-hide pb-2"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        className="flex space-x-4 overflow-x-auto scrollbar-hide smooth-scroll pb-2"
+        style={{ 
+          scrollbarWidth: 'none', 
+          msOverflowStyle: 'none',
+          WebkitOverflowScrolling: 'touch'
+        }}
       >
         {children}
       </div>
@@ -181,8 +185,10 @@ const InfiniteFriendSuggestions = ({ friendSuggestions, onAddFriend }) => {
   const scrollRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+  const scrollCheckRef = useRef(null);
+  const isLoadingRef = useRef(false);
 
-  const generateMoreFriends = () => {
+  const generateMoreFriends = useCallback(() => {
     const names = ['Alex Johnson', 'Sarah Wilson', 'Mike Chen', 'Emma Davis', 'David Kumar', 'Lisa Zhang', 'James Rodriguez', 'Anna Patel', 'Tom Brown', 'Maria Garcia', 'John Smith', 'Sophie Turner', 'Chris Lee', 'Rachel Green', 'Daniel Clark', 'Nina Sharma'];
     const usernames = ['@alex_dev', '@sarah_designer', '@mike_photo', '@emma_writer', '@david_code', '@lisa_art', '@james_music', '@anna_travel', '@tom_fitness', '@maria_chef', '@john_travel', '@sophie_reads', '@chris_tech', '@rachel_yoga', '@daniel_art', '@nina_dance'];
 
@@ -197,56 +203,88 @@ const InfiniteFriendSuggestions = ({ friendSuggestions, onAddFriend }) => {
       });
     }
     return newFriends;
-  };
+  }, []);
 
   useEffect(() => {
     const initialFriends = [...friendSuggestions, ...generateMoreFriends()];
     setDisplayedFriends(initialFriends);
-  }, [friendSuggestions]);
+  }, [friendSuggestions, generateMoreFriends]);
 
-  const checkScrollButtons = () => {
-    if (scrollRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-      setCanScrollLeft(scrollLeft > 0);
-      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
+  // Throttled scroll check function
+  const checkScrollButtons = useCallback(() => {
+    if (scrollCheckRef.current) {
+      cancelAnimationFrame(scrollCheckRef.current);
     }
-  };
+    
+    scrollCheckRef.current = requestAnimationFrame(() => {
+      if (scrollRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+        setCanScrollLeft(scrollLeft > 0);
+        setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
+      }
+    });
+  }, []);
 
   useEffect(() => {
     checkScrollButtons();
     const handleResize = () => checkScrollButtons();
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [displayedFriends]);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (scrollCheckRef.current) {
+        cancelAnimationFrame(scrollCheckRef.current);
+      }
+    };
+  }, [displayedFriends, checkScrollButtons]);
 
-  const scrollLeft = () => {
+  const scrollLeft = useCallback(() => {
     if (scrollRef.current) {
       const cardWidth = 176; // 160px + 16px gap
       scrollRef.current.scrollBy({ left: -cardWidth * 3, behavior: 'smooth' });
-      setTimeout(checkScrollButtons, 300);
+      // Use requestAnimationFrame for better timing
+      requestAnimationFrame(() => {
+        setTimeout(checkScrollButtons, 300);
+      });
     }
-  };
+  }, [checkScrollButtons]);
 
-  const scrollRight = () => {
+  const scrollRight = useCallback(() => {
     if (scrollRef.current) {
       const cardWidth = 176; // 160px + 16px gap
       scrollRef.current.scrollBy({ left: cardWidth * 3, behavior: 'smooth' });
-      setTimeout(checkScrollButtons, 300);
-
-      // Load more friends when near the end
-      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-      if (scrollLeft + clientWidth >= scrollWidth - 500) {
-        setDisplayedFriends(prev => [...prev, ...generateMoreFriends()]);
+      
+      // Load more friends when near the end (throttled)
+      if (!isLoadingRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+        if (scrollLeft + clientWidth >= scrollWidth - 500) {
+          isLoadingRef.current = true;
+          requestAnimationFrame(() => {
+            setDisplayedFriends(prev => [...prev, ...generateMoreFriends()]);
+            setTimeout(() => {
+              isLoadingRef.current = false;
+            }, 300);
+          });
+        }
       }
+      
+      // Use requestAnimationFrame for better timing
+      requestAnimationFrame(() => {
+        setTimeout(checkScrollButtons, 300);
+      });
     }
-  };
+  }, [checkScrollButtons, generateMoreFriends]);
+
+  // Throttled scroll handler
+  const handleScroll = useCallback(() => {
+    checkScrollButtons();
+  }, [checkScrollButtons]);
 
   return (
-    <div className="relative group">
+    <div className="relative group stable-layout">
       {/* Left Arrow - Desktop only */}
       <button
         onClick={scrollLeft}
-        className={`absolute left-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white rounded-full shadow-lg border border-gray-200 items-center justify-center transition-all duration-200 hover:shadow-xl hidden md:flex group-hover:opacity-100 ${canScrollLeft ? 'opacity-70 hover:opacity-100' : 'opacity-30 cursor-not-allowed'
+        className={`absolute left-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white rounded-full shadow-lg border border-gray-200 items-center justify-center transition-all duration-200 hover:shadow-xl hidden md:flex group-hover:opacity-100 will-change-transform ${canScrollLeft ? 'opacity-70 hover:opacity-100' : 'opacity-30 cursor-not-allowed'
           }`}
         disabled={!canScrollLeft}
       >
@@ -258,7 +296,7 @@ const InfiniteFriendSuggestions = ({ friendSuggestions, onAddFriend }) => {
       {/* Right Arrow - Desktop only */}
       <button
         onClick={scrollRight}
-        className={`absolute right-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white rounded-full shadow-lg border border-gray-200 items-center justify-center transition-all duration-200 hover:shadow-xl hidden md:flex group-hover:opacity-100 ${canScrollRight ? 'opacity-70 hover:opacity-100' : 'opacity-30 cursor-not-allowed'
+        className={`absolute right-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white rounded-full shadow-lg border border-gray-200 items-center justify-center transition-all duration-200 hover:shadow-xl hidden md:flex group-hover:opacity-100 will-change-transform ${canScrollRight ? 'opacity-70 hover:opacity-100' : 'opacity-30 cursor-not-allowed'
           }`}
         disabled={!canScrollRight}
       >
@@ -269,13 +307,13 @@ const InfiniteFriendSuggestions = ({ friendSuggestions, onAddFriend }) => {
 
       <div
         ref={scrollRef}
-        className="flex space-x-4 overflow-x-auto scrollbar-hide pb-2 px-2 md:px-12 scroll-smooth"
+        className="flex space-x-4 overflow-x-auto scrollbar-hide smooth-scroll pb-2 px-2 md:px-12"
         style={{
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
           WebkitOverflowScrolling: 'touch' // Better touch scrolling on mobile
         }}
-        onScroll={checkScrollButtons}
+        onScroll={handleScroll}
       >
         {displayedFriends.map(friend => (
           <FriendSuggestionCard
@@ -766,7 +804,7 @@ const CreatePostSection = () => {
             {selectedFiles.map((fileObj, index) => (
               <div
                 key={index}
-                className="flex items-center justify-around bg-gray-100 rounded px-2 py-1 w-[50%] "
+                className="flex items-center justify-around bg-[#EDF6F9] rounded px-2 py-1 w-[50%] "
               >
                 <div className="truncate">
                   {fileObj.type.toUpperCase()}: {fileObj.name}
@@ -868,14 +906,14 @@ const Home = () => {
     }
   ];
 
-  const handleAddFriend = (friendId) => {
+  const handleAddFriend = useCallback((friendId) => {
     setFriendSuggestions(prev =>
       prev.filter(friend => friend.id !== friendId)
     );
-  };
+  }, []);
 
   return (
-    <div className="min-h-screen bg-[#EDF6F9] relative">
+    <div className="min-h-screen bg-[#EDF6F9] relative pb-15 smooth-scroll">
       <div className="max-w-6xl mx-auto px-3 md:px-4 py-4 md:py-6">
         <div className="mb-6 md:mb-8">
           <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4 md:mb-6 px-2 md:px-4">Feed</h2>
@@ -896,11 +934,14 @@ const Home = () => {
         <div className="px-2 md:px-4 relative">
           <CreatePostSection />
 
-          <div className="sticky top-0 z-30 bg-[#EDF6F9] pt-4 md:pt-6 pb-2 -mx-2 md:-mx-4 px-2 md:px-4">
-            <QuickActionsSection />
+          {/* Fixed sticky positioning issue */}
+          <div className="sticky-optimized top-0 z-30 bg-[#EDF6F9] pt-4 md:pt-6 pb-2">
+            <div className="mx-[-0.5rem] md:mx-[-1rem] px-2 md:px-4">
+              <QuickActionsSection />
+            </div>
           </div>
 
-          <div className="mb-4 md:mb-6">
+          <div className="mb-4 md:mb-6 smooth-content-transition">
             <PostCard
               user={posts[0].user}
               content={posts[0].content}
