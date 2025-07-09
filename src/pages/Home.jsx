@@ -7,13 +7,6 @@ import {
   BsImage,
   BsCameraVideo,
   BsFolder,
-  BsBarChartSteps,
-  BsFileText,
-  BsPersonCheck,
-  BsClipboard,
-  BsDatabase,
-  BsShop,
-  BsRecycle
 } from "react-icons/bs";
 import {
   MoreHorizontal,
@@ -162,20 +155,20 @@ const PostCard = ({ user, content, image, likes, comments, shares, saves, timeAg
 );
 
 const FriendSuggestionCard = ({ user, onAddFriend }) => (
-  <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-w-[160px] max-w-[160px] flex-shrink-0">
+  <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-w-[150px] max-w-[150px] md:min-w-[160px] md:max-w-[160px] flex-shrink-0 hover:shadow-md transition-shadow duration-200">
     <div className="relative">
       <img
         src="/perimg.png"
         alt={user.name}
-        className="w-full h-32 object-cover"
+        className="w-full h-28 md:h-32 object-cover"
       />
     </div>
     <div className="p-3 text-center">
-      <h3 className="font-semibold text-gray-900 text-sm mb-1 truncate">{user.name}</h3>
+      <h3 className="font-semibold text-gray-900 text-xs md:text-sm mb-1 truncate">{user.name}</h3>
       <p className="text-xs text-gray-500 mb-3 truncate">{user.username}</p>
       <button
         onClick={onAddFriend}
-        className="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded-md text-sm hover:bg-gray-50 transition-colors w-full font-medium"
+        className="bg-white border border-gray-300 text-gray-700 px-2 md:px-3 py-1.5 rounded-md text-xs md:text-sm hover:bg-gray-50 transition-colors w-full font-medium"
       >
         Add Friend
       </button>
@@ -186,8 +179,8 @@ const FriendSuggestionCard = ({ user, onAddFriend }) => (
 const InfiniteFriendSuggestions = ({ friendSuggestions, onAddFriend }) => {
   const [displayedFriends, setDisplayedFriends] = useState([]);
   const scrollRef = useRef(null);
-  const animationRef = useRef(null);
-  const scrollPosition = useRef(0);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
 
   const generateMoreFriends = () => {
     const names = ['Alex Johnson', 'Sarah Wilson', 'Mike Chen', 'Emma Davis', 'David Kumar', 'Lisa Zhang', 'James Rodriguez', 'Anna Patel', 'Tom Brown', 'Maria Garcia', 'John Smith', 'Sophie Turner', 'Chris Lee', 'Rachel Green', 'Daniel Clark', 'Nina Sharma'];
@@ -211,63 +204,78 @@ const InfiniteFriendSuggestions = ({ friendSuggestions, onAddFriend }) => {
     setDisplayedFriends(initialFriends);
   }, [friendSuggestions]);
 
-  useEffect(() => {
-    const smoothScroll = () => {
-      if (scrollRef.current) {
-        const container = scrollRef.current;
-        scrollPosition.current += 0.5;
-
-        if (scrollPosition.current >= container.scrollWidth - container.clientWidth) {
-          setDisplayedFriends(prev => [...prev, ...generateMoreFriends()]);
-        }
-
-        container.scrollLeft = scrollPosition.current;
-      }
-      animationRef.current = requestAnimationFrame(smoothScroll);
-    };
-
-    animationRef.current = requestAnimationFrame(smoothScroll);
-
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, [displayedFriends]);
-
-  const handleMouseEnter = () => {
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
+  const checkScrollButtons = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
     }
   };
 
-  const handleMouseLeave = () => {
-    const smoothScroll = () => {
-      if (scrollRef.current) {
-        const container = scrollRef.current;
-        scrollPosition.current += 0.5;
+  useEffect(() => {
+    checkScrollButtons();
+    const handleResize = () => checkScrollButtons();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [displayedFriends]);
 
-        if (scrollPosition.current >= container.scrollWidth - container.clientWidth) {
-          setDisplayedFriends(prev => [...prev, ...generateMoreFriends()]);
-        }
+  const scrollLeft = () => {
+    if (scrollRef.current) {
+      const cardWidth = 176; // 160px + 16px gap
+      scrollRef.current.scrollBy({ left: -cardWidth * 3, behavior: 'smooth' });
+      setTimeout(checkScrollButtons, 300);
+    }
+  };
 
-        container.scrollLeft = scrollPosition.current;
+  const scrollRight = () => {
+    if (scrollRef.current) {
+      const cardWidth = 176; // 160px + 16px gap
+      scrollRef.current.scrollBy({ left: cardWidth * 3, behavior: 'smooth' });
+      setTimeout(checkScrollButtons, 300);
+
+      // Load more friends when near the end
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      if (scrollLeft + clientWidth >= scrollWidth - 500) {
+        setDisplayedFriends(prev => [...prev, ...generateMoreFriends()]);
       }
-      animationRef.current = requestAnimationFrame(smoothScroll);
-    };
-    animationRef.current = requestAnimationFrame(smoothScroll);
+    }
   };
 
   return (
-    <div
-      className="relative"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
+    <div className="relative group">
+      {/* Left Arrow - Desktop only */}
+      <button
+        onClick={scrollLeft}
+        className={`absolute left-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white rounded-full shadow-lg border border-gray-200 items-center justify-center transition-all duration-200 hover:shadow-xl hidden md:flex group-hover:opacity-100 ${canScrollLeft ? 'opacity-70 hover:opacity-100' : 'opacity-30 cursor-not-allowed'
+          }`}
+        disabled={!canScrollLeft}
+      >
+        <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
+
+      {/* Right Arrow - Desktop only */}
+      <button
+        onClick={scrollRight}
+        className={`absolute right-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white rounded-full shadow-lg border border-gray-200 items-center justify-center transition-all duration-200 hover:shadow-xl hidden md:flex group-hover:opacity-100 ${canScrollRight ? 'opacity-70 hover:opacity-100' : 'opacity-30 cursor-not-allowed'
+          }`}
+        disabled={!canScrollRight}
+      >
+        <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+
       <div
         ref={scrollRef}
-        className="flex space-x-4 overflow-x-auto scrollbar-hide pb-2"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        className="flex space-x-4 overflow-x-auto scrollbar-hide pb-2 px-2 md:px-12 scroll-smooth"
+        style={{
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          WebkitOverflowScrolling: 'touch' // Better touch scrolling on mobile
+        }}
+        onScroll={checkScrollButtons}
       >
         {displayedFriends.map(friend => (
           <FriendSuggestionCard
@@ -340,14 +348,14 @@ const QuickActionsSection = ({ className = '' }) => {
   ];
 
   return (
-    <div className={`bg-white rounded-2xl shadow-sm border border-[#808080] px-4 py-2 mb-6 ${className}`}>
-      <div className="flex items-center justify-between overflow-x-auto space-x-2 scrollbar-hide">
+    <div className={`bg-white rounded-2xl shadow-sm border border-[#808080] px-3 md:px-4 py-2 mb-4 md:mb-6 ${className}`}>
+      <div className="flex items-center justify-between overflow-x-auto space-x-1 md:space-x-2">
         {actions.map((action, index) => (
           <Link to={action.path} key={index} className="flex-shrink-0">
             <button
-              className={`flex flex-col items-center space-y-2 p-3 rounded-lg hover:bg-gray-50 transition-colors`}
+              className={`flex flex-col items-center space-y-1 md:space-y-2 p-2 md:p-3 rounded-lg hover:bg-gray-50 transition-colors`}
             >
-              <div className={`w-12 h-12 rounded-xl ${action.bg} flex items-center justify-center cursor-pointer`}>
+              <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl ${action.bg} flex items-center justify-center cursor-pointer`}>
                 <action.icon />
               </div>
             </button>
@@ -433,16 +441,16 @@ const CreatePostPopup = ({ isOpen, onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 bg-black/30 backdrop-blur-md flex items-center justify-center z-50"
+      className="fixed inset-0 bg-black/30 backdrop-blur-md flex items-center justify-center z-50 px-2 md:px-6"
       style={{ backdropFilter: 'blur(10px)' }}
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl max-w-[50%] w-full mx-4 max-h-[90vh] overflow-y-auto relative shadow-2xl"
+        className="bg-white rounded-2xl w-full max-w-2xl md:max-w-3xl max-h-[90vh] overflow-y-auto relative shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 md:p-6 border-b border-gray-200 gap-3">
           <div className="flex items-center space-x-3">
             <img
               src="/perimg.png"
@@ -451,7 +459,7 @@ const CreatePostPopup = ({ isOpen, onClose }) => {
             />
             <h2 className="text-xl font-semibold text-gray-800">Create a Post</h2>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 md:space-x-4">
             <button className="p-2 hover:bg-gray-100 rounded-full">
               <MapPin className="w-5 h-5 text-gray-600" />
             </button>
@@ -463,7 +471,7 @@ const CreatePostPopup = ({ isOpen, onClose }) => {
             </button>
             <button
               onClick={handlePost}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full font-medium transition-colors"
+              className="bg-blue-500 hover:bg-blue-600 text-white px-4 md:px-6 py-2 rounded-full font-medium transition-colors"
             >
               <Send className="w-4 h-4" />
             </button>
@@ -471,7 +479,7 @@ const CreatePostPopup = ({ isOpen, onClose }) => {
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-4 md:p-6">
           {/* Text Input */}
           <textarea
             value={postText}
@@ -489,12 +497,12 @@ const CreatePostPopup = ({ isOpen, onClose }) => {
                 {selectedFiles.map((file, index) => (
                   <div
                     key={index}
-                    className="flex w-[25%] items-center bg-gray-100 border border-gray-300 rounded-lg px-4 py-2"
+                    className="flex w-full sm:w-[48%] md:w-[32%] items-center bg-gray-100 border border-gray-300 rounded-lg px-3 py-2"
                   >
-                    <span className="text-gray-800 font-medium truncate">{file.name}</span>
+                    <span className="text-gray-800 text-sm truncate w-full">{file.name}</span>
                     <button
                       onClick={() => removeFile(index)}
-                      className="ml-4 text-gray-600 hover:text-red-600 text-lg font-bold"
+                      className="ml-2 text-gray-600 hover:text-red-600 text-lg font-bold"
                     >
                       &times;
                     </button>
@@ -503,7 +511,7 @@ const CreatePostPopup = ({ isOpen, onClose }) => {
               </div>
             )}
 
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
               {/* Image */}
               <button
                 className="flex items-center space-x-3 p-3 cursor-pointer"
@@ -542,7 +550,7 @@ const CreatePostPopup = ({ isOpen, onClose }) => {
                 <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
                   <BiBarChartAlt2 className="w-5 h-5 text-purple-600" />
                 </div>
-                <span className="text-gray-700 font-medium">Pole</span>
+                <span className="text-gray-700 font-medium">Poll</span>
               </button>
 
               {/* Audio */}
@@ -584,7 +592,7 @@ const CreatePostPopup = ({ isOpen, onClose }) => {
 
           {/* Settings */}
           <div className="mt-6 space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
               <div className="flex items-center space-x-2">
                 <span className="text-gray-700 font-medium">Sharing</span>
                 <button
@@ -602,7 +610,7 @@ const CreatePostPopup = ({ isOpen, onClose }) => {
                   onChange={(e) => setCommentsEnabled(e.target.checked)}
                   className="w-4 h-4 text-blue-600 rounded"
                 />
-                <label htmlFor="comments" className="text-gray-700">Turn Of Comments</label>
+                <label htmlFor="comments" className="text-gray-700">Turn Off Comments</label>
               </div>
             </div>
           </div>
@@ -617,25 +625,69 @@ const CreatePostPopup = ({ isOpen, onClose }) => {
         </button>
       </div>
     </div>
+
   );
 };
 
 const CreatePostSection = () => {
   const [postText, setPostText] = useState('');
   const [showPopup, setShowPopup] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState([]);
 
   const handlePost = () => {
-    console.log('Posting:', { postText });
+    console.log('Posting:', { postText, selectedFiles });
     setPostText('');
+    setSelectedFiles([]);
   };
 
   const handleMoreClick = () => {
     setShowPopup(true);
   };
 
+  // 👉 File selector logic
+  const handleFileSelect = (type) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+
+    if (type === 'image') {
+      input.accept = 'image/*';
+      input.multiple = true;
+    } else if (type === 'video') {
+      input.accept = 'video/*';
+    } else if (type === 'audio') {
+      input.accept = 'audio/*';
+    } else {
+      input.accept = '*';
+    }
+
+    input.onchange = (e) => {
+      const files = Array.from(e.target.files);
+      if (files.length) {
+        if (type === 'image') {
+          const newFiles = files.map((file) => ({
+            name: file.name,
+            type,
+            file,
+          }));
+          setSelectedFiles((prev) => [...prev, ...newFiles]);
+        } else {
+          setSelectedFiles([{ name: files[0].name, type, file: files[0] }]);
+        }
+      }
+    };
+
+    input.click();
+  };
+
+  // ❌ Remove file handler
+  const handleRemoveFile = (indexToRemove) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== indexToRemove));
+  };
+
   return (
     <>
       <div className="bg-white rounded-xl border border-[#808080] px-6 py-8 shadow-sm">
+        {/* Input Field */}
         <div className="relative mb-4">
           <img
             src="/perimg.png"
@@ -648,48 +700,56 @@ const CreatePostSection = () => {
             placeholder="Share something"
             value={postText}
             onChange={(e) => setPostText(e.target.value)}
-            onClick={handleMoreClick}
-            className="w-full pl-16 pr-12 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-            readOnly
+            className="w-full pl-16 pr-12 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
 
           <button
             onClick={handlePost}
-            className="absolute right-3 top-1/2 -translate-y-1/2 bg-white "
+            className="absolute right-3 top-1/2 -translate-y-1/2 bg-white"
           >
-            <Icon icon="lets-icons:send-hor-light" width="35" height="35" style={{ color: '#212121' }} />
+            <Icon
+              icon="lets-icons:send-hor-light"
+              width="35"
+              height="35"
+              style={{ color: '#212121' }}
+            />
           </button>
         </div>
 
+        {/* Action Buttons */}
         <div className="flex justify-around px-2 pt-4 text-sm text-gray-600">
           <button
-            onClick={handleMoreClick}
+            onClick={() => handleFileSelect('image')}
             className="flex flex-col items-center hover:text-green-600 cursor-pointer"
           >
             <BsImage className="w-5 h-5 text-green-500" />
             <span>Image</span>
           </button>
+
           <button
-            onClick={handleMoreClick}
+            onClick={() => handleFileSelect('video')}
             className="flex flex-col items-center hover:text-blue-600 cursor-pointer"
           >
             <BsCameraVideo className="w-5 h-5 text-blue-500" />
             <span>Video</span>
           </button>
+
           <button
-            onClick={handleMoreClick}
+            onClick={() => handleFileSelect('file')}
             className="flex flex-col items-center hover:text-orange-600 cursor-pointer"
           >
             <BsFolder className="w-5 h-5 text-orange-500" />
             <span>File's</span>
           </button>
+
           <button
-            onClick={handleMoreClick}
+            onClick={() => console.log('Poll clicked')}
             className="flex flex-col items-center hover:text-purple-600 cursor-pointer"
           >
             <BiBarChartAlt2 className="w-5 h-5 text-purple-500" />
             <span>Poll</span>
           </button>
+
           <button
             onClick={handleMoreClick}
             className="flex flex-col items-center hover:text-red-600 cursor-pointer"
@@ -698,8 +758,33 @@ const CreatePostSection = () => {
             <span>More</span>
           </button>
         </div>
+
+        {/* File Preview Section with ❌ Remove */}
+        {selectedFiles.length > 0 && (
+          <div className="mt-4 space-y-2 text-sm text-gray-700">
+            <strong>Selected Files:</strong>
+            {selectedFiles.map((fileObj, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-around bg-gray-100 rounded px-2 py-1 w-[50%] "
+              >
+                <div className="truncate">
+                  {fileObj.type.toUpperCase()}: {fileObj.name}
+                </div>
+                <button
+                  onClick={() => handleRemoveFile(index)}
+                  className="text-red-500 hover:text-red-700 ml-4 text-lg font-bold"
+                  title="Remove"
+                >
+                  &times;
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
+      {/* Post Popup */}
       <CreatePostPopup
         isOpen={showPopup}
         onClose={() => setShowPopup(false)}
@@ -710,43 +795,43 @@ const CreatePostSection = () => {
 
 const Home = () => {
   const [friendSuggestions, setFriendSuggestions] = useState([
-    { id: 1, name: 'Siddharth Verma', username: '@muscleManSid', avatar: '/api/placeholder/160/128' },
-    { id: 2, name: 'Bhuvan Rana', username: '@beatsByBhuvan', avatar: '/api/placeholder/160/128' },
-    { id: 3, name: 'Sana Qadri', username: '@sanskariSana', avatar: '/api/placeholder/160/128' },
-    { id: 4, name: 'Aniket Naik', username: '@athleteAniket', avatar: '/api/placeholder/160/128' },
-    { id: 5, name: 'Laya Krishnan', username: '@lensByLaya', avatar: '/api/placeholder/160/128' },
-    { id: 6, name: 'Rajesh Kumar', username: '@rajeshkumar', avatar: '/api/placeholder/160/128' },
-    { id: 7, name: 'Priya Sharma', username: '@priyasharma', avatar: '/api/placeholder/160/128' },
+    { id: 1, name: 'Siddharth Verma', username: '@muscleManSid', avatar: '/perimg.png' },
+    { id: 2, name: 'Bhuvan Rana', username: '@beatsByBhuvan', avatar: '/perimg.png' },
+    { id: 3, name: 'Sana Qadri', username: '@sanskariSana', avatar: '/perimg.png' },
+    { id: 4, name: 'Aniket Naik', username: '@athleteAniket', avatar: '/perimg.png' },
+    { id: 5, name: 'Laya Krishnan', username: '@lensByLaya', avatar: '/perimg.png' },
+    { id: 6, name: 'Rajesh Kumar', username: '@rajeshkumar', avatar: '/perimg.png' },
+    { id: 7, name: 'Priya Sharma', username: '@priyasharma', avatar: '/perimg.png' },
   ]);
 
   const feedCards = [
     {
-      image: '/api/placeholder/160/208',
+      image: '/perimg.png',
       username: 'veer_Byte',
       isVideo: false
     },
     {
-      image: '/api/placeholder/160/208',
+      image: '/perimg.png',
       username: 'rinkaNova',
       isVideo: false
     },
     {
-      image: '/api/placeholder/160/208',
+      image: '/perimg.png',
       username: 'vikram_...',
       isVideo: false
     },
     {
-      image: '/api/placeholder/160/208',
+      image: '/perimg.png',
       username: 'techyTina',
       isVideo: false
     },
     {
-      image: '/api/placeholder/160/208',
+      image: '/perimg.png',
       username: 'shohan',
       isVideo: false
     },
     {
-      image: '/api/placeholder/160/208',
+      image: '/perimg.png',
       username: 'alex_dev',
       isVideo: false
     },
@@ -791,10 +876,10 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-[#EDF6F9] relative">
-      <div className="max-w-6xl mx-auto px-4 py-6">
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6 px-4">Feed</h2>
-          <div className="px-4">
+      <div className="max-w-6xl mx-auto px-3 md:px-4 py-4 md:py-6">
+        <div className="mb-6 md:mb-8">
+          <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4 md:mb-6 px-2 md:px-4">Feed</h2>
+          <div className="px-2 md:px-4">
             <ScrollableSection>
               {feedCards.map((card, index) => (
                 <FeedCard
@@ -808,14 +893,14 @@ const Home = () => {
           </div>
         </div>
 
-        <div className="px-4 relative">
+        <div className="px-2 md:px-4 relative">
           <CreatePostSection />
 
-          <div className="sticky top-0 z-30 bg-[#EDF6F9] pt-6 pb-2 -mx-4 px-4 ">
+          <div className="sticky top-0 z-30 bg-[#EDF6F9] pt-4 md:pt-6 pb-2 -mx-2 md:-mx-4 px-2 md:px-4">
             <QuickActionsSection />
           </div>
 
-          <div className="mb-6">
+          <div className="mb-4 md:mb-6">
             <PostCard
               user={posts[0].user}
               content={posts[0].content}
@@ -828,15 +913,15 @@ const Home = () => {
             />
           </div>
 
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">People you may know</h2>
+          <div className="mb-6 md:mb-8">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6">Friend Suggestions</h2>
             <InfiniteFriendSuggestions
               friendSuggestions={friendSuggestions}
               onAddFriend={handleAddFriend}
             />
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-4 md:space-y-6 mb-4 md:mb-6">
             {posts.slice(1).map(post => (
               <PostCard
                 key={post.id}
