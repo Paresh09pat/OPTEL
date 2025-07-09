@@ -51,7 +51,7 @@ const MainLayout = ({ children }) => {
         </div>
 
         {/* Main Content - Scrollable */}
-        <main className="flex-1 lg:ml-80 lg:mr-80 xl:mr-80 h-full lg:h-screen lg:pt-0 overflow-y-auto scrollbar-hide smooth-scroll stable-layout">
+        <main className="flex-1 lg:ml-80 lg:mr-80 xl:mr-80 h-full lg:h-screen lg:pt-0 overflow-y-auto scrollbar-hide smooth-scroll">
           {children}
         </main>
 
