@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import SideMenu from './SideMenu'
-import { FaBars, FaTimes } from 'react-icons/fa'
+import { FaBars, FaBell, FaPlus, FaSearch, FaTimes, FaUser, FaUsers } from 'react-icons/fa'
+import { CiCircleMore } from 'react-icons/ci'
+import { BiBell } from 'react-icons/bi'
 
 const MainLayout = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -51,13 +53,48 @@ const MainLayout = ({ children }) => {
         </div>
 
         {/* Main Content - Scrollable */}
-        <main className="flex-1 lg:ml-80 lg:mr-80 xl:mr-80 h-full lg:h-screen lg:pt-0 overflow-y-auto scrollbar-hide smooth-scroll stable-layout">
+        <main className="flex-1 lg:ml-80 lg:mr-80 xl:mr-80 h-full lg:h-screen lg:pt-0 overflow-y-auto scrollbar-hide smooth-scroll">
           {children}
         </main>
 
         {/* Desktop Right Sidebar - Fixed */}
-        <div className="hidden lg:block lg:w-80 bg-white flex-shrink-0 fixed right-0 top-0 h-full z-30 border-l border-gray-200 overflow-y-auto scrollbar-hide smooth-scroll stable-layout">
+        <div className=" bg-[#EDF6F9] pr-1 lg:block lg:w-80  flex-shrink-0 fixed right-0 top-0 h-full z-30  overflow-y-auto scrollbar-hide smooth-scroll stable-layout">
           {/* Trending Section */}
+          <div className="w-full p-3 rounded-lg bg-white shadow-[#EDF6F9] shadow-md border border-[#808080]">
+            <div className="flex p-4 items-center justify-between">
+            <div className=" relative w-[58px] h-[58px] rounded-full bg-[#EDF6F9] border-[4px]  border-inset border-[#ffffff] shadow-md shadow-fuchsia-400 ">
+              <div className="grid place-items-center  absolute -right-1 -bottom-1 bg-black w-5 h-5 rounded-full border-inset border-[2px] shadow-2xl shadow-fuchsia-400 border-white">
+          <FaPlus className='text-white size-[10px]' />
+              </div>
+            </div>
+
+          <div className="flex items-center justify-center gap-4 ">
+          <svg xmlns="http://www.w3.org/2000/svg" className='text-gray-500 size-[25px] cursor-pointer' width={24} height={24} viewBox="0 0 24 24"><g fill="none" stroke="currentColor" strokeWidth={2}><circle cx={11} cy={11} r={7}></circle><path strokeLinecap="round" d="M11 8a3 3 0 0 0-3 3m12 9l-3-3"></path></g></svg>
+          <BiBell className='text-gray-500 size-[25px] cursor-pointer' />
+          <CiCircleMore className='text-gray-500 size-[25px] cursor-pointer' />
+            <input type="text" placeholder='Search' className='text-gray-500 text-sm outline-none ml-2 w-full bg-transparent hidden transition-colors duration-300 rounded-md p-2' />
+
+          </div>
+
+            </div>
+
+          </div>
+
+          <div className="flex flex-col p-5 mt-2.5 bg-white rounded-lg border border-[#808080]">
+           <div className="flex w-full items-center justify-between">
+            <button className=' relative flex items-center gap-2 border border-[#212121] px-4 py-2 rounded-xl cursor-pointer'>
+              <div className="grid absolute bg-[#B3261E] place-items-center w-6 h-6 rounded-full -right-2 -top-2 text-[10px] text-white font-medium">2</div>
+              <FaUser className='text-[#212121] size-[24px]' />
+              <span className='text-[##212121] text-sm font-medium'>Individual</span>
+            </button>
+
+            <button className=' relative flex items-center gap-2 cursor-pointer '>
+            <div className="grid absolute bg-[#B3261E] place-items-center w-5 h-5 rounded-full -right-2 -top-2 text-[10px] text-white font-medium">2</div>
+              <FaUsers className='text-[#808080] size-[32px]' />
+              
+            </button>
+           </div>
+          </div>
           <div className="p-6 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Trending Topics</h3>
             <div className="space-y-3">
