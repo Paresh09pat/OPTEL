@@ -122,16 +122,18 @@ const Home = () => {
         </div>
 
         <div className="px-2 md:px-4 relative">
+          <div className='mb-4 md:mb-6'>
           <CreatePostSection />
+          </div>
 
           {/* Fixed sticky positioning issue */}
-          <div className="sticky-optimized top-0 z-30 bg-[#EDF6F9] pt-4 md:pt-6 pb-2">
+          <div className="sticky-optimized top-0 z-30 bg-[#EDF6F9]">
             <div className="mx-[-0.5rem] md:mx-[-1rem] px-2 md:px-4">
               <QuickActionsSection />
             </div>
           </div>
 
-          <div className="mb-4 md:mb-6 smooth-content-transition bg-white rounded-xl border border-[#808080]">
+          <div className="mb-4 md:mb-6 mt-4 md:mt-6 smooth-content-transition bg-white rounded-xl border border-[#808080]">
             <PostCard
               user={posts[0].user}
               content={posts[0].content}
