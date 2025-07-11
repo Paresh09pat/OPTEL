@@ -38,6 +38,16 @@ const feedCards = [
     username: 'alex_dev',
     isVideo: false
   },
+  {
+    image: '/perimg.png',
+    username: 'shohan',
+    isVideo: false
+  },
+  {
+    image: '/perimg.png',
+    username: 'alex_dev',
+    isVideo: false
+  },
 ];
 
 
