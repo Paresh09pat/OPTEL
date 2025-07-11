@@ -21,9 +21,9 @@ const SideMenu = ({ onClose, isMobile = false }) => {
   return (
     <div className={`${isMobile ? 'w-full' : 'w-80'} h-screen bg-[#EDF6F9] flex flex-col`}>
       {/* Logo Section */}
-      <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+      <div className="p-1 border-b border-gray-200 flex items-center justify-between">
         <div className="flex items-center justify-center space-x-3 flex-1">
-          <img src="/logo.png" alt="Optel Logo" className="w-auto h-15" />
+          <img src="/logo.png" alt="Optel Logo" className="w-[250px] h-20" />
         </div>
         {isMobile && (
           <button
@@ -36,8 +36,8 @@ const SideMenu = ({ onClose, isMobile = false }) => {
       </div>
 
       {/* Navigation Items */}
-      <div className="flex-1 px-4 py-6 overflow-y-auto scrollbar-hide">
-        <nav className="space-y-2">
+      <div className="flex-1 px-4 pt-[19px] pb-0 overflow-y-auto scrollbar-hide">
+        <nav className="">
           {navigationItems.map((item) => {
             const active = isActive(item.path)
 
@@ -46,7 +46,7 @@ const SideMenu = ({ onClose, isMobile = false }) => {
                 key={item.id}
                 to={item.path}
                 onClick={handleLinkClick}
-                className={`flex items-center space-x-4 p-3 rounded-lg transition-colors duration-200 ${
+                className={`flex items-center space-x-4 py-2 px-7 rounded-lg transition-colors duration-200 ${
                   active
                     ? 'bg-white border border-[#808080]'
                     : 'hover:bg-gray-100'
@@ -58,7 +58,7 @@ const SideMenu = ({ onClose, isMobile = false }) => {
                   <img
                     src={item.icon}
                     alt={item.name}
-                    className="w-8 h-8 object-contain"
+                    className="w-5 h-5 object-contain"
                   />
                 </div>
                 <span
@@ -75,18 +75,17 @@ const SideMenu = ({ onClose, isMobile = false }) => {
       </div>
 
       {/* Create Post Button */}
-      <div className="px-4 py-2 ">
+     
         <button 
           onClick={handleLinkClick}
-          className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-3 px-4 rounded-full flex items-center justify-between transition-colors cursor-pointer"
+          className="  bg-transparent  text-[#212121] font-semibold text-xl py-3.5 px-6 rounded-full flex items-center justify-between transition-colors cursor-pointer border border-[#808080] mx-auto w-[288px]"
         >
           <span>Create post</span>
          <Icon icon="lets-icons:send-hor-light" width="30" height="30"  style={{color: '#000'}} />
         </button>
-      </div>
-
+    
       {/* User Profile Section */}
-      <div className="px-4 py-4 border-t border-gray-200">
+      <div className="px-4 py-1 mt-5">
         <div className="flex items-center space-x-3 p-3 bg-white rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
           <img
             src="/perimg.png"
