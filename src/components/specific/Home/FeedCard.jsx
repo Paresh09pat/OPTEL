@@ -1,7 +1,7 @@
 import { memo } from "react";
 
 const FeedCard = ({ image, username, isVideo = false }) => (
-    <div className="relative flex-shrink-0 w-40 h-52 rounded-xl overflow-hidden cursor-pointer group">
+    <div className="relative flex-shrink-0 w-[120px] h-[160px] rounded-xl overflow-hidden cursor-pointer group">
         <img
             src={image}
             alt={username}

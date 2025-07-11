@@ -1,101 +1,88 @@
-import { 
-  FaHome, 
-  FaCompass, 
-  FaImages, 
-  FaBookmark, 
-  FaCalendarAlt, 
-  FaComments, 
-  FaUsers, 
-  FaFileAlt, 
-  FaBlog, 
-  FaNewspaper, 
-  FaBriefcase, 
-  FaEllipsisH 
-} from 'react-icons/fa'
+// src/constants/navigation.js
+import homeIcon from '/icons/home.png'
+import exploreIcon from '/icons/compass.png'
+import albumsIcon from '/icons/album.png'
+import savedIcon from '/icons/save.png'
+import eventsIcon from '/icons/event.png'
+import forumIcon from '/icons/forum.png'
+import groupsIcon from '/icons/group.png'
+import pagesIcon from '/icons/page.png'
+import blogIcon from '/icons/blog.png'
+import articleIcon from '/icons/article.png'
+import jobsIcon from '/icons/job.png'
+import moreIcon from '/icons/more.png'
 
 export const navigationItems = [
   {
     id: 'home',
     name: 'Home',
     path: '/',
-    icon: FaHome,
-    color: 'bg-blue-500',
+    icon: homeIcon,
   },
   {
-    id: 'explore',
-    name: 'Explore',
-    path: '/explore',
-    icon: FaCompass,
-    color: 'bg-teal-500',
+     id: 'explore',
+     name: 'Explore',
+     path: '/explore',
+     icon: exploreIcon,
   },
   {
     id: 'albums',
     name: 'Albums',
     path: '/albums',
-    icon: FaImages,
-    color: 'bg-green-500',
+    icon: albumsIcon,
   },
   {
     id: 'saved-posts',
     name: 'Saved Posts',
     path: '/saved-posts',
-    icon: FaBookmark,
-    color: 'bg-purple-500',
+    icon: savedIcon,
   },
   {
     id: 'events',
     name: 'Events',
     path: '/events',
-    icon: FaCalendarAlt,
-    color: 'bg-red-500',
+    icon: eventsIcon,
   },
   {
     id: 'forum',
     name: 'Forum',
     path: '/forum',
-    icon: FaComments,
-    color: 'bg-yellow-500',
+    icon: forumIcon,
   },
   {
     id: 'my-groups',
     name: 'My Groups',
     path: '/my-groups',
-    icon: FaUsers,
-    color: 'bg-blue-400',
+    icon: groupsIcon,
   },
   {
     id: 'my-pages',
     name: 'My Pages',
     path: '/my-pages',
-    icon: FaFileAlt,
-    color: 'bg-orange-500',
+    icon: pagesIcon,
   },
   {
     id: 'blog',
     name: 'Blog',
     path: '/blog',
-    icon: FaBlog,
-    color: 'bg-red-400',
+    icon: blogIcon,
   },
   {
     id: 'article',
     name: 'Article',
     path: '/article',
-    icon: FaNewspaper,
-    color: 'bg-teal-400',
+    icon: articleIcon,
   },
   {
     id: 'jobs',
     name: 'Jobs',
     path: '/jobs',
-    icon: FaBriefcase,
-    color: 'bg-green-400',
+    icon: jobsIcon,
   },
   {
     id: 'more',
     name: 'More',
     path: '/more',
-    icon: FaEllipsisH,
-    color: 'bg-pink-500',
+    icon: moreIcon,
   },
-] 
+]
