@@ -3,10 +3,58 @@ import { FaPlus, FaUser, FaUsers } from 'react-icons/fa'
 import { CiCircleMore } from 'react-icons/ci'
 import { BiBell } from 'react-icons/bi'
 import { FaTimes } from 'react-icons/fa'
+import { HiUsers } from "react-icons/hi";
+import { FaArrowTrendUp } from "react-icons/fa6";
+
+
 
 const Chatbox = ({ onClose, isMobile = false }) => {
+  // Random conversation data
+  const conversations = [
+    {
+      id: 1,
+      name: "Sana Rizvi",
+      message: "I am sending the design...",
+      time: "now",
+      isOnline: true,
+      avatar: "/perimg.png"
+    },
+    {
+      id: 2,
+      name: "Alex Johnson",
+      message: "Hey! How's the project going?",
+      time: "2m",
+      isOnline: true,
+      avatar: "/perimg.png"
+    },
+    {
+      id: 3,
+      name: "Sarah Chen",
+      message: "Thanks for the meeting notes 📝",
+      time: "15m",
+      isOnline: false,
+      avatar: "/perimg.png"
+    },
+    {
+      id: 4,
+      name: "Mike Torres",
+      message: "Let's schedule a call tomorrow",
+      time: "1h",
+      isOnline: true,
+      avatar: "/perimg.png"
+    },
+    {
+      id: 5,
+      name: "Emma Davis",
+      message: "The presentation looks great!",
+      time: "2h",
+      isOnline: false,
+      avatar: "/perimg.png"
+    },
+  ];
+
   return (
-    <div className={`bg-[#EDF6F9] px-6 py-8 h-full overflow-y-auto scrollbar-hide smooth-scroll ${
+    <div className={`bg-[#EDF6F9] px-6 py-8 h-full overflow-y-auto scrollbar-hide smooth-scroll pt-0  ${
       isMobile ? 'w-full' : 'w-90'
     }`}>
       {/* Mobile Close Button */}
@@ -21,9 +69,10 @@ const Chatbox = ({ onClose, isMobile = false }) => {
           </button>
         </div>
       )}
-
+  
       {/* Profile Section */}
-      <div className="w-full p-3 rounded-lg bg-white shadow-[#EDF6F9] shadow-md border border-[#808080]">
+      <div className="pt-8 sticky top-0 z-10 bg-[#EDF6F9] ">
+      <div className="w-full p-3 rounded-lg bg-white shadow-[#EDF6F9] shadow-md border border-[#808080] sticky top-8 z-10">
         <div className="flex p-4 items-center justify-between">
           <div className="relative w-[58px] h-[58px] rounded-full bg-[#EDF6F9] border-[4px] border-inset border-[#ffffff] shadow-md shadow-fuchsia-400">
             <div className="grid place-items-center absolute -right-1 -bottom-1 bg-black w-5 h-5 rounded-full border-inset border-[2px] shadow-2xl shadow-fuchsia-400 border-white">
@@ -44,6 +93,7 @@ const Chatbox = ({ onClose, isMobile = false }) => {
           </div>
         </div>
       </div>
+      </div>
 
       {/* Individual/Groups Toggle */}
       <div className="flex flex-col p-5 mt-2.5 bg-white rounded-lg border border-[#808080]">
@@ -59,79 +109,156 @@ const Chatbox = ({ onClose, isMobile = false }) => {
             <FaUsers className='text-[#808080] size-[32px]' />
           </button>
         </div>
+
+      <div className="flex flex-col gap-4">
+                 {conversations.map((conversation) => (
+           <div key={conversation.id} className="mt-6 w-full flex items-center justify-between">
+             {/* profile photo */}
+             <div className="grid size-11 rounded-full bg-black relative" > 
+               <div className={`size-4 rounded-full ${conversation.isOnline ? 'bg-[#4CAF50]' : 'bg-gray-400'} absolute -right-0 -bottom-0 border-2 border-inset border-white`}></div>
+             </div>
+
+            <div className="flex flex-col gap-1">
+              <p className="text-sm font-semibold text-[#212121]">{conversation.name}</p>
+              <p className="text-xs text-[#212121]">{conversation.message}</p>
+            </div>
+            <span className='text-[#212121] text-sm font-medium'>{conversation.time}</span>
+          </div>
+        ))}
+      </div>
+      </div>
+
+      <div className="flex flex-col p-5 mt-2.5 bg-white rounded-lg border border-[#808080]">
+        <div className="flex items-center justify-between w-full">
+          <h5 className='text-lg font-semibold text-gray-800 '>Pages you may like</h5> 
+          <button>
+          <svg xmlns="http://www.w3.org/2000/svg" className='text-gray-500 size-[25px] cursor-pointer' width={24} height={24} viewBox="0 0 24 24">
+              <g fill="none" stroke="currentColor" strokeWidth={2}>
+                <circle cx={11} cy={11} r={7}></circle>
+                <path strokeLinecap="round" d="M11 8a3 3 0 0 0-3 3m12 9l-3-3"></path>
+              </g>
+            </svg>
+          </button>
+        </div>
+
+        <div className="flex w-full overflow-x-auto scrollbar-hide mt-6">
+          <div className="flex flex-col gap-2 min-w-full bg-[#FFFFFF] shadow-2xl  pb-3 px-0.5 shadow-[#21212140] rounded-lg border border-[#21212140]">
+            <img src="/pagesCardImg.png" alt="cardImg" className=' w-full h-[160px] object-cover rounded-lg' />
+            <div className="flex flex-col gap-2.5 w-full px-2.5">
+            <h5 className='text-sm font-medium text-[#212121] w-full text-left'>EchoVerse: The Sound Awakens</h5>
+            <div className="flex items-center justify-between">
+              <div className="flex gap-1.5">
+              <HiUsers className='text-[#808080] size-[15px]' />
+              <span className='text-[#808080] text-xs font-medium'>20 Members</span>
+              </div>
+              <div className="flex gap-1.5">
+              <img src="/icons/book.png" alt="book" className='size-[15px]' />
+              <span className='text-[#808080] text-xs font-medium'>200+Posts</span>
+              </div>
+              </div>
+            </div>
+           
+              <button className='bg-[#ffff] text-black px-7 py-0.5 rounded-lg  mx-auto mt-6 border border-[#212121]'>Join Now</button>
+           
+          </div>
+
+
+          <div className="flex flex-col gap-2 min-w-full bg-[#FFFFFF] shadow-2xl  pb-3 px-0.5 shadow-[#21212140] rounded-lg border border-[#21212140]">
+            <img src="/pagesCardImg.png" alt="cardImg" className=' w-full h-[160px] object-cover rounded-lg' />
+            <div className="flex flex-col gap-2.5 w-full px-2.5">
+            <h5 className='text-sm font-medium text-[#212121] w-full text-left'>EchoVerse: The Sound Awakens</h5>
+            <div className="flex items-center justify-between">
+              <div className="flex gap-1.5">
+              <HiUsers className='text-[#808080] size-[15px]' />
+              <span className='text-[#808080] text-xs font-medium'>20 Members</span>
+              </div>
+              <div className="flex gap-1.5">
+              <img src="/icons/book.png" alt="book" className='size-[15px]' />
+              <span className='text-[#808080] text-xs font-medium'>200+Posts</span>
+              </div>
+              </div>
+            </div>
+           
+              <button className='bg-[#ffff] text-black px-7 py-0.5 rounded-lg  mx-auto mt-6 border border-[#212121]'>Join Now</button>
+           
+          </div>
+
+
+          <div className="flex flex-col gap-2 min-w-full bg-[#FFFFFF] shadow-2xl  pb-3 px-0.5 shadow-[#21212140] rounded-lg border border-[#21212140]">
+            <img src="/pagesCardImg.png" alt="cardImg" className=' w-full h-[160px] object-cover rounded-lg' />
+            <div className="flex flex-col gap-2.5 w-full px-2.5">
+            <h5 className='text-sm font-medium text-[#212121] w-full text-left'>EchoVerse: The Sound Awakens</h5>
+            <div className="flex items-center justify-between">
+              <div className="flex gap-1.5">
+              <HiUsers className='text-[#808080] size-[15px]' />
+              <span className='text-[#808080] text-xs font-medium'>20 Members</span>
+              </div>
+              <div className="flex gap-1.5">
+              <img src="/icons/book.png" alt="book" className='size-[15px]' />
+              <span className='text-[#808080] text-xs font-medium'>200+Posts</span>
+              </div>
+              </div>
+            </div>
+           
+              <button className='bg-[#ffff] text-black px-7 py-0.5 rounded-lg  mx-auto mt-6 border border-[#212121]'>Join Now</button>
+           
+          </div>
+        
+        </div>
       </div>
 
       {/* Trending Topics */}
       <div className="p-6 bg-white mt-2.5 rounded-lg border border-[#808080]">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Trending Topics</h3>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors will-change-transform">
-            <div>
-              <p className="font-medium text-gray-900">#Technology</p>
-              <p className="text-sm text-gray-500">12.5k posts</p>
-            </div>
+        <div className="flex items-center justify-between">
+        <h5 className="text-lg font-semibold text-[#212121]">Trending Topics</h5>
+        <svg xmlns="http://www.w3.org/2000/svg" className='text-gray-500 size-[25px] cursor-pointer' width={24} height={24} viewBox="0 0 24 24">
+              <g fill="none" stroke="currentColor" strokeWidth={2}>
+                <circle cx={11} cy={11} r={7}></circle>
+                <path strokeLinecap="round" d="M11 8a3 3 0 0 0-3 3m12 9l-3-3"></path>
+              </g>
+            </svg>
+        </div>
+      
+        <div className="space-y-1 mt-5">
+          <div className="flex items-center justify-between p-0 cursor-pointer transition-colors will-change-transform text-[#212121]">
+            <FaArrowTrendUp />
+              <a href="#" className="font-medium ">#Technology</a>
+              <p className="text-sm ">12.5k posts</p>
           </div>
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors will-change-transform">
-            <div>
-              <p className="font-medium text-gray-900">#Design</p>
-              <p className="text-sm text-gray-500">8.2k posts</p>
-            </div>
+          <div className="flex items-center justify-between p-0 cursor-pointer transition-colors will-change-transform text-[#212121]">
+            <FaArrowTrendUp />
+              <a href="#" className="font-medium ">#Technology</a>
+              <p className="text-sm ">12.5k posts</p>
           </div>
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors will-change-transform">
-            <div>
-              <p className="font-medium text-gray-900">#Programming</p>
-              <p className="text-sm text-gray-500">15.7k posts</p>
-            </div>
+          <div className="flex items-center justify-between p-0 cursor-pointer transition-colors will-change-transform text-[#212121]">
+            <FaArrowTrendUp />
+              <a href="#" className="font-medium ">#Technology</a>
+              <p className="text-sm ">12.5k posts</p>
           </div>
+          <div className="flex items-center justify-between p-0 cursor-pointer transition-colors will-change-transform text-[#212121]">
+            <FaArrowTrendUp />
+              <a href="#" className="font-medium ">#Technology</a>
+              <p className="text-sm ">12.5k posts</p>
+          </div>
+
         </div>
       </div>
 
       {/* Who to Follow */}
-      <div className="p-6 mt-2.5 bg-white rounded-lg border border-[#808080]">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Who to Follow</h3>
-        <div className="space-y-4">
-          <div className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors will-change-transform">
-            <img
-              src="/perimg.png"
-              alt="User avatar"
-              className="w-10 h-10 rounded-full object-cover"
-            />
-            <div className="flex-1">
-              <p className="font-medium text-gray-900">John Doe</p>
-              <p className="text-sm text-gray-500">@johndoe</p>
-            </div>
-            <button className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-sm transition-colors">
-              Follow
-            </button>
-          </div>
-          <div className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors will-change-transform">
-            <img
-              src="/perimg.png"
-              alt="User avatar"
-              className="w-10 h-10 rounded-full object-cover"
-            />
-            <div className="flex-1">
-              <p className="font-medium text-gray-900">Jane Smith</p>
-              <p className="text-sm text-gray-500">@janesmith</p>
-            </div>
-            <button className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-sm transition-colors">
-              Follow
-            </button>
-          </div>
-          <div className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors will-change-transform">
-            <img
-              src="/perimg.png"
-              alt="User avatar"
-              className="w-10 h-10 rounded-full object-cover"
-            />
-            <div className="flex-1">
-              <p className="font-medium text-gray-900">Tech News</p>
-              <p className="text-sm text-gray-500">@technews</p>
-            </div>
-            <button className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-sm transition-colors">
-              Follow
-            </button>
-          </div>
+      <div className="py-4 px-6 mt-2.5 bg-[#808080] rounded-lg border border-[#808080]">
+      <img src="/logos/ouptelfootericon.svg" alt="ouptel-logo" />
+        <div className="grid grid-cols-2 gap-11 text-white mt-3.5 text-[12px]">
+         <div className="flex flex-col gap-1.5 ">
+          <a href="">About us</a>
+          <a href="">Blogs</a>
+          <a href="">Contact us</a>
+          <a href="">Developers</a>
+         </div>
+         <div className="flex flex-col gap-1.5 ">
+          <a href="">Languages</a>
+          <a href="">Terms & Condition</a>
+          <a href="">Privacy Policy</a>
+         </div>
         </div>
       </div>
     </div>
