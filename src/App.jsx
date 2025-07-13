@@ -15,6 +15,7 @@ import Blog from './pages/Blog'
 import Article from './pages/Article'
 import Jobs from './pages/Jobs'
 import More from './pages/More'
+import ChatDetailed from './pages/ChatDetailed'
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
         <Route path="/article" element={<Article />} />
         <Route path="/jobs" element={<Jobs />} />
         <Route path="/more" element={<More />} />
+        <Route path="/chat-detailed" element={<ChatDetailed />} />
       </Routes>
     </MainLayout>
   )
