@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Heart, MessageCircle, Share, Bookmark, Send, Smile, MoreHorizontal } from 'lucide-react';
+import { Heart, MessageCircle, Share, Bookmark, Send, Smile, MoreHorizontal, Pin } from 'lucide-react';
 
 const FullAlbumView = () => {
     const [liked, setLiked] = useState(false);
@@ -32,7 +32,7 @@ const FullAlbumView = () => {
     return (
         <div className="bg-[#EDF6F9] w-full h-auto  flex flex-col gap-4 ">
             <div className='w-full h-[98px] sticky pt-8 top-0 z-10 bg-[#EDF6F9]'>
-                <div className="flex items-center justify-between h-full px-4 md:px-7 flex-col md:flex-row gap-4">
+                <div className="flex flex-row items-center justify-between h-full px-4 md:px-7 md:flex-row gap-4">
                     <h1 className="text-2xl font-bold text-[#212121] mb-4">My Albums</h1>
                     <div className="flex gap-6 items-center">
                         <button className='border border-[#808080] cursor-pointer py-1.5 px-3.5 rounded-2xl flex items-center gap-1.5'>
@@ -52,7 +52,7 @@ const FullAlbumView = () => {
                 {/* User Info Header */}
                 <div className="bg-white border-b border-[#808080] px-4 py-3">
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3 w-full">
+                        <div className="flex items-start md:items-center gap-3 w-1/2 md:w-full flex-col md:flex-row">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 bg-gray-300 rounded-full flex-shrink-0 overflow-hidden">
                                     <img
@@ -69,7 +69,7 @@ const FullAlbumView = () => {
                             </div>
 
                         </div>
-                        <div className="flex items-center gap-4 w-[30%] md:w-full justify-between ">
+                        <div className="flex items-center gap-4 w-[30%] md:w-full justify-between flex-col md:flex-row">
                             <div className="flex items-center justify-center gap-4 w-full">
                                 <span className="text-sm text-black">{albumData?.length || '50'} Photos</span>
                                 <span className="text-sm text-gray-500">{timeStamp || '3 Days Ago'}</span>
@@ -116,17 +116,17 @@ const FullAlbumView = () => {
                                 }`}
                         >
                             <Heart className={`w-5 h-5 ${liked ? 'fill-current' : ''}`} />
-                            <span className="text-sm">Like</span>
+
                         </button>
 
                         <button className="flex items-center gap-2 px-3 py-2 rounded-full text-gray-600 hover:bg-gray-100">
                             <MessageCircle className="w-5 h-5" />
-                            <span className="text-sm">Comment</span>
+
                         </button>
 
                         <button className="flex items-center gap-2 px-3 py-2 rounded-full text-gray-600 hover:bg-gray-100">
                             <Share className="w-5 h-5" />
-                            <span className="text-sm">Share</span>
+
                         </button>
 
                         <button
@@ -153,16 +153,21 @@ const FullAlbumView = () => {
                                 className="flex-1 bg-transparent outline-none text-sm"
                                 onKeyPress={(e) => e.key === 'Enter' && handleComment()}
                             />
+                        </div>
+                        <div className="flex items-center gap-2 md:gap-4">
+                            <button className="text-gray-400 hover:text-gray-600">
+                                <Pin className="w-5 h-5" />
+                            </button>
                             <button className="text-gray-400 hover:text-gray-600">
                                 <Smile className="w-5 h-5" />
                             </button>
+                            <button
+                                onClick={handleComment}
+                                className="text-blue-500 hover:text-blue-700"
+                            >
+                                <Send className="w-5 h-5" />
+                            </button>
                         </div>
-                        <button
-                            onClick={handleComment}
-                            className="text-blue-500 hover:text-blue-700"
-                        >
-                            <Send className="w-5 h-5" />
-                        </button>
                     </div>
                 </div>
             </div>

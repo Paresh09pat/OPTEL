@@ -26,7 +26,7 @@ const MainLayout = ({ children }) => {
   }
 
   return (
-    <div className="h-screen bg-white overflow-hidden scrollbar-hide stable-layout">
+    <div className="h-auto bg-white overflow-hidden scrollbar-hide stable-layout">
       {/* Mobile Header with Hamburger */}
       <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between relative z-50 h-16">
         <button
