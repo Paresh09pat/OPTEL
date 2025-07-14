@@ -16,6 +16,8 @@ import Article from './pages/Article'
 import Jobs from './pages/Jobs'
 import More from './pages/More'
 import ChatDetailed from './pages/ChatDetailed'
+import MyAlbums from './pages/MyAlbums'
+import FullAlbumView from './pages/FullAlbum'
 
 function App() {
   return (
@@ -34,6 +36,8 @@ function App() {
         <Route path="/jobs" element={<Jobs />} />
         <Route path="/more" element={<More />} />
         <Route path="/chat-detailed" element={<ChatDetailed />} />
+        <Route path="/my-albums" element={<MyAlbums />} />
+        <Route path="/my-albums/:albumTitle" element={<FullAlbumView />} />
       </Routes>
     </MainLayout>
   )

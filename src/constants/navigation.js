@@ -28,7 +28,7 @@ export const navigationItems = [
   {
     id: 'albums',
     name: 'Albums',
-    path: '/albums',
+    path: '/my-albums',
     icon: albumsIcon,
   },
   {
