@@ -1,7 +1,7 @@
 // src/components/layout/SideMenu.js
 import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import {FaEllipsisV, FaTimes } from 'react-icons/fa'
+import { FaEllipsisV, FaTimes } from 'react-icons/fa'
 import { Icon } from '@iconify/react'
 import { navigationItems } from '../../constants/navigation'
 
@@ -9,7 +9,10 @@ const SideMenu = ({ onClose, isMobile = false }) => {
   const location = useLocation()
 
   const isActive = (path) => {
-    return location.pathname === path
+    if (path === '/') {
+      return location.pathname === '/'
+    }
+    return location.pathname.startsWith(path)
   }
 
   const handleLinkClick = () => {
@@ -46,11 +49,10 @@ const SideMenu = ({ onClose, isMobile = false }) => {
                 key={item.id}
                 to={item.path}
                 onClick={handleLinkClick}
-                className={`flex items-center space-x-4 py-2 px-7 rounded-lg transition-colors duration-200 ${
-                  active
-                    ? 'bg-white border border-[#808080]'
-                    : 'hover:bg-gray-100'
-                }`}
+                className={`flex items-center space-x-4 py-2 px-7 rounded-lg transition-colors duration-200 ${active
+                  ? 'bg-white border border-[#808080]'
+                  : 'hover:bg-gray-100'
+                  }`}
               >
                 <div
                   className={`w-10 h-10 ${item.color} rounded-lg flex items-center justify-center flex-shrink-0`}
@@ -62,9 +64,8 @@ const SideMenu = ({ onClose, isMobile = false }) => {
                   />
                 </div>
                 <span
-                  className={`font-medium text-lg truncate ${
-                    active ? 'text-blue-600' : 'text-gray-700'
-                  }`}
+                  className={`font-medium text-lg truncate ${active ? 'text-blue-600' : 'text-gray-700'
+                    }`}
                 >
                   {item.name}
                 </span>
@@ -75,15 +76,15 @@ const SideMenu = ({ onClose, isMobile = false }) => {
       </div>
 
       {/* Create Post Button */}
-     
-        <button 
-          onClick={handleLinkClick}
-          className="  bg-transparent  text-[#212121] font-semibold text-xl py-3.5 px-6 rounded-full flex items-center justify-between transition-colors cursor-pointer border border-[#808080] mx-auto w-[288px]"
-        >
-          <span>Create post</span>
-         <Icon icon="lets-icons:send-hor-light" width="30" height="30"  style={{color: '#000'}} />
-        </button>
-    
+
+      <button
+        onClick={handleLinkClick}
+        className="  bg-transparent  text-[#212121] font-semibold text-xl py-3.5 px-6 rounded-full flex items-center justify-between transition-colors cursor-pointer border border-[#808080] mx-auto w-[288px]"
+      >
+        <span>Create post</span>
+        <Icon icon="lets-icons:send-hor-light" width="30" height="30" style={{ color: '#000' }} />
+      </button>
+
       {/* User Profile Section */}
       <div className="px-4 py-1 mt-5">
         <div className="flex items-center space-x-3 p-3 bg-white rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">

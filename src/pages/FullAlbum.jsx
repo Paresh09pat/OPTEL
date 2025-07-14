@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Heart, MessageCircle, Share, Bookmark, Send, Smile, MoreHorizontal, Pin } from 'lucide-react';
 
 const FullAlbumView = () => {
@@ -35,10 +35,10 @@ const FullAlbumView = () => {
                 <div className="flex flex-row items-center justify-between h-full px-4 md:px-7 md:flex-row gap-4">
                     <h1 className="text-2xl font-bold text-[#212121] mb-4">My Albums</h1>
                     <div className="flex gap-6 items-center">
-                        <button className='border border-[#808080] cursor-pointer py-1.5 px-3.5 rounded-2xl flex items-center gap-1.5'>
+                        <Link to={"/my-albums/create"} className='border border-[#808080] cursor-pointer py-1.5 px-3.5 rounded-2xl flex items-center gap-1.5'>
                             <img src="/icons/gridicons_create.svg" alt="create" className='size-[15px]' />
                             <span className='text-[#808080] text-base font-medium'>Create Album</span>
-                        </button>
+                        </Link>
                     </div>
                 </div>
             </div>

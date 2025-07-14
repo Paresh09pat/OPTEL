@@ -18,6 +18,7 @@ import More from './pages/More'
 import ChatDetailed from './pages/ChatDetailed'
 import MyAlbums from './pages/MyAlbums'
 import FullAlbumView from './pages/FullAlbum'
+import CreateAlbum from './pages/CreateAlbum'
 
 function App() {
   return (
@@ -38,6 +39,7 @@ function App() {
         <Route path="/chat-detailed" element={<ChatDetailed />} />
         <Route path="/my-albums" element={<MyAlbums />} />
         <Route path="/my-albums/:albumTitle" element={<FullAlbumView />} />
+        <Route path="/my-albums/create" element={<CreateAlbum />} />
       </Routes>
     </MainLayout>
   )
