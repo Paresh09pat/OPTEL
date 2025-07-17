@@ -59,7 +59,7 @@ const Chatbox = ({ onClose, isMobile = false }) => {
     }`}>
       {/* Mobile Close Button */}
       {isMobile && (
-        <div className="flex justify-between items-center mb-4 lg:hidden">
+        <div className="flex justify-between items-center mb-4 lg:hidden pt-4">
           <h2 className="text-xl font-semibold text-gray-800">Messages & Activity</h2>
           <button
             onClick={onClose}

@@ -19,6 +19,8 @@ import ChatDetailed from './pages/ChatDetailed'
 import MyAlbums from './pages/MyAlbums'
 import FullAlbumView from './pages/FullAlbum'
 import CreateAlbum from './pages/CreateAlbum'
+import MainPages from './pages/PagesComp/MainPages'
+import CreatePage from './pages/PagesComp/CreatePage'
 
 function App() {
   return (
@@ -29,7 +31,7 @@ function App() {
         <Route path="/albums" element={<Albums />} />
         <Route path="/saved-posts" element={<SavedPosts />} />
         <Route path="/events" element={<Events />} />
-        <Route path="/forum" element={<Forum />} />
+        <Route path="/PagesComp/MainPages" element={<MainPages />} />
         <Route path="/my-groups" element={<MyGroups />} />
         <Route path="/my-pages" element={<MyPages />} />
         <Route path="/blog" element={<Blog />} />
@@ -40,6 +42,7 @@ function App() {
         <Route path="/my-albums" element={<MyAlbums />} />
         <Route path="/my-albums/:albumTitle" element={<FullAlbumView />} />
         <Route path="/my-albums/create" element={<CreateAlbum />} />
+        <Route path="/PagesComp/MainPages/CreatePage" element={<CreatePage />} />
       </Routes>
     </MainLayout>
   )

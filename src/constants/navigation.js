@@ -58,7 +58,7 @@ export const navigationItems = [
   {
     id: 'my-pages',
     name: 'My Pages',
-    path: '/my-pages',
+    path: '/PagesComp/MainPages',
     icon: pagesIcon,
   },
   {
