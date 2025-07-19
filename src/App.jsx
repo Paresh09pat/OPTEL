@@ -21,7 +21,7 @@ import FullAlbumView from './pages/FullAlbum'
 import CreateAlbum from './pages/CreateAlbum'
 import MainPages from './pages/PagesComp/MainPages'
 import CreatePage from './pages/PagesComp/CreatePage'
-
+import Profile from './pages/Profile'
 function App() {
   return (
     <MainLayout>
@@ -43,6 +43,7 @@ function App() {
         <Route path="/my-albums/:albumTitle" element={<FullAlbumView />} />
         <Route path="/my-albums/create" element={<CreateAlbum />} />
         <Route path="/PagesComp/MainPages/CreatePage" element={<CreatePage />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </MainLayout>
   )
