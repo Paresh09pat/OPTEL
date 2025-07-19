@@ -1,6 +1,40 @@
 import React from 'react'
+import CreatePostSection from '../components/specific/Home/CreatePostSection'
+import QuickActionSection from '../components/specific/Home/QuickActionSection'
+
+import PostCard from '../components/specific/Home/PostCard'
 
 const Profile = () => {
+    const posts = [
+        {
+          id: 1,
+          user: {
+            name: 'feeliummagic',
+            avatar: '/perimg.png'
+          },
+          content: 'Explore new horizons... Follow us for design inspiration, Check out our latest graphic design and branding content. @feeliummagic...more',
+          image: '/mobile.jpg',
+          likes: '2k+',
+          comments: '100+',
+          shares: '250+',
+          saves: '50+',
+          timeAgo: '2h ago'
+        },
+        {
+          id: 2,
+          user: {
+            name: '_amu_456',
+            avatar: '/perimg.png'
+          },
+          content: 'What a thrilling clash between MI & LSG last night! LSG got the time only with Mitchell Marsh hammering 60 off just 31 balls, powering them to a massive 204/5. Mumbai fought back strongly, but Suryakumar Yadav brought them back with a classy 67 (43). Hardik Pandya shined with the ball (3/21), but LSG\'s bowlers held their nerve in the death overs, sealing a 12-run win. Momentum shift. Playoff race heating up! This IPL just keeps getting better. #MIvsLSG #IPL2025 #CricketMadness #GameDay',
+          image: null,
+          likes: '2k+',
+          comments: '100+',
+          shares: '250+',
+          saves: '50+',
+          timeAgo: '4h ago'
+        }
+      ];
   return (
     <div className=" w-full h-full pt-8 bg-[#EDF6F9]">
         <div className="flex flex-col  border border-[#808080] rounded-xl overflow-hidden">
@@ -31,6 +65,24 @@ const Profile = () => {
                     </div>
                     
             </div>
+        </div>
+        <div className="w-full mt-4 px-5">
+        <CreatePostSection  />
+        </div>
+        <div className="w-full mt-4 px-5">
+            <QuickActionSection />
+        </div>
+        <div className="w-full mt-4 px-5">
+        <PostCard
+              user={posts[0].user}
+              content={posts[0].content}
+              image={posts[0].image}
+              likes={posts[0].likes}
+              comments={posts[0].comments}
+              shares={posts[0].shares}
+              saves={posts[0].saves}
+              timeAgo={posts[0].timeAgo}
+            />
         </div>
     </div>
   )
