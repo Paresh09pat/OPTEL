@@ -1,13 +1,13 @@
 // src/components/layout/SideMenu.js
 import React from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { FaEllipsisV, FaTimes } from 'react-icons/fa'
 import { Icon } from '@iconify/react'
 import { navigationItems } from '../../constants/navigation'
 
 const SideMenu = ({ onClose, isMobile = false }) => {
   const location = useLocation()
-
+  const navigate = useNavigate()
   const isActive = (path) => {
     if (path === '/') {
       return location.pathname === '/'
@@ -92,8 +92,13 @@ const SideMenu = ({ onClose, isMobile = false }) => {
             src="/perimg.png"
             alt="User Profile"
             className="w-12 h-12 rounded-full object-cover"
+            onClick={() => {
+              navigate('/profile')
+            }}
           />
-          <div className="flex-1">
+          <div className="flex-1" onClick={() => {
+            navigate('/profile')
+          }}>
             <p className="font-semibold text-gray-900">John Doe</p>
             <p className="text-sm text-gray-500">@johndoe</p>
           </div>
