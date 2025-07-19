@@ -127,8 +127,8 @@ const Home = () => {
           </div>
 
           {/* Fixed sticky positioning issue */}
-          <div className="sticky-optimized top-0 z-30 bg-[#EDF6F9]">
-            <div className="mx-[-0.5rem] md:mx-[-1rem] px-2 md:px-4">
+          <div className="sticky top-0 z-30 bg-[#EDF6F9] py-2 -mx-2 md:-mx-4">
+            <div className="mx-2 md:mx-4">
               <QuickActionsSection />
             </div>
           </div>

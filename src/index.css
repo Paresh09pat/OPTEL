@@ -48,6 +48,16 @@ html {
   transform: translateZ(0);
 }
 
+/* Mobile-specific sticky positioning fixes */
+@media (max-width: 768px) {
+  .sticky {
+    position: -webkit-sticky;
+    position: sticky;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+}
+
 /* Smooth transitions for dynamic content */
 .smooth-content-transition {
   transition: all 0.2s ease-out;

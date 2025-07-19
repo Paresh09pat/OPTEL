@@ -82,7 +82,7 @@ export const navigationItems = [
   {
     id: 'more',
     name: 'More',
-    path: '/more',
+    path: '/PageSetting/MainPageSetting',
     icon: moreIcon,
   },
 ]
