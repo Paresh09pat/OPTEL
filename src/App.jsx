@@ -23,6 +23,7 @@ import MainPages from './pages/PagesComp/MainPages'
 import CreatePage from './pages/PagesComp/CreatePage'
 import MainPageSetting from './pages/PageSetting/MainPageSetting'
 import Profile from './pages/Profile'
+import PageProfile from './pages/PageSetting/PageProfile'
 function App() {
   return (
     <MainLayout>
@@ -46,6 +47,7 @@ function App() {
         <Route path="/PagesComp/MainPages/CreatePage" element={<CreatePage />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/PageSetting/MainPageSetting" element={<MainPageSetting />} />
+        <Route path="/PageProfile" element={<PageProfile />} />
       </Routes>
     </MainLayout>
   )
