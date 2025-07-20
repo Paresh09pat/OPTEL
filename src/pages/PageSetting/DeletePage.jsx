@@ -12,8 +12,8 @@ const DeletePage = () => {
   };
 
   return (
-    <div className="bg-white rounded-lg p-6">
-      <h2 className="text-xl font-semibold text-gray-800 mb-6">Delete Page</h2>
+    <div className="bg-white rounded-xl p-3.5 px-9 border border-[#808080]">
+      <h2 className="text-xl font-semibold text-[#808080] text-center border-b border-[#808080] pb-2 mb-2">Delete Page</h2>
       
       <div className="space-y-4">
         <div>
@@ -24,7 +24,7 @@ const DeletePage = () => {
             value={formData.password}
             onChange={handleChange}
             placeholder="Password"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="w-full px-3 py-2 border border-[#212121] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500"
           />
         </div>
 
@@ -36,7 +36,7 @@ const DeletePage = () => {
             value={formData.confirmPassword}
             onChange={handleChange}
             placeholder="Password"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="w-full px-3 py-2 border border-[#212121] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500"
           />
         </div>
 
@@ -69,8 +69,8 @@ const DeletePage = () => {
         </div>
       </div>
 
-      <div className="mt-8">
-        <button className="w-32 bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-colors">
+      <div className="border-t border-[#808080] pt-4 mt-3.5 grid place-items-center ">
+        <button className="w-32 mx-auto border border-[#FF0707] text-[#FF0707] bg-white py-2 px-4 rounded-lg cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm font-semibold">
           Delete Page
         </button>
       </div>

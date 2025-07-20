@@ -21,8 +21,8 @@ const PageInformation = () => {
   };
 
   return (
-    <div className="bg-white rounded-lg p-6">
-      <h2 className="text-xl font-semibold text-gray-800 mb-6">Page Information</h2>
+    <div className="bg-white rounded-xl p-3.5 border border-[#808080]">
+      <h2 className="text-xl font-semibold text-[#808080] text-center border-b border-[#808080] pb-2 mb-2">Page Information</h2>
       
       <form onSubmit={handleSubmit}>
         <div className="space-y-4">
@@ -36,7 +36,7 @@ const PageInformation = () => {
               value={formData.companyName}
               onChange={handleChange}
               placeholder="Company Name"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full px-3 py-2 border border-[#212121] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500"
               required
             />
           </div>
@@ -49,7 +49,7 @@ const PageInformation = () => {
               value={formData.phone}
               onChange={handleChange}
               placeholder="Phone"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full px-3 py-2 border border-[#212121] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
           </div>
 
@@ -59,7 +59,7 @@ const PageInformation = () => {
               name="location"
               value={formData.location}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full px-3 py-2 border border-[#212121] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
               <option value="">Location</option>
               <option value="New York">New York</option>
@@ -81,7 +81,7 @@ const PageInformation = () => {
               value={formData.websiteUrl}
               onChange={handleChange}
               placeholder="URL"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full px-3 py-2 border border-[#212121] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
           </div>
 
@@ -93,15 +93,15 @@ const PageInformation = () => {
               onChange={handleChange}
               placeholder="Write Your Msg"
               rows={6}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+              className="w-full px-3 py-2 border border-[#212121] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
             />
           </div>
         </div>
 
-        <div className="mt-8">
+        <div className="border-t border-[#808080] pt-4 mt-3.5 grid place-items-center ">
           <button 
             type="submit"
-            className="w-32 bg-orange-500 text-white py-2 px-4 rounded-lg hover:bg-orange-600 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="w-32 mx-auto border border-orange-[#F69F58] text-[#F69F58] bg-white py-2 px-4 rounded-lg cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm font-semibold"
           >
             Save
           </button>

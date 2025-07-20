@@ -22,7 +22,7 @@ const SideMenu = ({ onClose, isMobile = false }) => {
   }
 
   return (
-    <div className={`${isMobile ? 'w-full' : 'w-80'} h-screen bg-[#EDF6F9] flex flex-col`}>
+    <div className={`${isMobile ? 'w-full' : 'w-60 xl:w-80'} h-screen bg-[#EDF6F9] flex flex-col`}>
       {/* Logo Section */}
       <div className="p-1 border-b border-gray-200 flex items-center justify-between">
         <div className="flex items-center justify-center space-x-3 flex-1">
@@ -79,7 +79,7 @@ const SideMenu = ({ onClose, isMobile = false }) => {
 
       <button
         onClick={handleLinkClick}
-        className="  bg-transparent  text-[#212121] font-semibold text-xl py-3.5 px-6 rounded-full flex items-center justify-between transition-colors cursor-pointer border border-[#808080] mx-auto w-[288px]"
+        className="  bg-transparent  text-[#212121] font-semibold text-xl py-3.5 px-6 rounded-full flex items-center justify-between transition-colors cursor-pointer border border-[#808080] mx-auto w-full"
       >
         <span>Create post</span>
         <Icon icon="lets-icons:send-hor-light" width="30" height="30" style={{ color: '#000' }} />
