@@ -3,9 +3,7 @@
 /* Custom styles can be added here */
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: 'Poppins', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 } 
@@ -48,6 +46,16 @@ html {
   will-change: transform;
   backface-visibility: hidden;
   transform: translateZ(0);
+}
+
+/* Mobile-specific sticky positioning fixes */
+@media (max-width: 768px) {
+  .sticky {
+    position: -webkit-sticky;
+    position: sticky;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
 }
 
 /* Smooth transitions for dynamic content */

@@ -55,11 +55,11 @@ const Chatbox = ({ onClose, isMobile = false }) => {
 
   return (
     <div className={`bg-[#EDF6F9] px-6 py-8 h-full overflow-y-auto scrollbar-hide smooth-scroll pt-0  ${
-      isMobile ? 'w-full' : 'w-90'
+      isMobile ? 'w-full' : 'w-60'
     }`}>
       {/* Mobile Close Button */}
       {isMobile && (
-        <div className="flex justify-between items-center mb-4 lg:hidden">
+        <div className="flex justify-between items-center mb-4 lg:hidden pt-4">
           <h2 className="text-xl font-semibold text-gray-800">Messages & Activity</h2>
           <button
             onClick={onClose}
@@ -72,15 +72,15 @@ const Chatbox = ({ onClose, isMobile = false }) => {
   
       {/* Profile Section */}
       <div className="pt-8 sticky top-0 z-10 bg-[#EDF6F9] ">
-      <div className="w-full p-3 rounded-lg bg-white shadow-[#EDF6F9] shadow-md border border-[#808080] sticky top-8 z-10">
-        <div className="flex p-4 items-center justify-between">
+      <div className="w-full xl:p-3 lg:p-2 rounded-lg bg-white shadow-[#EDF6F9] shadow-md border border-[#808080] sticky top-8 z-10">
+        <div className="flex xl:p-4 lg:p-2 items-center justify-between">
           <div className="relative w-[58px] h-[58px] rounded-full bg-[#EDF6F9] border-[4px] border-inset border-[#ffffff] shadow-md shadow-fuchsia-400">
             <div className="grid place-items-center absolute -right-1 -bottom-1 bg-black w-5 h-5 rounded-full border-inset border-[2px] shadow-2xl shadow-fuchsia-400 border-white">
               <FaPlus className='text-white size-[10px]' />
             </div>
           </div>
 
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex items-center justify-center xl:gap-4 lg:gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" className='text-gray-500 size-[25px] cursor-pointer' width={24} height={24} viewBox="0 0 24 24">
               <g fill="none" stroke="currentColor" strokeWidth={2}>
                 <circle cx={11} cy={11} r={7}></circle>
@@ -98,31 +98,31 @@ const Chatbox = ({ onClose, isMobile = false }) => {
       {/* Individual/Groups Toggle */}
       <div className="flex flex-col p-5 mt-2.5 bg-white rounded-lg border border-[#808080]">
         <div className="flex w-full items-center justify-between">
-          <button className='relative flex items-center gap-2 border border-[#212121] px-4 py-2 rounded-xl cursor-pointer'>
+          <button className='relative flex items-center gap-2 border border-[#212121] xl:px-4 lg:px-2 py-2 rounded-xl cursor-pointer'>
             <div className="grid absolute bg-[#B3261E] place-items-center w-6 h-6 rounded-full -right-2 -top-2 text-[10px] text-white font-medium">2</div>
-            <FaUser className='text-[#212121] size-[24px]' />
+            <FaUser className='text-[#212121] xl:size-[24px] lg:size-[18px] ' />
             <span className='text-[#212121] text-sm font-medium'>Individual</span>
           </button>
 
           <button className='relative flex items-center gap-2 cursor-pointer'>
             <div className="grid absolute bg-[#B3261E] place-items-center w-5 h-5 rounded-full -right-2 -top-2 text-[10px] text-white font-medium">2</div>
-            <FaUsers className='text-[#808080] size-[32px]' />
+            <FaUsers className='text-[#808080] xl:size-[32px] lg:size-[24px]  ' />
           </button>
         </div>
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col xl:gap-4 lg:gap-2">
                  {conversations.map((conversation) => (
-           <div key={conversation.id} className="mt-6 w-full flex items-center justify-between">
+           <div key={conversation.id} className="mt-6 w-full flex items-center justify-between xl:gap-4 lg:gap-2">
              {/* profile photo */}
-             <div className="grid size-11 rounded-full bg-black relative" > 
-               <div className={`size-4 rounded-full ${conversation.isOnline ? 'bg-[#4CAF50]' : 'bg-gray-400'} absolute -right-0 -bottom-0 border-2 border-inset border-white`}></div>
+             <div className="grid xl:size-11 lg:size-8 rounded-full bg-black relative" > 
+               <div className={`xl:size-4 lg:size-3 rounded-full ${conversation.isOnline ? 'bg-[#4CAF50]' : 'bg-gray-400'} absolute -right-0 -bottom-0 border-2 border-inset border-white`}></div>
              </div>
 
             <div className="flex flex-col gap-1">
-              <p className="text-sm font-semibold text-[#212121]">{conversation.name}</p>
-              <p className="text-xs text-[#212121]">{conversation.message}</p>
+              <p className="xl:text-sm lg:text-xs font-semibold text-[#212121]">{conversation.name}</p>
+              <p className="xl:text-xs lg:text-xs text-[#212121] line-clamp-1">{conversation.message}</p>
             </div>
-            <span className='text-[#212121] text-sm font-medium'>{conversation.time}</span>
+            <span className='text-[#212121] xl:text-sm lg:text-xs font-medium'>{conversation.time}</span>
           </div>
         ))}
       </div>

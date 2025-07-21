@@ -28,7 +28,7 @@ export const navigationItems = [
   {
     id: 'albums',
     name: 'Albums',
-    path: '/albums',
+    path: '/my-albums',
     icon: albumsIcon,
   },
   {
@@ -58,7 +58,7 @@ export const navigationItems = [
   {
     id: 'my-pages',
     name: 'My Pages',
-    path: '/my-pages',
+    path: '/PagesComp/MainPages',
     icon: pagesIcon,
   },
   {
@@ -82,7 +82,7 @@ export const navigationItems = [
   {
     id: 'more',
     name: 'More',
-    path: '/more',
+    path: '/PageSetting/MainPageSetting',
     icon: moreIcon,
   },
 ]

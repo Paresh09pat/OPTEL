@@ -26,7 +26,7 @@ const MainLayout = ({ children }) => {
   }
 
   return (
-    <div className="h-screen bg-white overflow-hidden scrollbar-hide stable-layout">
+    <div className="h-auto bg-white overflow-hidden scrollbar-hide stable-layout">
       {/* Mobile Header with Hamburger */}
       <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between relative z-50 h-16">
         <button
@@ -59,7 +59,7 @@ const MainLayout = ({ children }) => {
 
       <div className="flex h-full lg:h-screen">
         {/* Desktop Left Sidebar - Fixed */}
-        <div className="hidden lg:block lg:w-80 flex-shrink-0 fixed left-0 top-0 h-full z-30 stable-layout">
+        <div className="hidden lg:block lg:w-60 xl:w-80 flex-shrink-0 fixed left-0 top-0 h-full z-30 stable-layout">
           <SideMenu />
         </div>
 
@@ -78,12 +78,12 @@ const MainLayout = ({ children }) => {
         </div>
 
         {/* Main Content - Scrollable */}
-        <main className="flex-1 mr-0 lg:ml-80 lg:mr-90 xl:mr-90 h-full lg:h-screen lg:pt-0 overflow-y-auto scrollbar-hide smooth-scroll">
+        <main className="flex-1 mr-0 lg:ml-60 xl:ml-80 lg:mr-60 xl:mr-90 h-full lg:h-screen lg:pt-0 overflow-y-auto scrollbar-hide smooth-scroll">
           {children}
         </main>
 
         {/* Desktop Right Sidebar - Fixed */}
-        <div className="hidden lg:block lg:w-90 flex-shrink-0 fixed right-0 top-0 h-full z-30">
+        <div className="hidden lg:block lg:w-60 xl:w-90 flex-shrink-0 fixed right-0 top-0 h-full z-30">
           <Chatbox />
         </div>
       </div>
