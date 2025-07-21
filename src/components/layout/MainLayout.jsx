@@ -85,6 +85,7 @@ const MainLayout = ({ children }) => {
         {/* Desktop Right Sidebar - Fixed */}
         <div className="hidden lg:block lg:w-60 xl:w-90 flex-shrink-0 fixed right-0 top-0 h-full z-30">
           <Chatbox />
+          
         </div>
       </div>
     </div>

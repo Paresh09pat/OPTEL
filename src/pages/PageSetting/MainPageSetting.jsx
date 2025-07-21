@@ -75,7 +75,7 @@ const MainPageSetting = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#EDF6F9] pt-8 overflow-x-hidden">
+    <div className="min-h-screen bg-[#EDF6F9] pt-8 overflow-x-hidden pb-8">
       <div className="max-w-6xl mx-auto relative">
         {/* Header */}
         <div className="bg-[#F69F58] rounded-xl p-4 h-[200px] py-5 px-8 ">
