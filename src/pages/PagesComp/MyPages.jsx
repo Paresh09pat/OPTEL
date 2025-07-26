@@ -1,5 +1,6 @@
 import React from 'react';
 import { BiSolidEdit } from "react-icons/bi";
+import { Link } from 'react-router-dom';
 
 const MyPages = () => {
     const myPagesData = [
@@ -68,10 +69,13 @@ const MyPages = () => {
                             <p className="text-sm text-gray-600 font-medium sm:hidden">
                                 {/* Already shown inside image section */}
                             </p>
-                            <button className="w-full sm:w-auto px-4 py-2 border border-[#808080] rounded-full text-[#808080] hover:bg-gray-50 flex items-center justify-center gap-2 text-sm sm:text-base">
-                                <BiSolidEdit className="text-lg" />
-                                <span>Edit Page</span>
-                            </button>
+                            <Link to="/pagescomp/mainpages/pagesetting/mainpagesetting" >
+                                <button className="cursor-pointer w-full sm:w-auto px-4 py-2 border border-[#808080] rounded-full text-[#808080] hover:bg-gray-50 flex items-center justify-center gap-2 text-sm sm:text-base"
+                                >
+                                    <BiSolidEdit className="text-lg" />
+                                    <span>Edit Page</span>
+                                </button>
+                            </Link>
                         </div>
                     </div>
 

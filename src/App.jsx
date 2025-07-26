@@ -1,33 +1,41 @@
-import React from 'react'
-import { Routes, Route } from 'react-router-dom'
-import MainLayout from './components/layout/MainLayout'
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import MainLayout from './components/layout/MainLayout';
 
-// Import all page components
-import Home from './pages/Home'
-import Explore from './pages/Explore'
-import Albums from './pages/Albums'
-import SavedPosts from './pages/SavedPosts'
-import Events from './pages/Events'
-import Forum from './pages/Forum'
-import MyGroups from './pages/MyGroups'
-import MyPages from './pages/MyPages'
-import Blog from './pages/Blog'
-import Article from './pages/Article'
-import Jobs from './pages/Jobs'
-import More from './pages/More'
-import ChatDetailed from './pages/ChatDetailed'
-import MyAlbums from './pages/MyAlbums'
-import FullAlbumView from './pages/FullAlbum'
-import CreateAlbum from './pages/CreateAlbum'
-import MainPages from './pages/PagesComp/MainPages'
-import CreatePage from './pages/PagesComp/CreatePage'
-import MainPageSetting from './pages/PageSetting/MainPageSetting'
-import Profile from './pages/Profile'
-import PageProfile from './pages/PageSetting/PageProfile'
+// Page imports
+import Home from './pages/Home';
+import Explore from './pages/Explore';
+import Albums from './pages/Albums';
+import SavedPosts from './pages/SavedPosts';
+import Events from './pages/Events';
+import Forum from './pages/Forum';
+import MyGroups from './pages/MyGroups';
+import MyPages from './pages/MyPages';
+import Blog from './pages/Blog';
+import Article from './pages/Article';
+import Jobs from './pages/Jobs';
+import More from './pages/More';
+import ChatDetailed from './pages/ChatDetailed';
+import MyAlbums from './pages/MyAlbums';
+import FullAlbumView from './pages/FullAlbum';
+import CreateAlbum from './pages/CreateAlbum';
+import MainPages from './pages/PagesComp/MainPages';
+import CreatePage from './pages/PagesComp/CreatePage';
+import MainPageSetting from './pages/PageSetting/MainPageSetting';
+import Profile from './pages/Profile';
+import PageProfile from './pages/PageSetting/PageProfile';
+import Login from './pages/Login';
+import Register from './pages/PageSetting/Register'; // 🛑 Consider moving Register to `./pages/Register`
+
 function App() {
   return (
-    <MainLayout>
-      <Routes>
+    <Routes>
+      {/* Public Routes (no layout) */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+
+      {/* Protected / Layout Routes */}
+      <Route element={<MainLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/explore" element={<Explore />} />
         <Route path="/albums" element={<Albums />} />
@@ -44,13 +52,13 @@ function App() {
         <Route path="/my-albums" element={<MyAlbums />} />
         <Route path="/my-albums/:albumTitle" element={<FullAlbumView />} />
         <Route path="/my-albums/create" element={<CreateAlbum />} />
-        <Route path="/PagesComp/MainPages/CreatePage" element={<CreatePage />} />
+        <Route path="/pagescomp/mainpages/createpage" element={<CreatePage />} />
         <Route path="/profile" element={<Profile />} />
-        <Route path="/PageSetting/MainPageSetting" element={<MainPageSetting />} />
+        <Route path="/pagescomp/mainpages/pagesetting/mainpagesetting" element={<MainPageSetting />} />
         <Route path="/PageProfile" element={<PageProfile />} />
-      </Routes>
-    </MainLayout>
-  )
+      </Route>
+    </Routes>
+  );
 }
 
-export default App 
+export default App;

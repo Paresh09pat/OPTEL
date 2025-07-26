@@ -35,12 +35,12 @@ const MainPages = () => {
           <h1 className="text-xl sm:text-3xl lg:text-3xl font-bold text-gray-800">
             My Pages
           </h1>
-          <button className="text-[#808080] border border-[#808080] px-4 py-2 rounded-full text-sm sm:text-base hover:bg-gray-50 transition">
-          <Link to="/PagesComp/MainPages/CreatePage" className='flex items-center gap-2'>
-          <MdOutlineAddPhotoAlternate className="text-lg" />
-          <span>Create Page</span>
+          <Link to="/pagescomp/mainpages/createpage">
+            <button className="text-[#808080] border cursor-pointer flex items-center gap-2 border-[#808080] px-4 py-2 rounded-full text-sm sm:text-base hover:bg-gray-50 transition">
+              <MdOutlineAddPhotoAlternate className="text-lg" />
+              <span>Create Page</span>
+            </button>
           </Link>
-          </button>
         </div>
 
         {/* Tabs */}
@@ -50,8 +50,8 @@ const MainPages = () => {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-2 sm:px-6 sm:py-3 rounded-full font-medium transition-colors duration-200 cursor-pointer text-sm sm:text-base ${activeTab === tab.id
-                  ? 'text-white shadow-md bg-gradient-to-b from-[rgba(246,159,88,1)] to-[rgba(244,180,0,0.5)]'
-                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                ? 'text-white shadow-md bg-gradient-to-b from-[rgba(246,159,88,1)] to-[rgba(244,180,0,0.5)]'
+                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
                 }`}
             >
               {tab.label}
