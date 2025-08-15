@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import CreatePostSection from '../components/specific/Home/CreatePostSection';
 import FeedCard from '../components/specific/Home/FeedCard';
@@ -52,6 +52,8 @@ const feedCards = [
 
 
 
+
+
 const Home = () => {
   const [friendSuggestions, setFriendSuggestions] = useState([
     { id: 1, name: 'Siddharth Verma', username: '@muscleManSid', avatar: '/perimg.png' },
@@ -63,6 +65,56 @@ const Home = () => {
     { id: 7, name: 'Priya Sharma', username: '@priyasharma', avatar: '/perimg.png' },
   ]);
 
+
+  const [session, setSession] = useState(localStorage.getItem("session_id"));
+const [loading, setLoading] = useState(true);
+const [error, setError] = useState(null);
+
+const getSession = async () => {
+  try {
+   
+    setLoading(true);
+    setError(null);
+    
+    // Get access token from localStorage
+    const accessToken = localStorage.getItem("access_token") ;
+    const userId = localStorage.getItem("user_id") ;
+
+    const formData = new URLSearchParams();
+    formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
+    // formData.append('user_id', userId);
+    formData.append('type', 'get');
+    const response = await fetch(`https://ouptel.com/api/sessions?access_token=${accessToken}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      body: formData.toString(),
+    })
+   
+    const data = await response.json();
+     if (data?.api_status === 200) {
+      
+      localStorage.setItem("session_id", data?.data[0]?.session_id);
+     
+    } else {
+      setError(response?.data?.errors?.error_text);
+    }
+    setSession(data?.data[0]?.session_id);
+   
+    setLoading(false);
+    
+  } catch (error) {
+    console.error('Error fetching events:', error);
+    setError(error.message);
+    setLoading(false);
+  }
+ 
+}
+useEffect(() => { 
+  getSession();
+}, []);
 
 
   const posts = [

@@ -2,59 +2,95 @@ import React, { useState, useEffect, useRef } from 'react'
 import { HiUsers } from 'react-icons/hi'
 import { FaChevronUp, FaChevronDown } from 'react-icons/fa'
 import axios from 'axios';
+import Loader from '../components/loading/Loader';
 
 const Events = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [selectedOption, setSelectedOption] = useState('Events')
+  const [myEvents, setMyEvents] = useState([]);
+  const [eventOptions, setEventOptions] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const dropdownRef = useRef(null)
 
-  const dropdownOptions = [
-    'Events',
-    'Going',
-    'Invited',
-    'Interested',
-    'Pastor'
-  ]
+  const dropdownOptions = ['Events', 'Going', 'Invited', 'Interested', 'Past'];
+
+  // Update eventOptions when selectedOption changes
+  useEffect(() => {
+    const mapping = {
+      Events: 'my_events',
+      Going: 'going',
+      Invited: 'invited',
+      Interested: 'interested',
+      Past: 'past'
+    };
+    setEventOptions(mapping[selectedOption] || 'my_events');
+  }, [selectedOption]);
 
   const handleOptionSelect = (option) => {
-    setSelectedOption(option)
-    setIsDropdownOpen(false)
-  }
+    setSelectedOption(option);
+    setIsDropdownOpen(false);
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsDropdownOpen(false)
+        setIsDropdownOpen(false);
       }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [])
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const getEvents = async () => {
-    const response = await axios.post(`https://ouptel.com/api/get-events?access_token=${localStorage.getItem("access_token")}`, {
-      server_key: "24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179",
-      fetch:'going'
-    },
-    {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'X-Requested-With': 'XMLHttpRequest',
-        
+    try {
+      setLoading(true);
+      setError(null);
+
+      const accessToken =
+        localStorage.getItem('access_token');
+
+      const formData = new URLSearchParams();
+      formData.append(
+        'server_key',
+        '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179'
+      );
+      formData.append('fetch', eventOptions);
+
+      const response = await fetch(
+        `https://ouptel.com/api/get-events?access_token=${accessToken}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: formData.toString()
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+
+      const data = await response.json();
+      setMyEvents(data?.my_events || []);
+    } catch (error) {
+      console.error('Error fetching events:', error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
-  );
+  };
 
-    console.log(response.data);
-  }
-
+  // Fetch events whenever eventOptions changes
   useEffect(() => {
     getEvents();
-  }, []);
+  }, [eventOptions]);
+
+  if (loading) return <Loader />;
+  console.log(myEvents , "my events");
 
     return (
       <div className="bg-[#EDF6F9] w-full h-full pt-8 flex flex-col gap-4">
@@ -100,10 +136,11 @@ const Events = () => {
         </div>
 
         <div className="pt-5 pb-6 px-7 border border-[#808080] rounded-lg grid grid-cols-1 md:grid-cols-2  gap-4 bg-white">
-          <div className="flex flex-col gap-2 min-w-full bg-[#FFFFFF] shadow-2xl  pb-3 px-0.5 shadow-[#21212140] rounded-lg border border-[#21212140]">
-            <img src="/pagesCardImg.png" alt="cardImg" className=' w-full h-[160px] object-cover rounded-lg' />
+          {myEvents?.map((event) => 
+          <div className="flex flex-col gap-2 min-w-full bg-[#FFFFFF] shadow-2xl  pb-3 px-0.5 shadow-[#21212140] rounded-lg border border-[#21212140]" key={event?.id}>
+            <img src={event?.cover || "/pagesCardImg.png"} alt="cardImg" className=' w-full h-[160px] object-cover rounded-lg' />
             <div className="flex flex-col gap-2.5 w-full px-2.5">
-              <h5 className='text-sm font-medium text-[#212121] w-full text-left'>EchoVerse: The Sound Awakens</h5>
+              <h5 className='text-sm font-medium text-[#212121] w-full text-left'>{event?.name}</h5>
               <div className="flex items-center justify-between">
                 <div className="flex gap-1.5">
                   <HiUsers className='text-[#808080] size-[15px]' />
@@ -119,86 +156,9 @@ const Events = () => {
             <button className='bg-[#ffff] text-black px-7 py-0.5 rounded-lg  mx-auto mt-6 border border-[#212121]'>Join Now</button>
 
           </div>
+          )}
 
-          <div className="flex flex-col gap-2 min-w-full bg-[#FFFFFF] shadow-2xl  pb-3 px-0.5 shadow-[#21212140] rounded-lg border border-[#21212140]">
-            <img src="/pagesCardImg.png" alt="cardImg" className=' w-full h-[160px] object-cover rounded-lg' />
-            <div className="flex flex-col gap-2.5 w-full px-2.5">
-              <h5 className='text-sm font-medium text-[#212121] w-full text-left'>EchoVerse: The Sound Awakens</h5>
-              <div className="flex items-center justify-between">
-                <div className="flex gap-1.5">
-                  <HiUsers className='text-[#808080] size-[15px]' />
-                  <span className='text-[#808080] text-xs font-medium'>20 Members</span>
-                </div>
-                <div className="flex gap-1.5">
-                  <img src="/icons/book.png" alt="book" className='size-[15px]' />
-                  <span className='text-[#808080] text-xs font-medium'>200+Posts</span>
-                </div>
-              </div>
-            </div>
-
-            <button className='bg-[#ffff] text-black px-7 py-0.5 rounded-lg  mx-auto mt-6 border border-[#212121]'>Join Now</button>
-
-          </div>
-
-          <div className="flex flex-col gap-2 min-w-full bg-[#FFFFFF] shadow-2xl  pb-3 px-0.5 shadow-[#21212140] rounded-lg border border-[#21212140]">
-            <img src="/pagesCardImg.png" alt="cardImg" className=' w-full h-[160px] object-cover rounded-lg' />
-            <div className="flex flex-col gap-2.5 w-full px-2.5">
-              <h5 className='text-sm font-medium text-[#212121] w-full text-left'>EchoVerse: The Sound Awakens</h5>
-              <div className="flex items-center justify-between">
-                <div className="flex gap-1.5">
-                  <HiUsers className='text-[#808080] size-[15px]' />
-                  <span className='text-[#808080] text-xs font-medium'>20 Members</span>
-                </div>
-                <div className="flex gap-1.5">
-                  <img src="/icons/book.png" alt="book" className='size-[15px]' />
-                  <span className='text-[#808080] text-xs font-medium'>200+Posts</span>
-                </div>
-              </div>
-            </div>
-
-            <button className='bg-[#ffff] text-black px-7 py-0.5 rounded-lg  mx-auto mt-6 border border-[#212121]'>Join Now</button>
-
-          </div>
-
-          <div className="flex flex-col gap-2 min-w-full bg-[#FFFFFF] shadow-2xl  pb-3 px-0.5 shadow-[#21212140] rounded-lg border border-[#21212140]">
-            <img src="/pagesCardImg.png" alt="cardImg" className=' w-full h-[160px] object-cover rounded-lg' />
-            <div className="flex flex-col gap-2.5 w-full px-2.5">
-              <h5 className='text-sm font-medium text-[#212121] w-full text-left'>EchoVerse: The Sound Awakens</h5>
-              <div className="flex items-center justify-between">
-                <div className="flex gap-1.5">
-                  <HiUsers className='text-[#808080] size-[15px]' />
-                  <span className='text-[#808080] text-xs font-medium'>20 Members</span>
-                </div>
-                <div className="flex gap-1.5">
-                  <img src="/icons/book.png" alt="book" className='size-[15px]' />
-                  <span className='text-[#808080] text-xs font-medium'>200+Posts</span>
-                </div>
-              </div>
-            </div>
-
-            <button className='bg-[#ffff] text-black px-7 py-0.5 rounded-lg  mx-auto mt-6 border border-[#212121]'>Join Now</button>
-
-          </div>
-
-          <div className="flex flex-col gap-2 min-w-full bg-[#FFFFFF] shadow-2xl  pb-3 px-0.5 shadow-[#21212140] rounded-lg border border-[#21212140]">
-            <img src="/pagesCardImg.png" alt="cardImg" className=' w-full h-[160px] object-cover rounded-lg' />
-            <div className="flex flex-col gap-2.5 w-full px-2.5">
-              <h5 className='text-sm font-medium text-[#212121] w-full text-left'>EchoVerse: The Sound Awakens</h5>
-              <div className="flex items-center justify-between">
-                <div className="flex gap-1.5">
-                  <HiUsers className='text-[#808080] size-[15px]' />
-                  <span className='text-[#808080] text-xs font-medium'>20 Members</span>
-                </div>
-                <div className="flex gap-1.5">
-                  <img src="/icons/book.png" alt="book" className='size-[15px]' />
-                  <span className='text-[#808080] text-xs font-medium'>200+Posts</span>
-                </div>
-              </div>
-            </div>
-
-            <button className='bg-[#ffff] text-black px-7 py-0.5 rounded-lg  mx-auto mt-6 border border-[#212121]'>Join Now</button>
-
-          </div>
+         
         </div>
       </div>
     )
