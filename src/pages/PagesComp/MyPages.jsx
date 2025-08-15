@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BiSolidEdit } from "react-icons/bi";
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 
 const MyPages = () => {
     const myPagesData = [
@@ -33,6 +34,40 @@ const MyPages = () => {
             avatar: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=150&h=150&fit=crop&crop=face"
         }
     ];
+
+    // const [myPages, setMyPages] = useState(myPagesData);
+
+    const getMyPages = async () => {
+        try {
+          const response = await axios.post(
+            `https://ouptel.com/api/get-my-pages?access_token=${localStorage.getItem("access_token")}`,
+            {
+              server_key: "24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179",
+              limit: 1,
+              offset: 2,
+              type: "my_pages"
+            },
+            {
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                // 'X-Requested-With': 'XMLHttpRequest',
+               'credentials': 'include',
+               "withCredentials": true
+              }
+            }
+          );
+      
+          console.log(response.data);
+          // setMyPages(response.data);
+        } catch (error) {
+          console.error("Error fetching pages:", error);
+        }
+      };
+      
+
+    useEffect(() => {
+        getMyPages();
+    }, []);
 
     return (
         <div className="space-y-6">

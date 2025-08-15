@@ -1,14 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
+  const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -16,28 +15,44 @@ const Login = () => {
     setError('');
     try {
       const response = await axios.post(
-        'https://ouptel.com/requests.php?f=login',
+        `https://ouptel.com/api/auth`,
         {
           username,
           password,
-          remember_device: 'on',
+          server_key: "24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179",
+          device_type: "windows"
         },
         {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
             'X-Requested-With': 'XMLHttpRequest',
+            
           },
         }
       );
-      setUser(response.data.user);
-      setToken(response.data.token);
-      setIsLoggedIn(true);
+
+      if (response.data.api_status === 200) {
+        localStorage.setItem("user_id", response?.data?.user_id);
+        localStorage.setItem("access_token", response?.data?.access_token);
+        localStorage.setItem("membership", response?.data?.membership);
+        navigate("/");
+      } else {
+        setError(response?.data?.errors?.error_text);
+      }
     } catch (error) {
       setError('Invalid username or password');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const isLoggedIn = localStorage.getItem("access_token");
+    const userId = localStorage.getItem("user_id");
+    if (isLoggedIn && userId) {
+      navigate("/");
+    }
+  }, [navigate]);
 
   if (loading) {
     return (

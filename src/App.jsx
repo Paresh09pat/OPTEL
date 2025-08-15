@@ -26,6 +26,7 @@ import Profile from './pages/Profile';
 import PageProfile from './pages/PageSetting/PageProfile';
 import Login from './pages/Login';
 import Register from './pages/PageSetting/Register'; // 🛑 Consider moving Register to `./pages/Register`
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
       <Route path="/register" element={<Register />} />
 
       {/* Protected / Layout Routes */}
+      <Route path="/" element={<ProtectedRoute />}>
       <Route element={<MainLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/explore" element={<Explore />} />
@@ -56,6 +58,7 @@ function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/pagescomp/mainpages/pagesetting/mainpagesetting" element={<MainPageSetting />} />
         <Route path="/PageProfile" element={<PageProfile />} />
+      </Route>
       </Route>
     </Routes>
   );
