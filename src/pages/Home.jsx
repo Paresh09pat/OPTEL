@@ -6,6 +6,7 @@ import InfiniteFriendSuggestions from '../components/specific/Home/InfiniteFrien
 import PostCard from '../components/specific/Home/PostCard';
 import QuickActionsSection from '../components/specific/Home/QuickActionSection';
 import ScrollableSection from '../components/specific/Home/ScrollableSection';
+import Loader from '../components/loading/Loader';
 
 const feedCards = [
   {
@@ -69,6 +70,11 @@ const Home = () => {
   const [session, setSession] = useState(localStorage.getItem("session_id"));
 const [loading, setLoading] = useState(true);
 const [error, setError] = useState(null);
+const [newFeeds, setNewFeeds] = useState([]);
+const [likedPosts, setLikedPosts] = useState(() => {
+  const saved = localStorage.getItem("liked_posts");
+  return saved ? new Set(JSON.parse(saved)) : new Set();
+}); // Track which posts are liked
 
 const getSession = async () => {
   try {
@@ -117,6 +123,44 @@ useEffect(() => {
 }, []);
 
 
+const getNewFeeds = async () => {
+  setLoading(true);
+  try {
+    setLoading(true);
+    setError(null);
+    
+    const accessToken = localStorage.getItem("access_token");
+    const formData = new URLSearchParams();
+    formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
+    formData.append('type', 'get_news_feed');
+    const response = await fetch(`https://ouptel.com/api/posts?access_token=${accessToken}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      body: formData.toString(),
+    })
+    const data = await response.json();
+    setNewFeeds(data?.data);
+    setLoading(false);
+  } catch (error) {
+    console.error('Error fetching news:', error);
+    setError(error.message);
+    setLoading(false);
+  }
+  setLoading(false);
+}
+
+
+useEffect(() => {
+  getNewFeeds();
+}, []); 
+
+
+
+
+
   const posts = [
     {
       id: 1,
@@ -154,6 +198,61 @@ useEffect(() => {
     );
   }, []);
 
+  const handleLike = async (post_id) => {
+    console.log(post_id, "id");
+    try {
+      const accessToken = localStorage.getItem("access_token");
+      const formData = new URLSearchParams();
+      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
+      formData.append('action', 'like');
+      formData.append('reaction', '1');
+      formData.append('post_id', post_id);
+      const response = await fetch(`https://ouptel.com/api/post-actions?access_token=${accessToken}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: formData.toString(),
+      })
+      const data = await response.json();
+      console.log(data, "data");
+      
+      // Update the liked state and like count
+      if (data?.api_status === 200) {
+        const wasLiked = likedPosts.has(post_id);
+        
+        setLikedPosts(prev => {
+          const newLikedPosts = new Set(prev);
+          if (wasLiked) {
+            newLikedPosts.delete(post_id);
+          } else {
+            newLikedPosts.add(post_id);
+          }
+          // Save to localStorage
+          localStorage.setItem("liked_posts", JSON.stringify([...newLikedPosts]));
+          return newLikedPosts;
+        });
+        
+        // Update the like count in newFeeds
+        setNewFeeds(prev => 
+          prev.map(post => 
+            post.id === post_id 
+              ? { 
+                  ...post, 
+                  post_likes: wasLiked 
+                    ? Math.max(0, parseInt(post.post_likes || 0) - 1) 
+                    : parseInt(post.post_likes || 0) + 1 
+                }
+              : post
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error liking post:', error);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#EDF6F9] relative pb-15 smooth-scroll">
       <div className="max-w-6xl mx-auto px-3 md:px-4 py-4 md:py-6">
@@ -185,17 +284,26 @@ useEffect(() => {
             </div>
           </div>
 
-          <div className="mb-4 md:mb-6 mt-4 md:mt-6 smooth-content-transition bg-white rounded-xl border border-[#808080]">
-            <PostCard
-              user={posts[0].user}
-              content={posts[0].content}
-              image={posts[0].image}
-              likes={posts[0].likes}
-              comments={posts[0].comments}
-              shares={posts[0].shares}
-              saves={posts[0].saves}
-              timeAgo={posts[0].timeAgo}
-            />
+          <div className="mb-4 md:mb-6 mt-4 flex flex-col gap-4 md:gap-6 smooth-content-transition ">
+            {loading ? <Loader /> : (
+               newFeeds?.map((post) => (
+                <PostCard
+                key={post?.id}
+                post_id={post?.id}
+                user={post?.publisher}
+                content={post?.postText}
+                image={post?.postFile}
+                likes={post?.post_likes}
+                comments={post?.post_comments}
+                shares={post?.post_shares}
+                saves={post?.is_post_saved}
+                timeAgo={post?.post_created_at}
+                handleLike={handleLike}
+                isLiked={likedPosts.has(post?.id)}
+              />
+              ))
+            )}
+           
           </div>
 
           <div className="mb-6 md:mb-8">
@@ -206,10 +314,11 @@ useEffect(() => {
             />
           </div>
 
-          <div className="space-y-4 md:space-y-6 mb-4 md:mb-6 bg-white rounded-xl border border-[#808080]">
+          <div className="space-y-4 md:mb-6 bg-white rounded-xl border border-[#808080]">
             {posts.slice(1).map(post => (
               <PostCard
                 key={post.id}
+                post_id={post.id}
                 user={post.user}
                 content={post.content}
                 image={post.image}
@@ -218,6 +327,8 @@ useEffect(() => {
                 shares={post.shares}
                 saves={post.saves}
                 timeAgo={post.timeAgo}
+                handleLike={handleLike}
+                isLiked={likedPosts.has(post.id)}
               />
             ))}
           </div>

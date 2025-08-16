@@ -1,17 +1,19 @@
 import { memo } from 'react';
 import { Heart, MessageCircle, Share, Bookmark, MoreHorizontal, Smile } from 'lucide-react';
+import { IoBookmark } from "react-icons/io5";
 
-const PostCard = ({ user, content, image, likes, comments, shares, saves, timeAgo }) => (
-  <div className="bg-white rounded-xl overflow-hidden">
-    <div className="p-4 flex items-center justify-between">
+
+const PostCard = ({ user, content, image, likes, comments, shares, saves, timeAgo, post_id, handleLike, isLiked }) => (
+  <div className="bg-white rounded-xl overflow-hidden border border-[#808080] smooth-content-transition" key={post_id}>
+    <div className="p-4 flex items-center justify-between"> 
       <div className="flex items-center space-x-3">
         <img
-          src="/perimg.png"
+          src={user?.avatar}
           alt={user.name}
           className="w-10 h-10 rounded-full object-cover"
         />
         <div>
-          <h3 className="font-semibold text-gray-900">{user.name}</h3>
+          <h3 className="font-semibold text-gray-900">{user?.name}</h3>
           <p className="text-sm text-gray-500">{timeAgo}</p>
         </div>
       </div>
@@ -22,14 +24,26 @@ const PostCard = ({ user, content, image, likes, comments, shares, saves, timeAg
 
     {content && (
       <div className="px-4 pb-3">
-        <p className="text-gray-800">{content}</p>
+        <div 
+          className="text-gray-800 prose prose-sm max-w-none"
+          style={{
+            wordBreak: 'break-word',
+            overflowWrap: 'break-word'
+          }}
+          dangerouslySetInnerHTML={{ 
+            __html: content.replace(
+              /<a\s+href="([^"]+)"[^>]*>([^<]+)<\/a>/g,
+              '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline break-all" style="word-break: break-all; overflow-wrap: break-word;">$2</a>'
+            )
+          }} 
+        />
       </div>
     )}
 
     {image && (
       <div className="relative">
         <img
-          src="/mobile.jpg"
+          src={image}
           alt="Post content"
           className="w-full h-auto object-cover"
         />
@@ -45,19 +59,34 @@ const PostCard = ({ user, content, image, likes, comments, shares, saves, timeAg
         </div>
       </div>
 
-      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-        <button className="flex items-center space-x-2 text-gray-600 hover:text-red-500 transition-colors">
-          <Heart className="w-5 h-5" />
-        </button>
+        <div className="flex items-center justify-between pt-3 border-t border-gray-100 ">
+          <button 
+            className={`inline-block items-center space-x-2 transition-all duration-200 hover:scale-105 cursor-pointer ${
+              isLiked ? 'text-red-500' : 'text-gray-600 hover:text-red-500'
+            }`} 
+            onClick={() => handleLike(post_id, 1)}
+          >
+            {isLiked ? (
+              <>
+                <Heart className="w-5 h-5 fill-red-500 text-red-500" />
+                <span className="text-sm font-medium">Liked</span>
+              </>
+            ) : (
+              <Heart className="w-5 h-5" />
+            )}
+          </button>
         <button className="flex items-center space-x-2 text-gray-600 hover:text-blue-500 transition-colors">
           <MessageCircle className="w-5 h-5" />
         </button>
         <button className="flex items-center space-x-2 text-gray-600 hover:text-green-500 transition-colors">
           <Share className="w-5 h-5" />
         </button>
+      
         <button className="flex items-center space-x-2 text-gray-600 hover:text-yellow-500 transition-colors">
-          <Bookmark className="w-5 h-5" />
+          {saves ? <IoBookmark className="w-5 h-5 text-blue-900" /> :  <Bookmark className="w-5 h-5" />}
+         
         </button>
+      
       </div>
 
       <div className="flex items-center space-x-3 mt-4">

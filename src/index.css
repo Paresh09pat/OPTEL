@@ -8,6 +8,34 @@ body {
   -moz-osx-font-smoothing: grayscale;
 } 
 
+/* Post content link styles */
+.link-style {
+  color: #2563eb !important;
+  text-decoration: underline !important;
+  word-break: break-all !important;
+  overflow-wrap: break-word !important;
+  max-width: 100% !important;
+  display: inline-block !important;
+}
+
+.link-style:hover {
+  color: #1d4ed8 !important;
+  text-decoration: underline !important;
+}
+
+/* Ensure links in post content are properly styled */
+.prose a {
+  color: #2563eb !important;
+  text-decoration: underline !important;
+  word-break: break-all !important;
+  overflow-wrap: break-word !important;
+}
+
+.prose a:hover {
+  color: #1d4ed8 !important;
+  text-decoration: underline !important;
+}
+
 /* Smooth scrolling optimizations */
 html {
   scroll-behavior: smooth;
