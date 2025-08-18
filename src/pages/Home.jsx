@@ -56,6 +56,10 @@ const feedCards = [
 
 
 const Home = () => {
+  const [session, setSession] = useState(localStorage.getItem("session_id"));
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
   const [friendSuggestions, setFriendSuggestions] = useState([
     { id: 1, name: 'Siddharth Verma', username: '@muscleManSid', avatar: '/perimg.png' },
     { id: 2, name: 'Bhuvan Rana', username: '@beatsByBhuvan', avatar: '/perimg.png' },
@@ -66,96 +70,44 @@ const Home = () => {
     { id: 7, name: 'Priya Sharma', username: '@priyasharma', avatar: '/perimg.png' },
   ]);
 
-
-  const [session, setSession] = useState(localStorage.getItem("session_id"));
-const [loading, setLoading] = useState(true);
-const [error, setError] = useState(null);
-const [newFeeds, setNewFeeds] = useState([]);
-const [likedPosts, setLikedPosts] = useState(() => {
-  const saved = localStorage.getItem("liked_posts");
-  return saved ? new Set(JSON.parse(saved)) : new Set();
-}); // Track which posts are liked
-
-const getSession = async () => {
-  try {
-   
+  const [newFeeds, setNewFeeds] = useState([]);
+  const [likedPosts, setLikedPosts] = useState(() => {
+    const saved = localStorage.getItem("liked_posts");
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  }); // Track which posts are liked
+  const [postComments, setPostComments] = useState({}); // Track comments for each post
+  
+  const getNewFeeds = async () => {
     setLoading(true);
-    setError(null);
-    
-    // Get access token from localStorage
-    const accessToken = localStorage.getItem("access_token") ;
-    const userId = localStorage.getItem("user_id") ;
+    try {
+      setError(null);
 
-    const formData = new URLSearchParams();
-    formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
-    // formData.append('user_id', userId);
-    formData.append('type', 'get');
-    const response = await fetch(`https://ouptel.com/api/sessions?access_token=${accessToken}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'X-Requested-With': 'XMLHttpRequest',
-      },
-      body: formData.toString(),
-    })
-   
-    const data = await response.json();
-     if (data?.api_status === 200) {
-      
-      localStorage.setItem("session_id", data?.data[0]?.session_id);
-     
-    } else {
-      setError(response?.data?.errors?.error_text);
+      const accessToken = localStorage.getItem("access_token");
+      const formData = new URLSearchParams();
+      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
+      formData.append('type', 'get_news_feed');
+      const response = await fetch(`https://ouptel.com/api/posts?access_token=${accessToken}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: formData.toString(),
+      })
+      const data = await response.json();
+      setNewFeeds(data?.data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching news:', error);
+      setError(error.message);
+      setLoading(false);
     }
-    setSession(data?.data[0]?.session_id);
-   
-    setLoading(false);
-    
-  } catch (error) {
-    console.error('Error fetching events:', error);
-    setError(error.message);
-    setLoading(false);
   }
- 
-}
-useEffect(() => { 
-  getSession();
-}, []);
 
 
-const getNewFeeds = async () => {
-  setLoading(true);
-  try {
-    setLoading(true);
-    setError(null);
-    
-    const accessToken = localStorage.getItem("access_token");
-    const formData = new URLSearchParams();
-    formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
-    formData.append('type', 'get_news_feed');
-    const response = await fetch(`https://ouptel.com/api/posts?access_token=${accessToken}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'X-Requested-With': 'XMLHttpRequest',
-      },
-      body: formData.toString(),
-    })
-    const data = await response.json();
-    setNewFeeds(data?.data);
-    setLoading(false);
-  } catch (error) {
-    console.error('Error fetching news:', error);
-    setError(error.message);
-    setLoading(false);
-  }
-  setLoading(false);
-}
-
-
-useEffect(() => {
-  getNewFeeds();
-}, []); 
+  useEffect(() => {
+    getNewFeeds();
+  }, []);
 
 
 
@@ -199,7 +151,7 @@ useEffect(() => {
   }, []);
 
   const handleLike = async (post_id) => {
-    console.log(post_id, "id");
+    setLoading(true);
     try {
       const accessToken = localStorage.getItem("access_token");
       const formData = new URLSearchParams();
@@ -212,16 +164,16 @@ useEffect(() => {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           'X-Requested-With': 'XMLHttpRequest',
+          "Accept": "application/json"
         },
         body: formData.toString(),
       })
       const data = await response.json();
-      console.log(data, "data");
-      
+
       // Update the liked state and like count
       if (data?.api_status === 200) {
         const wasLiked = likedPosts.has(post_id);
-        
+
         setLikedPosts(prev => {
           const newLikedPosts = new Set(prev);
           if (wasLiked) {
@@ -233,27 +185,80 @@ useEffect(() => {
           localStorage.setItem("liked_posts", JSON.stringify([...newLikedPosts]));
           return newLikedPosts;
         });
-        
+
         // Update the like count in newFeeds
-        setNewFeeds(prev => 
-          prev.map(post => 
-            post.id === post_id 
-              ? { 
-                  ...post, 
-                  post_likes: wasLiked 
-                    ? Math.max(0, parseInt(post.post_likes || 0) - 1) 
-                    : parseInt(post.post_likes || 0) + 1 
-                }
+        setNewFeeds(prev =>
+          prev.map(post =>
+            post.id === post_id
+              ? {
+                ...post,
+                post_likes: wasLiked
+                  ? Math.max(0, parseInt(post.post_likes || 0) - 1)
+                  : parseInt(post.post_likes || 0) + 1
+              }
               : post
           )
         );
       }
     } catch (error) {
       console.error('Error liking post:', error);
+    } finally {
+      setLoading(false);
     }
   }
 
+  const fetchComments = async (post_id) => {
+    try {
+      const accessToken = localStorage.getItem("access_token");
+      const formData = new URLSearchParams();
+      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
+      formData.append('type', 'fetch_comments');
+      formData.append('post_id', post_id);
+      const response = await fetch(`https://ouptel.com/api/comments?access_token=${accessToken}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-Requested-With': 'XMLHttpRequest',
+          "Accept": "application/json"
+        },
+        body: formData.toString(),
+      })
+      const data = await response.json();
+      
+      // Store comments for this specific post
+      if (data?.api_status === 200 && data.data) {
+        setPostComments(prev => {
+          const newState = {
+            ...prev,
+            [post_id]: data.data
+          };
+          return newState;
+        });
+        return data.data; // Return the comments data
+      } else {
+        // Set empty array for posts with no comments
+        setPostComments(prev => ({
+          ...prev,
+          [post_id]: []
+        }));
+        return []; // Return empty array if no data
+      }
+    }
+    catch (error) {
+      console.error('Error fetching comments for post', post_id, ':', error);
+      // Set empty array on error
+      setPostComments(prev => ({
+        ...prev,
+        [post_id]: []
+      }));
+      return []; // Return empty array on error
+    }
+  }
+
+
   return (
+    <>
+    {loading && <Loader />}
     <div className="min-h-screen bg-[#EDF6F9] relative pb-15 smooth-scroll">
       <div className="max-w-6xl mx-auto px-3 md:px-4 py-4 md:py-6">
         <div className="mb-6 md:mb-8">
@@ -274,7 +279,7 @@ useEffect(() => {
 
         <div className="px-2 md:px-4 relative">
           <div className='mb-4 md:mb-6'>
-          <CreatePostSection />
+            <CreatePostSection />
           </div>
 
           {/* Fixed sticky positioning issue */}
@@ -286,24 +291,31 @@ useEffect(() => {
 
           <div className="mb-4 md:mb-6 mt-4 flex flex-col gap-4 md:gap-6 smooth-content-transition ">
             {loading ? <Loader /> : (
-               newFeeds?.map((post) => (
-                <PostCard
-                key={post?.id}
-                post_id={post?.id}
-                user={post?.publisher}
-                content={post?.postText}
-                image={post?.postFile}
-                likes={post?.post_likes}
-                comments={post?.post_comments}
-                shares={post?.post_shares}
-                saves={post?.is_post_saved}
-                timeAgo={post?.post_created_at}
-                handleLike={handleLike}
-                isLiked={likedPosts.has(post?.id)}
-              />
-              ))
+              newFeeds?.map((post) => {
+                const postId = post?.id;
+                // Get comments for this post from state, with fallback to ref
+                const commentsForPost = postComments[postId] || [];
+                return (
+                  <PostCard
+                    key={postId}
+                    post_id={postId}
+                    user={post?.publisher}
+                    content={post?.postText}
+                    image={post?.postFile}
+                    likes={post?.post_likes}
+                    comments={post?.post_comments}
+                    shares={post?.post_shares}
+                    saves={post?.is_post_saved}
+                    timeAgo={post?.post_created_at}
+                    handleLike={handleLike}
+                    isLiked={likedPosts.has(postId)}
+                    fetchComments={fetchComments}
+                    commentsData={commentsForPost}
+                  />
+                );
+              })
             )}
-           
+
           </div>
 
           <div className="mb-6 md:mb-8">
@@ -335,6 +347,7 @@ useEffect(() => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

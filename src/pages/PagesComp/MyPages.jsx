@@ -65,6 +65,8 @@ const MyPages = () => {
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                         'X-Requested-With': 'XMLHttpRequest',
+                        // 'credentials': 'include',
+                        // 'withCredentials': true,
                     },
                     // DON'T include credentials - this causes the CORS error
                     // credentials: 'include', // REMOVE THIS LINE

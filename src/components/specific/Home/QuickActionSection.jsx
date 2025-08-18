@@ -26,7 +26,7 @@ const QuickActionsSection = ({ className = '' }) => {
       icon: () => <Icon icon="material-symbols:forum" width="30" height="30" style={{ color: '#8BC34B' }} />,
       color: 'text-green-600',
 
-      path: '/forums',
+      path: '/Forums',
     },
     {
       icon: () => <Icon icon="mingcute:group-3-fill" width="30" height="30" style={{ color: '#01A9F4' }} />,

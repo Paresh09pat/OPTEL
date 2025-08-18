@@ -9,4 +9,4 @@ const Forum = () => {
   )
 }
 
-export default Forum 
+export default Forum  
