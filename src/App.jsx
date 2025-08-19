@@ -27,6 +27,7 @@ import PageProfile from './pages/PageSetting/PageProfile';
 import Login from './pages/Login';
 import Register from './pages/PageSetting/Register';
 import ProtectedRoute from './components/ProtectedRoute';
+import BlogDetailed from './pages/BlogDetailed';
 
 function App() {
   const [loading, setLoading] = useState(true);
@@ -98,6 +99,7 @@ function App() {
           <Route path="/my-groups" element={<MyGroups />} />
           <Route path="/my-pages" element={<MyPages />} />
           <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:blogId" element={<BlogDetailed />} />
           <Route path="/article" element={<Article />} />
           <Route path="/jobs" element={<Jobs />} />
           <Route path="/more" element={<More />} />

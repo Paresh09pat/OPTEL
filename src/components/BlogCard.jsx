@@ -1,11 +1,11 @@
 import React from "react";
 import { FaEye, FaShareAlt } from "react-icons/fa";
 
-const BlogCard = ({ blog }) => {
+const BlogCard = ({ blog, onClick }) => {
   return (
-    <div className="bg-white rounded-xl shadow-md overflow-hidden border hover:shadow-lg transition">
+    <div className="bg-white rounded-xl shadow-md overflow-hidden border hover:shadow-lg transition" onClick={onClick}>
       {/* Thumbnail */}
-      <a href={blog?.url} target="_blank" rel="noopener noreferrer">
+      <a href={`/blog/${blog?.id}`}  rel="noopener noreferrer">
         <img
           src={blog?.thumbnail}
           alt={blog?.title}
@@ -28,7 +28,7 @@ const BlogCard = ({ blog }) => {
 
         {/* Title */}
         <h2 className="text-lg font-bold text-gray-900 hover:text-blue-600">
-          <a href={blog?.url} target="_blank" rel="noopener noreferrer">
+            <a href={`/blog/${blog?.id}`}  rel="noopener noreferrer">
             {blog?.title}
           </a>
         </h2>

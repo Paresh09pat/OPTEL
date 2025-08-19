@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import BlogCard from '../components/BlogCard';
 import Loader from '../components/loading/Loader';
-
+import { useNavigate } from 'react-router-dom';
 const Blog = () => {
   const [session, setSession] = useState(localStorage.getItem("session_id"));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [blogs, setBlogs] = useState([]);
-
+  const navigate = useNavigate();
   const getBlogs = async () => {
     try {
       setLoading(true);
@@ -34,6 +34,7 @@ const Blog = () => {
       const data = await response.json();
       // console.log(data , "blogs");
       setBlogs(data);
+      console.log("🚀 ~ getBlogs ~ data:", data)
       setLoading(false);
     } catch (error) {
       console.error('Error fetching events:', error);
@@ -42,9 +43,13 @@ const Blog = () => {
     }
   }
 
-  useEffect(() => {
+
+
+    useEffect(() => {
     getBlogs();
   }, []);
+
+  // console.log("🚀 ~ Blog ~ blogs: blogs page", blogs)
 
  if(loading) {
   return <Loader />
@@ -52,7 +57,7 @@ const Blog = () => {
   return (
     <div className="p-6 flex flex-col gap-4">
       {blogs?.blogs?.map((blog) => (
-        <BlogCard key={blog?.id} blog={blog} />
+          <BlogCard key={blog?.id} blog={blog} onClick={() => navigate(`/blog/${blog?.id}`)} />
       ))}
     </div>
   )

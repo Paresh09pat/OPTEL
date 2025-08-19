@@ -1,9 +1,9 @@
 import { memo, useState, useEffect, useCallback } from 'react';
 import { Heart, MessageCircle, Share, Bookmark, MoreHorizontal, Smile, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { IoBookmark } from "react-icons/io5";
-
-const PostCard = ({ user, content, image, likes, comments, shares, saves, timeAgo, post_id, handleLike, isLiked, fetchComments, commentsData }) => {
-
+import { useNavigate } from 'react-router-dom';
+  const PostCard = ({ user, content, image, video, audio, file, likes, comments, shares, saves, timeAgo, post_id, handleLike, handleDislike, isLiked, fetchComments, commentsData, savePost, isSaved, blog }) => {
+  const navigate = useNavigate();
   const [clickedComments, setClickedComments] = useState(false);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [localCommentsData, setLocalCommentsData] = useState(commentsData || []);
@@ -59,6 +59,10 @@ const PostCard = ({ user, content, image, likes, comments, shares, saves, timeAg
     handleLike(post_id, 1);
   }, [handleLike, post_id]);
 
+  const handleDislikeClick = useCallback(() => {
+    handleDislike(post_id);
+  }, [handleDislike, post_id]);
+
   // Get comments to display (initial 5 or all)
   const displayedComments = showAllComments ? localCommentsData : localCommentsData.slice(0, 5);
   const hasMoreComments = localCommentsData.length > 5;
@@ -97,20 +101,17 @@ const PostCard = ({ user, content, image, likes, comments, shares, saves, timeAg
               )
             }}
           />
+         {blog && <img src={blog?.thumbnail} alt="Post content" className="w-full h-auto object-cover cursor-pointer" onClick={() => navigate(`/blog/${blog?.id}`)}/>}
         </div>
-      )}
+      )}  
 
-      {image && (
-        <div className="relative">
-          <img
-            src={image}
-            alt="Post content"
-            className="w-full h-auto object-cover"
-          />
-        </div>
-      )}
+{image && <img src={image} alt="Post content" className="w-full h-auto object-cover" />}
+{video && <video className="w-full h-auto object-cover" controls src={video}></video>}
+{audio && <audio src={audio} controls className="w-full h-auto object-cover" />}
+{file && <a href={file} download>Download File</a>}
 
-      <div className="p-4">
+
+        <div className="p-4">
         <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
           <span>{likes} Likes</span>
           <div className="flex space-x-4">
@@ -123,7 +124,7 @@ const PostCard = ({ user, content, image, likes, comments, shares, saves, timeAg
           <button
             className={`inline-block items-center space-x-2 transition-all duration-200 hover:scale-105 cursor-pointer ${isLiked ? 'text-red-500' : 'text-gray-600 hover:text-red-500'
               }`}
-            onClick={handleLikeClick}
+            onClick={isLiked ? handleDislikeClick : handleLikeClick}
           >
             {isLiked ? (
               <>
@@ -151,8 +152,10 @@ const PostCard = ({ user, content, image, likes, comments, shares, saves, timeAg
             <Share className="w-5 h-5" />
           </button>
 
-          <button className="flex items-center space-x-2 text-gray-600 hover:text-yellow-500 transition-colors">
-            {saves ? <IoBookmark className="w-5 h-5 text-blue-900" /> : <Bookmark className="w-5 h-5" />}
+          {/* change the color of bookmark button when saved like we see like button */}
+
+          <button className="flex items-center space-x-2 text-gray-600 hover:text-yellow-500 transition-colors" onClick={() => savePost(post_id)} >
+            {isSaved ? <IoBookmark className="w-5 h-5 text-blue-900" /> : <Bookmark className="w-5 h-5 text-blue-900 hover:text-blue-500 transition-colors hover:scale-105  " />}
           </button>
         </div>
         {clickedComments && (
