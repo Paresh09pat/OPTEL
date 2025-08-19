@@ -1,57 +1,75 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FaHeart } from 'react-icons/fa';
 import axios from 'axios';
+import Loader from '../../components/loading/Loader';
 
 const LikedPages = () => {
-    const likedPagesData = [
-        {
-            id: 2,
-            name: "Light. Lens. Laya.",
-            category: "Photography",
-            likes: "2K+",
-            comments: "100+",
-            posts: "250+",
-            avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b5bb?w=150&h=150&fit=crop&crop=face",
-            isLiked: true
-        },
-        {
-            id: 5,
-            name: "Elite Cricket Academy",
-            category: "Cricket",
-            likes: "2K+",
-            comments: "100+",
-            posts: "250+",
-            avatar: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=150&h=150&fit=crop&crop=face",
-            isLiked: true
-        }
-    ];
-
-    const [likedPages, setLikedPages] = useState(new Set([2, 5]));
+    const [likedPages, setLikedPages] = useState([]);
     const [loading, setLoading] = useState(false);
-
-    const handleUnlike = async (pageId) => {
-        if (loading) return;
+    const [error, setError] = useState(null);
+  
+    const getLikedPages = async () => {
+      console.log("Fetching liked pages...");
+  
+      try {
         setLoading(true);
-
-        try {
-            // Call your backend API to unlike the page
-            await axios.post(`/api/unlike-page/${pageId}`); // adjust to your actual endpoint
-
-            setLikedPages(prev => {
-                const updated = new Set(prev);
-                updated.delete(pageId);
-                return updated;
-            });
-        } catch (error) {
-            console.error("Failed to unlike the page", error);
-        } finally {
-            setLoading(false);
+        setError(null);
+  
+        const accessToken = localStorage.getItem("access_token");
+        const userId = localStorage.getItem("user_id");
+  
+        if (!accessToken || !userId) {
+          throw new Error("Missing access token or user ID");
         }
+  
+        const formData = new URLSearchParams();
+        formData.append(
+          "server_key",
+          "24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179"
+        );
+        formData.append("user_id", userId);
+        formData.append("limit", "1");
+        formData.append("offset", "2");
+        formData.append("type", "liked_pages");
+  
+        const response = await fetch(
+          `https://ouptel.com/api/get-my-pages?access_token=${accessToken}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+              "X-Requested-With": "XMLHttpRequest",
+            },
+            body: formData.toString(),
+          }
+        );
+  
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+  
+        const data = await response.json();
+        setLikedPages(data?.data );
+        console.log(data, "full API response");
+        console.log(data?.data, "liked pages list");
+      } catch (err) {
+        console.error("Error fetching liked pages:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
     };
+  
+    useEffect(() => {
+      getLikedPages();
+    }, []);
+  
+    if (loading) return <Loader />;
+    if (error) return <div className="text-red-500">Error: {error}</div>;
 
     return (
         <div className="space-y-6">
-            {likedPagesData.map((page) => (
+            {likedPages?.map((page) => (
                 likedPages.has(page.id) && (
                     <div key={page.id} className="bg-white rounded-lg border border-gray-300 p-4 sm:p-6">
                         {/* Top Section */}

@@ -1,29 +1,29 @@
-import React, { useState } from 'react'
-import SideMenu from './SideMenu'
-import Chatbox from '../specific/Chatbox'
-import { FaBars, FaTimes, FaCommentDots } from 'react-icons/fa'
-import { PiChatCircleTextFill } from "react-icons/pi";
+import React, { useState } from 'react';
+import { Outlet } from 'react-router-dom';
+import SideMenu from './SideMenu';
+import Chatbox from '../specific/Chatbox';
+import { FaBars, FaTimes } from 'react-icons/fa';
+import { PiChatCircleTextFill } from 'react-icons/pi';
 
-
-const MainLayout = ({ children }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false)
+const MainLayout = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
 
   const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen)
-  }
+    setIsSidebarOpen(!isSidebarOpen);
+  };
 
   const closeSidebar = () => {
-    setIsSidebarOpen(false)
-  }
+    setIsSidebarOpen(false);
+  };
 
   const toggleRightSidebar = () => {
-    setIsRightSidebarOpen(!isRightSidebarOpen)
-  }
+    setIsRightSidebarOpen(!isRightSidebarOpen);
+  };
 
   const closeRightSidebar = () => {
-    setIsRightSidebarOpen(false)
-  }
+    setIsRightSidebarOpen(false);
+  };
 
   return (
     <div className="h-auto bg-white overflow-hidden scrollbar-hide stable-layout">
@@ -33,16 +33,26 @@ const MainLayout = ({ children }) => {
           onClick={toggleSidebar}
           className="p-2 rounded-lg hover:bg-gray-100 transition-colors flex items-center justify-center will-change-transform"
         >
-          {isSidebarOpen ? <FaTimes className="w-5 h-5" /> : <FaBars className="w-5 h-5" />}
+          {isSidebarOpen ? (
+            <FaTimes className="w-5 h-5" />
+          ) : (
+            <FaBars className="w-5 h-5" />
+          )}
         </button>
+
         <div className="flex items-center">
           <img src="/logo.png" alt="Optel Logo" className="h-8" />
         </div>
+
         <button
           onClick={toggleRightSidebar}
           className="p-2 rounded-lg hover:bg-gray-100 transition-colors flex items-center justify-center will-change-transform"
         >
-          {isRightSidebarOpen ? <FaTimes className="w-5 h-5" /> : <PiChatCircleTextFill className="w-7 h-7" />}
+          {isRightSidebarOpen ? (
+            <FaTimes className="w-5 h-5" />
+          ) : (
+            <PiChatCircleTextFill className="w-7 h-7" />
+          )}
         </button>
       </div>
 
@@ -51,8 +61,8 @@ const MainLayout = ({ children }) => {
         <div
           className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40 will-change-transform"
           onClick={() => {
-            closeSidebar()
-            closeRightSidebar()
+            closeSidebar();
+            closeRightSidebar();
           }}
         />
       )}
@@ -64,32 +74,35 @@ const MainLayout = ({ children }) => {
         </div>
 
         {/* Mobile Sidebar - Full Width */}
-        <div className={`lg:hidden fixed left-0 top-0 h-full w-full transform transition-transform duration-300 ease-in-out z-50 will-change-transform ${
-          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}>
+        <div
+          className={`lg:hidden fixed left-0 top-0 h-full w-full transform transition-transform duration-300 ease-in-out z-50 will-change-transform ${
+            isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
+        >
           <SideMenu onClose={closeSidebar} isMobile={true} />
         </div>
 
         {/* Mobile Right Sidebar - Full Width */}
-        <div className={`lg:hidden fixed right-0 top-0 h-full w-full transform transition-transform duration-300 ease-in-out z-50 will-change-transform ${
-          isRightSidebarOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}>
+        <div
+          className={`lg:hidden fixed right-0 top-0 h-full w-full transform transition-transform duration-300 ease-in-out z-50 will-change-transform ${
+            isRightSidebarOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
+        >
           <Chatbox onClose={closeRightSidebar} isMobile={true} />
         </div>
 
-        {/* Main Content - Scrollable */}
+        {/* Main Content */}
         <main className="flex-1 mr-0 lg:ml-60 xl:ml-80 lg:mr-60 xl:mr-90 h-full lg:h-screen lg:pt-0 overflow-y-auto scrollbar-hide smooth-scroll">
-          {children}
+          <Outlet /> 
         </main>
 
         {/* Desktop Right Sidebar - Fixed */}
         <div className="hidden lg:block lg:w-60 xl:w-90 flex-shrink-0 fixed right-0 top-0 h-full z-30">
           <Chatbox />
-          
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default MainLayout
+export default MainLayout;

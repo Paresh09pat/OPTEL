@@ -79,7 +79,7 @@ const SideMenu = ({ onClose, isMobile = false }) => {
 
       <button
         onClick={handleLinkClick}
-        className="  bg-transparent  text-[#212121] font-semibold text-xl py-3.5 px-6 rounded-full flex items-center justify-between transition-colors cursor-pointer border border-[#808080] mx-auto w-full"
+        className="  bg-transparent  text-[#212121] font-semibold text-xl py-3.5 px-6 rounded-full flex items-center justify-between transition-colors cursor-pointer border border-[#808080] mx-auto w-[90%]"
       >
         <span>Create post</span>
         <Icon icon="lets-icons:send-hor-light" width="30" height="30" style={{ color: '#000' }} />

@@ -1,4 +1,4 @@
-import { useState,useEffect, memo } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { BsImage, BsCameraVideo, BsFolder } from 'react-icons/bs';
 import { BiBarChartAlt2 } from 'react-icons/bi';
 import { CiCirclePlus } from 'react-icons/ci';
@@ -7,16 +7,11 @@ import { BarChart3, MapPin, Send, Smile } from 'lucide-react';
 import { Palette } from 'lucide-react';
 import { X } from 'lucide-react';
 
-const CreatePostSection = () => {
+const CreatePostSection = ({ fetchNewFeeds }) => {
     const [postText, setPostText] = useState('');
     const [showPopup, setShowPopup] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState([]);
-
-    const handlePost = () => {
-        console.log('Posting:', { postText, selectedFiles });
-        setPostText('');
-        setSelectedFiles([]);
-    };
+    const [loading, setLoading] = useState(false);
 
     const handleMoreClick = () => {
         setShowPopup(true);
@@ -62,9 +57,114 @@ const CreatePostSection = () => {
         setSelectedFiles((prev) => prev.filter((_, i) => i !== indexToRemove));
     };
 
+
+
+
+    const genetateId = Math.floor(10 + Math.random() * 90);
+
+    // const createNewPost = async (postText, selectedFiles) => {
+    //     try {
+    //         const accessToken = localStorage.getItem("access_token");
+    //         const user_id = localStorage.getItem("user_id");
+    //         const formData = new URLSearchParams();
+    //         formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
+    //         formData.append('type', 'share_post_on_timeline');
+
+    //         formData.append('id', '169');
+    //         formData.append('postText', postText);
+    //         formData.append('user_id', user_id);
+
+    //         console.log("🚀 ~ createNewPost ~ selectedFiles:", selectedFiles[0].type)
+
+    //         if (selectedFiles[0].type === 'image') {
+    //             formData.append('postPhotos[]', selectedFiles);
+    //         }
+
+    //         const response = await fetch(`https://ouptel.com/api/new_post?access_token=${accessToken}`, {
+    //             method: 'POST',
+    //             headers: {
+    //                 'Content-Type': 'application/x-www-form-urlencoded',
+    //                 'X-Requested-With': 'XMLHttpRequest',
+    //                 "Accept": "application/json"
+    //             },
+    //             body: formData.toString(),
+    //         })
+    //         const data = await response.json();
+    //         if (data.api_status === 200) {
+    //             fetchNewFeeds();
+    //             setPostText('');
+    //             setSelectedFiles([]);
+    //             setShowPopup(false);
+    //         }
+    //     } catch (error) {
+    //         console.error('Error creating new post:', error);
+    //     }
+    // }
+
+
+    const createNewPost = async (postText, selectedFiles) => {
+        setLoading(true);
+        try {
+            const accessToken = localStorage.getItem("access_token");
+            const user_id = localStorage.getItem("user_id");
+
+            // Use FormData instead of URLSearchParams
+            const formData = new FormData();
+            formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
+            formData.append('type', 'share_post_on_timeline');
+            formData.append('id', '169');
+            formData.append('postText', postText);
+            formData.append('user_id', user_id);
+
+            // Append files correctly
+            selectedFiles.forEach((fileObj) => {
+                if (fileObj.file && fileObj.file.type.startsWith("image/")) {
+                    formData.append("postPhotos[]", fileObj.file);
+                }
+            });
+            selectedFiles.forEach((fileObj) => {
+                if (fileObj.file && fileObj.file.type.startsWith("video/")) {
+                    formData.append("postVideo", fileObj.file);
+                }
+            });
+            selectedFiles.forEach((fileObj) => {
+                if (fileObj.file && fileObj.file.type.startsWith("audio/")) {
+                    formData.append("postMusic", fileObj.file);
+                }
+            });
+            selectedFiles.forEach((fileObj) => {
+                if (fileObj.file && fileObj.file.type.startsWith("file/")) {
+                    formData.append("postFile", fileObj.file);
+                }
+            });
+
+            const response = await fetch(`https://ouptel.com/api/new_post?access_token=${accessToken}`, {
+                method: "POST",
+                body: formData, // <-- no need to stringify, no headers needed
+            });
+
+            const data = await response.json();
+            if (data.api_status === 200) {
+                fetchNewFeeds();
+                setPostText("");
+                setSelectedFiles([]);
+                setShowPopup(false);
+            }
+        } catch (error) {
+            console.error("Error creating new post:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
+
     return (
         <>
-            <div className="bg-white rounded-xl border border-[#808080] px-6 py-8 shadow-sm">
+            {loading && <div className="fixed inset-0 bg-black/30 backdrop-blur-md flex items-center justify-center z-50">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            </div>}
+                <div className="bg-white rounded-xl border border-[#808080] px-6 py-8 shadow-sm">
                 {/* Input Field */}
                 <div className="relative mb-4">
                     <img
@@ -78,11 +178,16 @@ const CreatePostSection = () => {
                         placeholder="Share something"
                         value={postText}
                         onChange={(e) => setPostText(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                createNewPost(postText, selectedFiles);
+                            }
+                        }}
                         className="w-full pl-16 pr-12 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
 
                     <button
-                        onClick={handlePost}
+                        onClick={() => createNewPost(postText, selectedFiles)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 bg-white"
                     >
                         <Icon
@@ -117,7 +222,7 @@ const CreatePostSection = () => {
                         className="flex flex-col items-center hover:text-orange-600 cursor-pointer"
                     >
                         <BsFolder className="w-5 h-5 text-orange-500" />
-                        <span>File's</span>
+                        <span>File</span>
                     </button>
 
                     <button
@@ -163,10 +268,12 @@ const CreatePostSection = () => {
             </div>
 
             {/* Post Popup */}
-            
+
             <CreatePostPopup
                 isOpen={showPopup}
                 onClose={() => setShowPopup(false)}
+                createNewPost={createNewPost}
+                setShowPopup={setShowPopup}
             />
         </>
     );
@@ -175,7 +282,7 @@ const CreatePostSection = () => {
 export default memo(CreatePostSection);
 
 
-const CreatePostPopup = ({ isOpen, onClose }) => {
+const CreatePostPopup = ({ isOpen, onClose, createNewPost, setShowPopup }) => {
     const [postText, setPostText] = useState('');
     const [showSharing, setShowSharing] = useState(false);
     const [commentsEnabled, setCommentsEnabled] = useState(true);
@@ -242,10 +349,11 @@ const CreatePostPopup = ({ isOpen, onClose }) => {
 
     if (!isOpen) return null;
 
-    const handlePost = () => {
+    const handlePost = async () => {
         console.log('Posting:', { postText, commentsEnabled, showSharing });
         setPostText('');
-        onClose();
+        await createNewPost(postText, selectedFiles);
+        setShowPopup(false);
     };
 
     return (
@@ -351,7 +459,7 @@ const CreatePostPopup = ({ isOpen, onClose }) => {
                                 <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
                                     <BsFolder className="w-5 h-5 text-orange-600" />
                                 </div>
-                                <span className="text-gray-700 font-medium">File's</span>
+                                <span className="text-gray-700 font-medium">File</span>
                             </button>
 
                             {/* Poll */}

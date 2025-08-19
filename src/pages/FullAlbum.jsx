@@ -30,6 +30,7 @@ const FullAlbumView = () => {
     };
 
     return (
+
         <div className="bg-[#EDF6F9] w-full h-auto  flex flex-col gap-4 ">
             <div className='w-full h-[98px] sticky pt-8 top-0 z-10 bg-[#EDF6F9]'>
                 <div className="flex flex-row items-center justify-between h-full px-4 md:px-7 md:flex-row gap-4">

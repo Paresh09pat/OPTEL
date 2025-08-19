@@ -1,7 +1,14 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { BiSolidEdit } from "react-icons/bi";
+import { Link } from 'react-router-dom';
+import axios from 'axios';
+import Loader from '../../components/loading/Loader';
 
 const MyPages = () => {
+    const [myPages, setMyPages] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
     const myPagesData = [
         {
             id: 1,
@@ -33,9 +40,117 @@ const MyPages = () => {
         }
     ];
 
+    // const [myPages, setMyPages] = useState(myPagesData);
+
+    const getMyPages = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            
+            // Get access token from localStorage
+            const accessToken = localStorage.getItem("access_token") || '39bceb4226d88a2749417a759ec5ec477b1bddc3e151c25e6b1c05897a01455068ff5d4f223574132d5951d1e3b31dfb7fd2dcc172df17fd';
+            
+            // Create form-encoded data
+            const formData = new URLSearchParams();
+            formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
+            formData.append('limit', '10');
+            formData.append('offset', '0');
+            formData.append('type', 'my_pages');
+            
+            // SOLUTION: Remove withCredentials to avoid CORS issue
+            const response = await fetch(
+                `https://ouptel.com/api/get-my-pages?access_token=${accessToken}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        // 'credentials': 'include',
+                        // 'withCredentials': true,
+                    },
+                    // DON'T include credentials - this causes the CORS error
+                    // credentials: 'include', // REMOVE THIS LINE
+                    body: formData.toString()
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            // console.log('API Response:', data);
+            
+            // Transform API data to match component structure
+            if (data && data.api_status === 200 && data.data) {
+                const transformedData = data.data.map(page => ({
+                    id: page.page_id,
+                    name: page.page_name || page.name,
+                    category: page.category,
+                    likes: page.likes || "0",
+                    comments: "0", // Not in API response
+                    posts: page.users_post || "0",
+                    avatar: page.avatar,
+                    verified: page.verified === "1",
+                    pageTitle: page.page_title,
+                    description: page.page_description,
+                    url: page.url,
+                    isPageOwner: page.is_page_onwer
+                }));
+                setMyPages(transformedData);
+            } else {
+                console.log('Using fallback data - unexpected API response structure');
+                setMyPages(fallbackData);
+            }
+        } catch (error) {
+            console.error("Error fetching pages:", error);
+            setError(error.message);
+            
+            // Use fallback data in case of error
+            setMyPages(fallbackData);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Alternative approach using proxy (for development)
+    const getMyPagesWithProxy = async () => {
+        // If you're still getting CORS errors, you can:
+        // 1. Set up a proxy in your vite.config.js:
+        /*
+        export default {
+            server: {
+                proxy: {
+                    '/api': {
+                        target: 'https://ouptel.com',
+                        changeOrigin: true,
+                        secure: false,
+                    }
+                }
+            }
+        }
+        */
+        // 2. Then call: fetch('/api/get-my-pages?access_token=...')
+        
+        console.log('Using proxy approach - configure vite.config.js first');
+    };
+
+    useEffect(() => {
+        getMyPages();
+    }, []);
+
+    // console.log("pagesData", myPages)
+    if (loading) {
+        return (
+            
+        <Loader />
+            
+        );
+    }
+
     return (
         <div className="space-y-6">
-            {myPagesData.map((page) => (
+            {myPages?.map((page) => (
                 <div key={page.id} className="bg-white rounded-lg border border-[#808080] p-4 sm:p-6">
                     {/* Top Row */}
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -68,10 +183,13 @@ const MyPages = () => {
                             <p className="text-sm text-gray-600 font-medium sm:hidden">
                                 {/* Already shown inside image section */}
                             </p>
-                            <button className="w-full sm:w-auto px-4 py-2 border border-[#808080] rounded-full text-[#808080] hover:bg-gray-50 flex items-center justify-center gap-2 text-sm sm:text-base">
-                                <BiSolidEdit className="text-lg" />
-                                <span>Edit Page</span>
-                            </button>
+                            <Link to="/pagescomp/mainpages/pagesetting/mainpagesetting" >
+                                <button className="cursor-pointer w-full sm:w-auto px-4 py-2 border border-[#808080] rounded-full text-[#808080] hover:bg-gray-50 flex items-center justify-center gap-2 text-sm sm:text-base"
+                                >
+                                    <BiSolidEdit className="text-lg" />
+                                    <span>Edit Page</span>
+                                </button>
+                            </Link>
                         </div>
                     </div>
 

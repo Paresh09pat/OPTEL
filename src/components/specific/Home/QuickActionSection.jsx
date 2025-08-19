@@ -7,56 +7,56 @@ const QuickActionsSection = ({ className = '' }) => {
     {
       icon: () => <Icon icon="iconoir:post-solid" width="30" height="30" style={{ color: '#9748ff' }} />,
       color: 'text-purple-500',
-
-      path: '/posts',
+      path: '/',
+      tooltip: 'Posts'
     },
     {
       icon: () => <Icon icon="solar:album-bold" width="30" height="30" style={{ color: '#8BC34B' }} />,
       color: 'text-green-500',
-
       path: '/albums',
+      tooltip: 'Albums'
     },
     {
       icon: () => <Icon icon="solar:folder-bold" width="30" height="30" style={{ color: '#F44336' }} />,
       color: 'text-red-500',
-
-      path: '/folders',
+      path: '/my-albums',
+      tooltip: 'My Albums'
     },
     {
       icon: () => <Icon icon="material-symbols:forum" width="30" height="30" style={{ color: '#8BC34B' }} />,
       color: 'text-green-600',
-
-      path: '/forums',
+      path: '/forum',
+      tooltip: 'Forum'
     },
     {
       icon: () => <Icon icon="mingcute:group-3-fill" width="30" height="30" style={{ color: '#01A9F4' }} />,
       color: 'text-blue-500',
-
-      path: '/groups',
+      path: '/my-groups',
+      tooltip: 'Groups'
     },
     {
       icon: () => <Icon icon="fluent:document-one-page-multiple-24-filled" width="30" height="30" style={{ color: '#F69F58' }} />,
       color: 'text-orange-500',
-
-      path: '/documents',
+      path: '/my-pages',
+      tooltip: 'Pages'
     },
     {
       icon: () => <Icon icon="bxl:blogger" width="30" height="30" style={{ color: '#F25D4D' }} />,
       color: 'text-red-500',
-
-      path: '/blogs',
+      path: '/blog',
+      tooltip: 'Blog'
     },
     {
       icon: () => <Icon icon="mingcute:news-fill" width="30" height="30" style={{ color: '#009DA0' }} />,
       color: 'text-teal-500',
-
-      path: '/news',
+      path: '/article',
+      tooltip: 'Articles'
     },
     {
       icon: () => <Icon icon="hugeicons:new-job" width="30" height="30" style={{ color: '#4CAF50' }} />,
       color: 'text-green-500',
-
       path: '/jobs',
+      tooltip: 'Jobs'
     },
   ];
 
@@ -66,7 +66,8 @@ const QuickActionsSection = ({ className = '' }) => {
         {actions.map((action, index) => (
           <Link to={action.path} key={index} className="flex-shrink-0">
             <button
-              className={`flex flex-col items-center space-y-1 md:space-y-2 `}
+              className={`flex flex-col items-center space-y-1 md:space-y-2`}
+              title={action.tooltip}
             >
               <div className={`w-7 h-7  rounded-xl ${action.bg} flex items-center justify-center cursor-pointer`}>
                 <action.icon />
