@@ -1,14 +1,19 @@
 import { memo, useState, useEffect, useCallback } from 'react';
-import { Heart, MessageCircle, Share, Bookmark, MoreHorizontal, Smile, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Heart, MessageCircle, Share, Bookmark, MoreHorizontal, Smile, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown, X } from 'lucide-react';
 import { IoBookmark } from "react-icons/io5";
+import { FaPaperPlane } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-  const PostCard = ({ user, content, image, video, audio, file, likes, comments, shares, saves, timeAgo, post_id, handleLike, handleDislike, isLiked, fetchComments, commentsData, savePost, isSaved, blog }) => {
+import SharePopup from './SharePopup';
+const PostCard = ({ user, content, image, video, audio, file, likes, comments, shares, saves, timeAgo, post_id, handleLike, handleDislike, isLiked, fetchComments, commentsData, savePost, isSaved, blog, multipleImages, hasMultipleImages, reportPost, hidePost, commentPost }) => {
   const navigate = useNavigate();
   const [clickedComments, setClickedComments] = useState(false);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [localCommentsData, setLocalCommentsData] = useState(commentsData || []);
   const [showAllComments, setShowAllComments] = useState(false);
-
+  const [showOptionsMenu, setShowOptionsMenu] = useState(false);
+  const [showSharePopup, setShowSharePopup] = useState(false);
+  const [commentInput, setCommentInput] = useState('');
+  const [loading, setLoading] = useState(false);
   // Update local comments when prop changes
   useEffect(() => {
     if (commentsData && Array.isArray(commentsData)) {
@@ -16,7 +21,7 @@ import { useNavigate } from 'react-router-dom';
     }
   }, [commentsData]);
 
-  // Close comments when clicking outside
+  
   useEffect(() => {
     const handleClickOutside = (event) => {
       const commentsSection = event.target.closest('[data-comments-section]');
@@ -34,12 +39,68 @@ import { useNavigate } from 'react-router-dom';
     };
   }, [clickedComments]);
 
+    // Close options menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const optionsMenu = event.target.closest('[data-options-menu]');
+      const threeDotsButton = event.target.closest('[data-three-dots-button]');
+      
+      if (!optionsMenu && !threeDotsButton) {
+        setShowOptionsMenu(false);
+      }
+    };
+
+    if (showOptionsMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      // Also close on escape key
+      const handleEscape = (event) => {
+        if (event.key === 'Escape') {
+          setShowOptionsMenu(false);
+        }
+      };
+      document.addEventListener('keydown', handleEscape);
+      
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('keydown', handleEscape);
+      };
+    }
+  }, [showOptionsMenu]);
+
+  // Close share popup when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const sharePopup = event.target.closest('[data-share-popup]');
+      const shareButton = event.target.closest('[data-share-button]');
+      
+      if (!sharePopup && !shareButton) {
+        setShowSharePopup(false);
+      }
+    };
+
+    if (showSharePopup) {
+      document.addEventListener('mousedown', handleClickOutside);
+      // Also close on escape key
+      const handleEscape = (event) => {
+        if (event.key === 'Escape') {
+          setShowSharePopup(false);
+        }
+      };
+      document.addEventListener('keydown', handleEscape);
+      
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('keydown', handleEscape);
+      };
+    }
+  }, [showSharePopup]);
+
   const handleClickComments = useCallback(async () => {
     try {
       if (!clickedComments) {
         setIsLoadingComments(true);
         const fetchedComments = await fetchComments(post_id);
-        
+
         if (fetchedComments && Array.isArray(fetchedComments)) {
           setLocalCommentsData(fetchedComments);
         }
@@ -63,6 +124,91 @@ import { useNavigate } from 'react-router-dom';
     handleDislike(post_id);
   }, [handleDislike, post_id]);
 
+  const toggleOptionsMenu = useCallback(() => {
+    setShowOptionsMenu(!showOptionsMenu);
+  }, [showOptionsMenu]);
+
+  const toggleSharePopup = useCallback(() => {
+    setShowSharePopup(!showSharePopup);
+  }, [showSharePopup]);
+
+  const handleSavePost = useCallback(() => {
+    savePost(post_id);
+    setShowOptionsMenu(false);
+  }, [savePost, post_id]);
+
+  const handleReportPost = useCallback(() => {
+    reportPost(post_id);
+    setShowOptionsMenu(false);
+  }, [post_id]);
+
+  const handleOpenInNewTab = useCallback(() => {
+    window.open(`/post/${post_id}`, '_blank');
+    setShowOptionsMenu(false);
+  }, [post_id]);
+
+  const handleHidePost = useCallback(() => {
+    hidePost(post_id);
+    setShowOptionsMenu(false);
+  }, [post_id]);
+
+  const handleShareToTimeline = useCallback(() => {
+    console.log('Share to timeline:', post_id);
+    setShowSharePopup(false);
+  }, [post_id]);
+
+  const handleShareToPage = useCallback(() => {
+    console.log('Share to page:', post_id);
+    setShowSharePopup(false);
+  }, [post_id]);
+
+  const handleShareToGroup = useCallback(() => {
+    console.log('Share to group:', post_id);
+    setShowSharePopup(false);
+  }, [post_id]);
+
+  const handleSocialShare = useCallback((platform) => {
+    const postUrl = `${window.location.origin}/post/${post_id}`;
+    const postText = content || 'Check out this post!';
+    
+    let shareUrl = '';
+    switch (platform) {
+      case 'facebook':
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}&quote=${encodeURIComponent(postText)}`;
+        break;
+      case 'whatsapp':
+        shareUrl = `https://wa.me/?text=${encodeURIComponent(postText + ' ' + postUrl)}`;
+        break;
+      case 'linkedin':
+        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(postUrl)}`;
+        break;
+      default:
+        return;
+    }
+    
+    window.open(shareUrl, '_blank', 'width=600,height=400');
+    setShowSharePopup(false);
+  }, [post_id, content]);
+
+  const handleCommentPost = useCallback(async () => {
+    if (!commentInput.trim()) return; // Don't post empty comments
+    
+    const comment = commentInput;
+    console.log(comment);
+    
+    try {
+      const result = await commentPost(post_id, commentInput);
+      if (result.success) {
+        // Clear the comment input after successful submission
+        setCommentInput('');
+        // Close any open menus
+        setShowOptionsMenu(false);
+      }
+    } catch (error) {
+      console.error('Error posting comment:', error);
+    }
+  }, [post_id, commentInput, commentPost]);
+
   // Get comments to display (initial 5 or all)
   const displayedComments = showAllComments ? localCommentsData : localCommentsData.slice(0, 5);
   const hasMoreComments = localCommentsData.length > 5;
@@ -81,9 +227,51 @@ import { useNavigate } from 'react-router-dom';
             <p className="text-sm text-gray-500">{timeAgo}</p>
           </div>
         </div>
-        <button className="text-gray-400 hover:text-gray-600">
-          <MoreHorizontal className="w-5 h-5" />
-        </button>
+        <div className="relative">
+          <button
+            data-three-dots-button
+            className="text-gray-400 cursor-pointer hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
+            onClick={toggleOptionsMenu}
+          >
+            <MoreHorizontal className="w-5 h-5" />
+          </button>
+
+          {/* Options Dropdown Menu - positioned relative to the button */}
+          {showOptionsMenu && (
+            <div
+              data-options-menu
+              className="absolute right-0 top-0 z-50 bg-white rounded-lg shadow-xl border border-gray-200 py-2 min-w-[160px] md:min-w-[200px] max-w-[250px] animate-in slide-in-from-top-2 duration-200"
+            >
+              <button
+                onClick={handleSavePost}
+                className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors text-sm font-medium cursor-pointer"
+              >
+                {isSaved ? 'Unsave Post' : 'Save Post'}
+              </button>
+              <button
+                onClick={handleReportPost}
+                className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors text-sm font-medium cursor-pointer"
+              >
+                Report Post
+              </button>
+              <button
+                onClick={handleOpenInNewTab}
+                className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors text-sm font-medium cursor-pointer"
+              >
+                Open post in new tab
+              </button>
+              <button
+                onClick={handleHidePost}
+                className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors text-sm font-medium cursor-pointer"
+              >
+                Hide post
+              </button>
+            </div>
+          )}
+
+          {/* Share Popup */}
+          
+        </div>
       </div>
 
       {content && (
@@ -101,17 +289,82 @@ import { useNavigate } from 'react-router-dom';
               )
             }}
           />
-         {blog && <img src={blog?.thumbnail} alt="Post content" className="w-full h-auto object-cover cursor-pointer" onClick={() => navigate(`/blog/${blog?.id}`)}/>}
+          {blog && <img src={blog?.thumbnail} alt="Post content" className="w-full h-auto object-cover cursor-pointer" onClick={() => navigate(`/blog/${blog?.id}`)} />}
         </div>
-      )}  
+      )}
 
-{image && <img src={image} alt="Post content" className="w-full h-auto object-cover" />}
-{video && <video className="w-full h-auto object-cover" controls src={video}></video>}
-{audio && <audio src={audio} controls className="w-full h-auto object-cover" />}
-{file && <a href={file} download>Download File</a>}
+      {/* Handle multiple images */}
+      {multipleImages && multipleImages.length > 0 && (
+        <div className="px-4 pb-3">
+          <div className={`grid gap-1 ${multipleImages.length === 1 ? 'grid-cols-1' : multipleImages.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`} style={{ gridTemplateRows: 'repeat(auto-fit, minmax(150px, 1fr))', maxHeight: '400px', width: '100%', height: 'auto', display: 'grid' }}>
+            {multipleImages.map((img, index) => (
+              <div key={img.id || index} className={`relative overflow-hidden ${multipleImages.length === 1 ? 'col-span-1' : multipleImages.length === 2 ? 'col-span-1' : index === 0 ? 'col-span-2 row-span-2' : 'col-span-1'}`}>
+                <img
+                  src={img.image || img.image_org}
+                  alt={`Post image ${index + 1}`}
+                  className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-200"
+                  style={{ objectFit: 'cover', minHeight: '150px', maxHeight: '300px', width: '100%', height: '100%', display: 'block', maxWidth: '100%' }}
+                  onClick={() => {
+                    // TODO: Add image modal/lightbox functionality
+                    console.log('Open image modal for:', img.image || img.image_org);
+                  }}
+                  onLoad={() => {
+                    // console.log('Image loaded successfully:', img.image || img.image_org);
+                  }}
+                  onError={(e) => {
+                    console.error('Image failed to load:', img.image || img.image_org);
+                    // Show a placeholder instead of hiding the image
+                    e.target.src = '/perimg.png';
+                    e.target.className = 'w-full h-full object-cover opacity-50';
+                  }}
+                />
+                {/* Show overlay with count for images beyond the first few */}
+                {index === 2 && multipleImages.length > 3 && (
+                  <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                    <span className="text-white text-2xl font-bold">+{multipleImages.length - 3}</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Handle single image */}
+      {image && !multipleImages && <img
+        src={image}
+        alt="Post content"
+        className="w-full h-auto object-cover"
+        style={{ objectFit: 'cover', minHeight: '200px', maxHeight: '400px', width: '100%', height: 'auto', display: 'block' }}
+        onLoad={() => {
+          // console.log('Single image loaded successfully:', image);
+        }}
+        onError={(e) => {
+          console.error('Single image failed to load:', image);
+          // Show a placeholder instead of hiding the image
+          e.target.src = '/perimg.png';
+          e.target.className = 'w-full h-auto object-cover opacity-50';
+        }}
+      />}
+
+      {/* Handle video */}
+      {video && <video className="w-full h-auto object-cover" controls src={video}></video>}
+
+      {/* Handle audio */}
+      {audio && <audio src={audio} controls className="w-full h-auto object-cover" />}
+
+      {/* Handle file - only for non-media files */}
+      {/* {file && !image && !multipleImages && !video && !audio && <a href={file} download className="block w-full p-4 bg-gray-100 hover:bg-gray-200 transition-colors rounded-lg text-center">
+  <div className="flex items-center justify-center space-x-2">
+    <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+    <span className="text-gray-700 font-medium">Download File</span>
+  </div>
+</a>} */}
 
 
-        <div className="p-4">
+      <div className="p-4">
         <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
           <span>{likes} Likes</span>
           <div className="flex space-x-4">
@@ -137,7 +390,7 @@ import { useNavigate } from 'react-router-dom';
           </button>
 
           <div className="relative" data-comments-section>
-            <button className="flex items-center space-x-2 text-gray-600 hover:text-blue-500 transition-colors" onClick={handleClickComments}>
+            <button className="flex items-center space-x-2 text-gray-600 hover:text-blue-500 transition-colors cursor-pointer" onClick={handleClickComments}>
               <MessageCircle className="w-5 h-5" />
               <span className="text-sm font-medium">
                 {isLoadingComments ? 'Loading...' : (comments > 0 ? `Comments (${comments})` : 'Comment')}
@@ -145,92 +398,96 @@ import { useNavigate } from 'react-router-dom';
             </button>
 
             {/* Comments Section */}
-          
+
           </div>
 
-          <button className="flex items-center space-x-2 text-gray-600 hover:text-green-500 transition-colors">
+          <button 
+            data-share-button
+            className="flex items-center space-x-2 text-gray-600 hover:text-green-500 transition-colors cursor-pointer"
+            onClick={toggleSharePopup}
+          >
             <Share className="w-5 h-5" />
           </button>
 
           {/* change the color of bookmark button when saved like we see like button */}
 
-          <button className="flex items-center space-x-2 text-gray-600 hover:text-yellow-500 transition-colors" onClick={() => savePost(post_id)} >
+          <button className="flex items-center space-x-2 text-gray-600 hover:text-yellow-500 transition-colors cursor-pointer" onClick={() => savePost(post_id)} >
             {isSaved ? <IoBookmark className="w-5 h-5 text-blue-900" /> : <Bookmark className="w-5 h-5 text-blue-900 hover:text-blue-500 transition-colors hover:scale-105  " />}
           </button>
         </div>
         {clickedComments && (
-              <div className="relative top-full left-0 right-0 bg-white  rounded-lg z-10 mt-2 p-4 max-h-96 overflow-y-auto w-full animate-in slide-in-from-top-2 duration-200">
-                {isLoadingComments ? (
-                  <div className="text-center py-6">
-                    <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mb-2"></div>
-                    <p className="text-gray-500 text-sm">Loading comments...</p>
-                  </div>
-                ) : localCommentsData && localCommentsData.length > 0 ? (
-                  <div className="space-y-3">
-                   
-                    
-                    {/* Display comments */}
-                    {displayedComments.map((comment) => (
-                      <div key={comment.id} className="flex items-center justify-start space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                        <img
-                          src={comment.publisher?.avatar || '/perimg.png'}
-                          alt={comment.publisher?.name || 'User'}
-                          className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                        />
-                        <div className="flex-1 min-w-0 max-w-full overflow-hidden">
-                          <div className="flex items-start justify-between mb-1">
-                            <div className="flex-1 min-w-0 overflow-hidden">
-                              <span className="font-medium text-sm text-gray-900 block truncate">
-                                {comment.publisher?.first_name || 'Unknown'} {comment.publisher?.last_name || ''}
-                              </span>
-                              <span className="text-xs text-gray-500 block truncate">
-                                {comment.time ? new Date(comment.time * 1000).toLocaleDateString() : 'Unknown time'}
-                              </span>
-                            </div>
-                          </div>
-                          <p className="text-sm text-gray-700 break-words leading-relaxed overflow-hidden">
-                            {comment.Orginaltext || comment.text || 'No comment text'}
-                          </p>
-                        </div>
-                        <div className="inline-block items-end h-full justify-end space-x-4">
-                          <button className="text-gray-400 hover:text-gray-600">
-                            <ThumbsUp className="w-4 h-4" />
-                          </button>
-                          <button className="text-gray-400 hover:text-gray-600">
-                            <MessageCircle className="w-4 h-4" />
-                          </button>
+          <div className="relative top-full left-0 right-0 bg-white  rounded-lg z-10 mt-2 p-4 max-h-96 overflow-y-auto w-full animate-in slide-in-from-top-2 duration-200">
+            {isLoadingComments ? (
+              <div className="text-center py-6">
+                <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mb-2"></div>
+                <p className="text-gray-500 text-sm">Loading comments...</p>
+              </div>
+            ) : localCommentsData && localCommentsData.length > 0 ? (
+              <div className="space-y-3">
+
+
+                {/* Display comments */}
+                {displayedComments.map((comment) => (
+                  <div key={comment.id} className="flex items-center justify-start space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <img
+                      src={comment.publisher?.avatar || '/perimg.png'}
+                      alt={comment.publisher?.name || 'User'}
+                      className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                    />
+                    <div className="flex-1 min-w-0 max-w-full overflow-hidden">
+                      <div className="flex items-start justify-between mb-1">
+                        <div className="flex-1 min-w-0 overflow-hidden">
+                          <span className="font-medium text-sm text-gray-900 block truncate">
+                            {comment.publisher?.first_name || 'Unknown'} {comment.publisher?.last_name || ''}
+                          </span>
+                          <span className="text-xs text-gray-500 block truncate">
+                            {comment.time ? new Date(comment.time * 1000).toLocaleDateString() : 'Unknown time'}
+                          </span>
                         </div>
                       </div>
-                    ))}
-
-                    {/* Show more/less button */}
-                    {hasMoreComments && (
-                      <button
-                        onClick={toggleShowAllComments}
-                        className="w-full text-center py-3 text-blue-600 hover:text-blue-800 font-medium text-sm transition-colors border-t border-gray-200 mt-4 hover:bg-blue-50 rounded-lg"
-                      >
-                        {showAllComments ? (
-                          <span className="flex items-center justify-center space-x-1">
-                            <ChevronUp className="w-4 h-4" />
-                            Show less
-                          </span>
-                        ) : (
-                          <span className="flex items-center justify-center space-x-1">
-                            Show {localCommentsData.length - 5} more comments
-                            <ChevronDown className="w-4 h-4" />
-                          </span>
-                        )}
+                      <p className="text-sm text-gray-700 break-words leading-relaxed overflow-hidden">
+                        {comment.Orginaltext || comment.text || 'No comment text'}
+                      </p>
+                    </div>
+                    <div className="inline-block items-end h-full justify-end space-x-4">
+                      <button className="text-gray-400 hover:text-gray-600 cursor-pointer">
+                        <ThumbsUp className="w-4 h-4" />
                       </button>
+                      <button className="text-gray-400 hover:text-gray-600 cursor-pointer">
+                        <MessageCircle className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Show more/less button */}
+                {hasMoreComments && (
+                  <button
+                    onClick={toggleShowAllComments}
+                    className="w-full text-center py-3 text-blue-600 hover:text-blue-800 font-medium text-sm transition-colors border-t border-gray-200 mt-4 hover:bg-blue-50 rounded-lg cursor-pointer"
+                  >
+                    {showAllComments ? (
+                      <span className="flex items-center justify-center space-x-1">
+                        <ChevronUp className="w-4 h-4" />
+                        Show less
+                      </span>
+                    ) : (
+                      <span className="flex items-center justify-center space-x-1">
+                        Show {localCommentsData.length - 5} more comments
+                        <ChevronDown className="w-4 h-4" />
+                      </span>
                     )}
-                  </div>
-                ) : (
-                  <div className="text-center py-6">
-                    <p className="text-gray-500 text-sm">No comments yet</p>
-                    <p className="text-xs text-gray-400 mt-1">Be the first to comment!</p>
-                  </div>
+                  </button>
                 )}
               </div>
+            ) : (
+              <div className="text-center py-6">
+                <p className="text-gray-500 text-sm">No comments yet</p>
+                <p className="text-xs text-gray-400 mt-1">Be the first to comment!</p>
+              </div>
             )}
+          </div>
+        )}
 
         <div className="flex items-center space-x-3 mt-4">
           <img
@@ -241,26 +498,53 @@ import { useNavigate } from 'react-router-dom';
           <div className="flex-1 flex items-center bg-gray-50 rounded-full px-4 py-2 min-w-0">
             <input
               type="text"
-              placeholder="Comment"
+              placeholder="Comment bottom"
               className="flex-1 bg-transparent text-sm focus:outline-none min-w-0"
+              id="comment-input"
+              value={commentInput}
+              onChange={(e) => setCommentInput(e.target.value)}
+              onKeyDown={async (e) => {
+                if (e.key === "Enter" && !e.shiftKey) { // prevents shift+enter (new line)
+                  e.preventDefault(); // prevents default form submit if inside form
+                  await handleCommentPost();
+                }
+              }}
             />
             <div className="flex items-center space-x-2 ml-2 flex-shrink-0">
-              <button className="text-gray-400 hover:text-gray-600">
+              <button className="text-gray-400 hover:text-gray-600 cursor-pointer">
                 <Share className="w-4 h-4" />
               </button>
-              <button className="text-gray-400 hover:text-gray-600">
+              <button className="text-gray-400 hover:text-gray-600 cursor-pointer">
                 <Smile className="w-4 h-4" />
               </button>
-              <button className="text-blue-500 hover:text-blue-600">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M2 21l21-9L2 3v7l15 2-15 2v7z" />
-                </svg>
+              <button
+                className="text-blue-500 hover:text-blue-600 cursor-pointer"
+                onClick={handleCommentPost}
+              >
+                <FaPaperPlane className="w-4 h-4" />
               </button>
             </div>
           </div>
         </div>
+
       </div>
+
+      {/* Share Popup */}
+      <SharePopup
+        isOpen={showSharePopup}
+        onClose={() => setShowSharePopup(false)}
+        postId={post_id}
+        content={content}
+        onShareToTimeline={handleShareToTimeline}
+        onShareToPage={handleShareToPage}
+        onShareToGroup={handleShareToGroup}
+        onSocialShare={handleSocialShare}
+        setLoading={setLoading}
+        loading={loading}
+        />
+      
     </div>
+    
   );
 }
 

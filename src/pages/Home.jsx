@@ -80,14 +80,22 @@ const Home = () => {
     return saved ? new Set(JSON.parse(saved)) : new Set();
   }); // Track which posts are saved
   const [postComments, setPostComments] = useState({}); // Track comments for each post
+  const [notification, setNotification] = useState({ show: false, message: '', type: 'success' });
 
-  const getNewFeeds = async () => {
+  const getNewFeeds = async (type) => {
+    const formData = new URLSearchParams();
+
+    if(type){
+      formData.append('filter_by', type);
+      formData.append('f', 'posts');
+      formData.append('s', 'filter_posts');
+    }
+  
     setLoading(true);
     try {
       setError(null);
 
       const accessToken = localStorage.getItem("access_token");
-      const formData = new URLSearchParams();
       formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
       formData.append('type', 'get_news_feed');
       const response = await fetch(`https://ouptel.com/api/posts?access_token=${accessToken}`, {
@@ -358,28 +366,224 @@ const Home = () => {
     }
   }
 
-  const getFileTypeProps = (post) => {
-    if (!post?.postFile_full) return {};
-  
-    const url = post.postFile_full;
-    const ext = post.postFileName?.split('.').pop()?.toLowerCase();
-  
-    if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) {
-      return { image: url };
-    } else if (["mp4", "mov", "avi", "mkv", "webm"].includes(ext)) {
-      return { video: url };
-    } else if (["mp3", "wav", "ogg", "aac"].includes(ext)) {
-      return { audio: url };
-    } else {
-      return { file: url };
+  const reportPost = async (post_id) => {
+    setLoading(true);
+    try {
+      const accessToken = localStorage.getItem("access_token");
+      const formData = new URLSearchParams();
+      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
+      formData.append('action', 'report');
+      formData.append('post_id', post_id);
+      const response = await fetch(`https://ouptel.com/api/post-actions?access_token=${accessToken}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-Requested-With': 'XMLHttpRequest',
+          "Accept": "application/json"
+        },
+        body: formData.toString(),
+      })
+      const data = await response.json();
+      if (data?.api_status === 200) {
+        console.log('Post reported successfully');
+        // You can add a toast notification here
+      } else {
+        console.error('Error reporting post:', data);
+      }
+    } catch (error) {
+      console.error('Error reporting post:', error);
+    } finally {
+      setLoading(false);
     }
+  }
+
+  const showNotification = (message, type = 'success') => {
+    setNotification({ show: true, message, type });
+    setTimeout(() => setNotification({ show: false, message: '', type: 'success' }), 3000);
+  };
+
+  const hidePost = async (post_id) => {
+    setLoading(true);
+    try {
+      const accessToken = localStorage.getItem("access_token");
+      const formData = new URLSearchParams();
+      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
+      formData.append('post_id', post_id);
+      const response = await fetch(`https://ouptel.com/api/hide_post?access_token=${accessToken}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-Requested-With': 'XMLHttpRequest',
+          "Accept": "application/json"
+        },
+        body: formData.toString(),
+      })
+      const data = await response.json();
+      if (data?.api_status === 200) {
+        console.log('Post hidden successfully');
+        // Remove the hidden post from the feed
+        setNewFeeds(prev => prev.filter(post => post.id !== post_id));
+        showNotification('Post hidden successfully');
+      } else {
+        console.error('Error hiding post:', data);
+        showNotification('Failed to hide post', 'error');
+      }
+    } catch (error) {
+      console.error('Error hiding post:', error);
+      showNotification('Error hiding post', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const getFileTypeProps = (post) => {
+    // Helper function to ensure full URL
+    const ensureFullUrl = (url) => {
+      if (!url) return null;
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        return url;
+      }
+      // Add base URL for relative paths
+      return `https://ouptel.com/${url.replace(/^\//, '')}`;
+    };
+
+    // Handle multiple images from photo_multi array (PRIORITY)
+    if (post?.photo_multi && Array.isArray(post.photo_multi) && post.photo_multi.length > 0) {
+      // Process all images to ensure they have full URLs
+      const processedImages = post.photo_multi.map(img => ({
+        ...img,
+        image: ensureFullUrl(img.image),
+        image_org: ensureFullUrl(img.image_org)
+      }));
+      
+      return { 
+        image: processedImages[0]?.image || processedImages[0]?.image_org,
+        multipleImages: processedImages,
+        hasMultipleImages: processedImages.length > 1
+      };
+    }
+    
+    // Handle single image from postPhoto (PRIORITY)
+    if (post?.postPhoto) {
+      return { image: ensureFullUrl(post.postPhoto) };
+    }
+    
+    // Handle file attachments - but prioritize image detection
+    if (post?.postFile_full) {
+      const url = ensureFullUrl(post.postFile_full);
+      const fileName = post.postFileName || '';
+      const ext = fileName.split('.').pop()?.toLowerCase() || '';
+      
+      // More comprehensive image detection
+      const imageExtensions = ["jpg", "jpeg", "png", "gif", "webp", "bmp", "svg", "tiff", "tif"];
+      const videoExtensions = ["mp4", "mov", "avi", "mkv", "webm", "flv", "wmv", "m4v"];
+      const audioExtensions = ["mp3", "wav", "ogg", "aac", "flac", "wma", "m4a"];
+      
+      // Check if URL contains image-like patterns (for cases where extension might be missing)
+      const urlLooksLikeImage = /\.(jpg|jpeg|png|gif|webp|bmp|svg|tiff|tif)/i.test(url) || 
+                                url.includes('image') || 
+                                url.includes('photo');
+    
+      if (imageExtensions.includes(ext) || urlLooksLikeImage) {
+        return { image: url };
+      } else if (videoExtensions.includes(ext)) {
+        return { video: url };
+      } else if (audioExtensions.includes(ext)) {
+        return { audio: url };
+      }
+      // Only show file download for non-media files
+      else if (!imageExtensions.includes(ext) && !videoExtensions.includes(ext) && !audioExtensions.includes(ext)) {
+        return { file: url };
+      }
+    }
+    
+    return {};
   };
   
+  const commentPost = async (post_id, comment = '') => {
+    console.log("comment>>>", comment);
+    setLoading(true);
+    try {
+      const accessToken = localStorage.getItem("access_token");
+      const formData = new URLSearchParams();
+      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
+      formData.append('text', comment);
+      formData.append('post_id', post_id);
+      formData.append('type', 'create');
 
+      const response = await fetch(`https://ouptel.com/api/comments?access_token=${accessToken}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-Requested-With': 'XMLHttpRequest',
+          "Accept": "application/json"
+        },
+        body: formData.toString(),
+      })
+      const data = await response.json();
+      if (data?.api_status === 200) {
+        console.log('Comment posted successfully');
+        
+        // Create a new comment object to add to local state
+        const newComment = {
+          id: Date.now(), // Temporary ID until we get the real one from API
+          text: comment,
+          Orginaltext: comment,
+          time: Math.floor(Date.now() / 1000),
+          publisher: {
+            first_name: 'You', // This should come from user context
+            last_name: '',
+            avatar: '/perimg.png' // This should come from user context
+          }
+        };
+
+        // Update the local comments state immediately
+        setPostComments(prev => {
+          const currentComments = prev[post_id] || [];
+          return {
+            ...prev,
+            [post_id]: [newComment, ...currentComments]
+          };
+        });
+
+        // Update the comment count in the feed
+        setNewFeeds(prev => 
+          prev.map(post => 
+            post.id === post_id 
+              ? { ...post, post_comments: Number(post.post_comments || 0) + 1 }
+              : post
+          )
+        );
+
+        // Return success so PostCard can clear the input
+        return { success: true, comment: newComment };
+      } else {
+        console.error('Error posting comment:', data);
+        return { success: false, error: data };
+      }
+    } catch (error) {
+      console.error('Error posting comment:', error); 
+      return { success: false, error: error.message };
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <>
       {loading && <Loader />}
+      
+      {/* Notification */}
+      {notification.show && (
+        <div className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg transition-all duration-300 ${
+          notification.type === 'success' 
+            ? 'bg-green-500 text-white' 
+            : 'bg-red-500 text-white'
+        }`}>
+          {notification.message}
+        </div>
+      )}
+      
       <div className="min-h-screen bg-[#EDF6F9] relative pb-15 smooth-scroll">
         <div className="max-w-6xl mx-auto px-3 md:px-4 py-4 md:py-6">
           <div className="mb-6 md:mb-8">
@@ -406,7 +610,7 @@ const Home = () => {
             {/* Fixed sticky positioning issue */}
             <div className="sticky top-0 z-30 bg-[#EDF6F9] py-2 -mx-2 md:-mx-4">
               <div className="mx-2 md:mx-4">
-                <QuickActionsSection />
+                <QuickActionsSection fetchNewFeeds={getNewFeeds} />
               </div>
             </div>
 
@@ -424,6 +628,8 @@ const Home = () => {
                   const postId = post?.id;
                   // Get comments for this post from state, with fallback to ref
                   const commentsForPost = postComments[postId] || [];
+
+                  
                   return (
 
 
@@ -433,10 +639,7 @@ const Home = () => {
                       user={post?.publisher}
                       content={post?.postText}
                       blog={post?.blog}
-                      // image={post?.postPhotos}
                       {...getFileTypeProps(post)} 
-                      // audio={post?.postMusic}
-                      // file={post?.postFile}
                       likes={post?.post_likes}
                       comments={post?.post_comments}
                       shares={post?.post_shares}
@@ -449,7 +652,10 @@ const Home = () => {
                       fetchComments={fetchComments}
                       commentsData={commentsForPost}
                       savePost={savePost}
-                    />
+                      reportPost={reportPost}
+                      hidePost={hidePost}
+                      commentPost={commentPost}
+                      />
                   );
                 })
               )}
@@ -476,6 +682,8 @@ const Home = () => {
                   isLiked={likedPosts.has(post.id)}
                   isSaved={savedPosts.has(post.id)}
                   savePost={savePost}
+                  reportPost={reportPost}
+                  hidePost={hidePost}
                 />
               ))}
             </div>
