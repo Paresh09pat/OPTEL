@@ -59,15 +59,11 @@ const Home = () => {
   const [session, setSession] = useState(localStorage.getItem("session_id"));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
+  const [followedUsers, setFollowedUsers] = useState(new Set());
+  const [userStories, setUserStories] = useState([]);
+  const [selectedUserForStories, setSelectedUserForStories] = useState(null);
+  const [showStoriesPreview, setShowStoriesPreview] = useState(false); 
   const [friendSuggestions, setFriendSuggestions] = useState([
-    { id: 1, name: 'Siddharth Verma', username: '@muscleManSid', avatar: '/perimg.png' },
-    { id: 2, name: 'Bhuvan Rana', username: '@beatsByBhuvan', avatar: '/perimg.png' },
-    { id: 3, name: 'Sana Qadri', username: '@sanskariSana', avatar: '/perimg.png' },
-    { id: 4, name: 'Aniket Naik', username: '@athleteAniket', avatar: '/perimg.png' },
-    { id: 5, name: 'Laya Krishnan', username: '@lensByLaya', avatar: '/perimg.png' },
-    { id: 6, name: 'Rajesh Kumar', username: '@rajeshkumar', avatar: '/perimg.png' },
-    { id: 7, name: 'Priya Sharma', username: '@priyasharma', avatar: '/perimg.png' },
   ]);
 
   const [newFeeds, setNewFeeds] = useState([]);
@@ -85,12 +81,12 @@ const Home = () => {
   const getNewFeeds = async (type) => {
     const formData = new URLSearchParams();
 
-    if(type){
-      formData.append('filter_by', type);
-      formData.append('f', 'posts');
-      formData.append('s', 'filter_posts');
+    if (type) {
+      formData.append('post_type', type);
+      // formData.append('f', 'posts');
+      // formData.append('s', 'filter_posts');
     }
-  
+
     setLoading(true);
     try {
       setError(null);
@@ -103,13 +99,14 @@ const Home = () => {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json'
         },
         body: formData.toString(),
       })
       const data = await response.json();
       console.log("📰 Setting newFeeds:", data?.data);
       setNewFeeds(data?.data);
-      
+
       // Initialize saved posts from API data
       if (data?.data) {
         const savedFromAPI = new Set();
@@ -124,7 +121,7 @@ const Home = () => {
           return combined;
         });
       }
-      
+
       setLoading(false);
     } catch (error) {
       console.error('Error fetching news:', error);
@@ -146,10 +143,38 @@ const Home = () => {
 
   ];
 
-  const handleAddFriend = useCallback((friendId) => {
-    setFriendSuggestions(prev =>
-      prev.filter(friend => friend.id !== friendId)
-    );
+  const followUser = useCallback(async (user_id) => {
+    setLoading(true);
+
+    try {
+      const accessToken = localStorage.getItem("access_token");
+      const formData = new URLSearchParams();
+      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
+      // formData.append('action', 'follow');
+      formData.append('user_id', user_id);
+      const response = await fetch(`https://ouptel.com/api/follow-user?access_token=${accessToken}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-Requested-With': 'XMLHttpRequest',
+          "Accept": "application/json"
+        },
+        body: formData.toString(),
+      })
+      const data = await response.json();
+      if (data?.api_status === 200) {
+        console.log("User followed successfully");
+        setFollowedUsers(prev => {
+          const newSet = new Set(prev);
+          newSet.add(user_id);
+          return newSet;
+        });
+      }
+    } catch (error) {
+      console.error('Error following user:', error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const handleLike = async (post_id) => {
@@ -223,7 +248,7 @@ const Home = () => {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           'X-Requested-With': 'XMLHttpRequest',
-          "Accept": "application/json"
+          'Accept': 'application/json'
         },
         body: formData.toString(),
       })
@@ -350,8 +375,8 @@ const Home = () => {
 
         // Update the saved state in newFeeds
         setNewFeeds(prev =>
-          prev.map(post => 
-            post.id === post_id 
+          prev.map(post =>
+            post.id === post_id
               ? { ...post, is_post_saved: !wasSaved }
               : post
           )
@@ -455,35 +480,35 @@ const Home = () => {
         image: ensureFullUrl(img.image),
         image_org: ensureFullUrl(img.image_org)
       }));
-      
-      return { 
+
+      return {
         image: processedImages[0]?.image || processedImages[0]?.image_org,
         multipleImages: processedImages,
         hasMultipleImages: processedImages.length > 1
       };
     }
-    
+
     // Handle single image from postPhoto (PRIORITY)
     if (post?.postPhoto) {
       return { image: ensureFullUrl(post.postPhoto) };
     }
-    
+
     // Handle file attachments - but prioritize image detection
     if (post?.postFile_full) {
       const url = ensureFullUrl(post.postFile_full);
       const fileName = post.postFileName || '';
       const ext = fileName.split('.').pop()?.toLowerCase() || '';
-      
+
       // More comprehensive image detection
       const imageExtensions = ["jpg", "jpeg", "png", "gif", "webp", "bmp", "svg", "tiff", "tif"];
       const videoExtensions = ["mp4", "mov", "avi", "mkv", "webm", "flv", "wmv", "m4v"];
       const audioExtensions = ["mp3", "wav", "ogg", "aac", "flac", "wma", "m4a"];
-      
+
       // Check if URL contains image-like patterns (for cases where extension might be missing)
-      const urlLooksLikeImage = /\.(jpg|jpeg|png|gif|webp|bmp|svg|tiff|tif)/i.test(url) || 
-                                url.includes('image') || 
-                                url.includes('photo');
-    
+      const urlLooksLikeImage = /\.(jpg|jpeg|png|gif|webp|bmp|svg|tiff|tif)/i.test(url) ||
+        url.includes('image') ||
+        url.includes('photo');
+
       if (imageExtensions.includes(ext) || urlLooksLikeImage) {
         return { image: url };
       } else if (videoExtensions.includes(ext)) {
@@ -496,10 +521,10 @@ const Home = () => {
         return { file: url };
       }
     }
-    
+
     return {};
   };
-  
+
   const commentPost = async (post_id, comment = '') => {
     console.log("comment>>>", comment);
     setLoading(true);
@@ -521,9 +546,11 @@ const Home = () => {
         body: formData.toString(),
       })
       const data = await response.json();
+
+
       if (data?.api_status === 200) {
-        console.log('Comment posted successfully');
-        
+
+
         // Create a new comment object to add to local state
         const newComment = {
           id: Date.now(), // Temporary ID until we get the real one from API
@@ -547,9 +574,9 @@ const Home = () => {
         });
 
         // Update the comment count in the feed
-        setNewFeeds(prev => 
-          prev.map(post => 
-            post.id === post_id 
+        setNewFeeds(prev =>
+          prev.map(post =>
+            post.id === post_id
               ? { ...post, post_comments: Number(post.post_comments || 0) + 1 }
               : post
           )
@@ -562,49 +589,185 @@ const Home = () => {
         return { success: false, error: data };
       }
     } catch (error) {
-      console.error('Error posting comment:', error); 
+      console.error('Error posting comment:', error);
       return { success: false, error: error.message };
     } finally {
       setLoading(false);
     }
   }
 
+
+  const getSession = async () => {
+    try {
+
+      setLoading(true);
+      setError(null);
+
+      // Get access token from localStorage
+      const accessToken = localStorage.getItem("access_token");
+      const userId = localStorage.getItem("user_id");
+
+      const formData = new URLSearchParams();
+      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
+      // formData.append('user_id', userId);
+      formData.append('type', 'get');
+      const response = await fetch(`https://ouptel.com/api/sessions?access_token=${accessToken}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: formData.toString(),
+      })
+
+      const data = await response.json();
+      if (data?.api_status === 200) {
+
+        localStorage.setItem("session_id", data?.data[0]?.session_id);
+
+      } else {
+        setError(response?.data?.errors?.error_text);
+      }
+      setSession(data?.data[0]?.session_id);
+
+      setLoading(false);
+
+    } catch (error) {
+      console.error('Error fetching events:', error);
+      setError(error.message);
+      setLoading(false);
+    }
+
+  }
+
+
+  const getFriendSuggestions = async () => {
+    setLoading(true);
+    try {
+      const accessToken = localStorage.getItem("access_token");
+      const formData = new URLSearchParams();
+      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
+      formData.append('type', 'users');
+      formData.append('limit', '10');
+      const response = await fetch(`https://ouptel.com/api/fetch-recommended?access_token=${accessToken}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-Requested-With': 'XMLHttpRequest',
+          "Accept": "application/json"
+        },
+        body: formData.toString(),
+      })
+      const data = await response.json();
+      if (data?.api_status === 200) {
+        setFriendSuggestions(data?.data);
+      } else {
+        setError(response?.data?.errors?.error_text);
+      }
+    } catch (error) {
+      console.error('Error fetching friend suggestions:', error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const getuserStories = async () => {
+    setLoading(true);
+   try {
+    const accessToken = localStorage.getItem("access_token");
+    const formData = new URLSearchParams();
+    formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
+    // formData.append('type', 'get');
+    const response = await fetch(`https://ouptel.com/api/get-user-stories?access_token=${accessToken}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-Requested-With': 'XMLHttpRequest',
+        "Accept": "application/json"
+      },
+      body: formData.toString(),
+    })
+    const data = await response.json();
+
+    
+    if (data?.api_status === 200) {
+      // Extract the stories array from the response
+      const storiesData = data?.stories || data?.data || [];
+     
+      setUserStories(storiesData);
+    } else {
+      console.error('Error fetching stories:', data);
+      setError(data?.errors?.error_text || 'Failed to fetch stories');
+    }
+    setLoading(false);  
+   } catch (error) {
+    console.error('Error fetching user stories:', error);
+    setError(error.message);
+   } finally {
+    setLoading(false);
+   }
+  }
+
+ 
+ 
+  const handleStoryClick = (user) => {
+  
+    setSelectedUserForStories(user);
+    setShowStoriesPreview(true);
+  };
+
+  useEffect(() => {
+    getSession();
+    getFriendSuggestions();
+    getuserStories();
+  }, []);
+
   return (
     <>
       {loading && <Loader />}
-      
+
       {/* Notification */}
       {notification.show && (
-        <div className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg transition-all duration-300 ${
-          notification.type === 'success' 
-            ? 'bg-green-500 text-white' 
+        <div className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg transition-all duration-300 ${notification.type === 'success'
+            ? 'bg-green-500 text-white'
             : 'bg-red-500 text-white'
-        }`}>
+          }`}>
           {notification.message}
         </div>
       )}
-      
+
       <div className="min-h-screen bg-[#EDF6F9] relative pb-15 smooth-scroll">
         <div className="max-w-6xl mx-auto px-3 md:px-4 py-4 md:py-6">
           <div className="mb-6 md:mb-8">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 md:mb-6 px-2 md:px-4">Feed</h2>
             <div className="px-2 md:px-4">
               <ScrollableSection>
-                {feedCards.map((card, index) => (
-                  <FeedCard
-                    key={index}
-                    image={card.image}
-                    username={card.username}
-                    isVideo={card.isVideo}
-                  />
-                ))}
+                                 {Array.isArray(userStories || []) && (userStories || []).length > 0 ? (
+                   (userStories || []).map((user, index) => {
+                     console.log('User data:', user);
+                     console.log('First story thumbnail:', user.stories?.[0]?.thumbnail);
+                     return (
+                       <FeedCard
+                         key={user.user_id || index}
+                         image={user.stories && user.stories.length > 0 ? user.stories[0].thumbnail : user.avatar}
+                         username={user.username || user.first_name}
+                         isVideo={false}
+                         avatar={user.avatar}
+                         onClick={() => handleStoryClick(user)}
+                       />
+                     );
+                   })
+                 ) : (
+                  ""
+                 )}
               </ScrollableSection>
             </div>
           </div>
 
           <div className="px-2 md:px-4 relative">
             <div className='mb-4 md:mb-6'>
-              <CreatePostSection fetchNewFeeds= {getNewFeeds} />
+              <CreatePostSection fetchNewFeeds={getNewFeeds} />
             </div>
 
             {/* Fixed sticky positioning issue */}
@@ -618,7 +781,8 @@ const Home = () => {
               <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6">Friend Suggestions</h2>
               <InfiniteFriendSuggestions
                 friendSuggestions={friendSuggestions}
-                onAddFriend={handleAddFriend}
+                onAddFriend={followUser}
+                followedUsers={followedUsers}
               />
             </div>
 
@@ -629,7 +793,8 @@ const Home = () => {
                   // Get comments for this post from state, with fallback to ref
                   const commentsForPost = postComments[postId] || [];
 
-                  
+              
+
                   return (
 
 
@@ -639,7 +804,10 @@ const Home = () => {
                       user={post?.publisher}
                       content={post?.postText}
                       blog={post?.blog}
-                      {...getFileTypeProps(post)} 
+                      iframelink={post?.postYoutube}
+                      postfile={post?.postFile}
+                      postFileName={post?.postFileName}
+                      {...getFileTypeProps(post)}
                       likes={post?.post_likes}
                       comments={post?.post_comments}
                       shares={post?.post_shares}
@@ -655,7 +823,7 @@ const Home = () => {
                       reportPost={reportPost}
                       hidePost={hidePost}
                       commentPost={commentPost}
-                      />
+                    />
                   );
                 })
               )}
@@ -690,6 +858,76 @@ const Home = () => {
           </div>
         </div>
       </div>
+
+      {/* Stories Preview Modal */}
+      {showStoriesPreview && selectedUserForStories && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-md w-full max-h-[80vh] h-full overflow-y-auto">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <img
+                  src={selectedUserForStories.avatar || "/perimg.png"}
+                  alt={selectedUserForStories.username || selectedUserForStories.first_name}
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {selectedUserForStories.first_name} {selectedUserForStories.last_name}
+                  </h3>
+                  <p className="text-sm text-gray-500">@{selectedUserForStories.username}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowStoriesPreview(false);
+                  setSelectedUserForStories(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="p-4">
+              {selectedUserForStories.stories && selectedUserForStories.stories.length > 0 ? (
+                <div className="space-y-4">
+                  {selectedUserForStories.stories.map((story, index) => (
+                    <div key={story.id} className="border border-gray-200 rounded-lg p-3">
+                      {story.thumbnail && (
+                        <img
+                          src={story.thumbnail}
+                          alt={story.description || "Story"}
+                          className="w-full h-full object-cover rounded-lg mb-3"
+                        />
+                      )}
+                      <div className="space-y-2">
+                        <p className="text-sm text-gray-600">
+                          {story.time_text || "Recently"}
+                        </p>
+                        {story.description && (
+                          <p className="text-gray-900">{story.description}</p>
+                        )}
+                        <div className="flex items-center justify-between text-sm text-gray-500">
+                          <span>{story.view_count || 0} views</span>
+                          {story.is_viewed ? (
+                            <span className="text-green-600">Viewed</span>
+                          ) : (
+                            <span className="text-blue-600">New</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  No stories available
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

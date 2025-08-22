@@ -1,10 +1,10 @@
 import { memo, useState, useEffect, useCallback } from 'react';
 import { Heart, MessageCircle, Share, Bookmark, MoreHorizontal, Smile, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown, X } from 'lucide-react';
 import { IoBookmark } from "react-icons/io5";
-import { FaPaperPlane } from 'react-icons/fa';
+import { FaFilePdf, FaPaperPlane } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import SharePopup from './SharePopup';
-const PostCard = ({ user, content, image, video, audio, file, likes, comments, shares, saves, timeAgo, post_id, handleLike, handleDislike, isLiked, fetchComments, commentsData, savePost, isSaved, blog, multipleImages, hasMultipleImages, reportPost, hidePost, commentPost }) => {
+const PostCard = ({ user, content, image, video, audio, file, likes, comments, shares, saves, timeAgo, post_id, handleLike, handleDislike, isLiked, fetchComments, commentsData, savePost, isSaved, blog, multipleImages, hasMultipleImages, reportPost, hidePost, commentPost, iframelink, postfile, postFileName }) => {
   const navigate = useNavigate();
   const [clickedComments, setClickedComments] = useState(false);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
@@ -21,7 +21,8 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
     }
   }, [commentsData]);
 
-  
+
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       const commentsSection = event.target.closest('[data-comments-section]');
@@ -39,12 +40,12 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
     };
   }, [clickedComments]);
 
-    // Close options menu when clicking outside
+  // Close options menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       const optionsMenu = event.target.closest('[data-options-menu]');
       const threeDotsButton = event.target.closest('[data-three-dots-button]');
-      
+
       if (!optionsMenu && !threeDotsButton) {
         setShowOptionsMenu(false);
       }
@@ -59,7 +60,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
         }
       };
       document.addEventListener('keydown', handleEscape);
-      
+
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
         document.removeEventListener('keydown', handleEscape);
@@ -72,7 +73,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
     const handleClickOutside = (event) => {
       const sharePopup = event.target.closest('[data-share-popup]');
       const shareButton = event.target.closest('[data-share-button]');
-      
+
       if (!sharePopup && !shareButton) {
         setShowSharePopup(false);
       }
@@ -87,7 +88,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
         }
       };
       document.addEventListener('keydown', handleEscape);
-      
+
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
         document.removeEventListener('keydown', handleEscape);
@@ -170,7 +171,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
   const handleSocialShare = useCallback((platform) => {
     const postUrl = `${window.location.origin}/post/${post_id}`;
     const postText = content || 'Check out this post!';
-    
+
     let shareUrl = '';
     switch (platform) {
       case 'facebook':
@@ -185,17 +186,17 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
       default:
         return;
     }
-    
+
     window.open(shareUrl, '_blank', 'width=600,height=400');
     setShowSharePopup(false);
   }, [post_id, content]);
 
   const handleCommentPost = useCallback(async () => {
     if (!commentInput.trim()) return; // Don't post empty comments
-    
+
     const comment = commentInput;
     console.log(comment);
-    
+
     try {
       const result = await commentPost(post_id, commentInput);
       if (result.success) {
@@ -270,7 +271,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
           )}
 
           {/* Share Popup */}
-          
+
         </div>
       </div>
 
@@ -349,20 +350,65 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
 
       {/* Handle video */}
       {video && <video className="w-full h-auto object-cover" controls src={video}></video>}
+      {iframelink !== "" && <iframe src={`https://www.youtube.com/embed/${iframelink}`} className="w-full h-[300px] object-cover" controls></iframe>}
 
       {/* Handle audio */}
       {audio && <audio src={audio} controls className="w-full h-auto object-cover" />}
 
-      {/* Handle file - only for non-media files */}
-      {/* {file && !image && !multipleImages && !video && !audio && <a href={file} download className="block w-full p-4 bg-gray-100 hover:bg-gray-200 transition-colors rounded-lg text-center">
-  <div className="flex items-center justify-center space-x-2">
-    <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-    </svg>
-    <span className="text-gray-700 font-medium">Download File</span>
-  </div>
-</a>} */}
+      {postfile !== "" && (
+  <>
+    {/* If file is PDF */}
+    {postfile.endsWith(".pdf") && (
+      <a 
+        href={postfile} 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="flex flex-col py-2 items-center justify-center space-x-2 w-full"
+      >
+        <div className="flex items-center justify-center space-x-2 w-[90%] h-full bg-gray-100 hover:bg-gray-200 transition-colors rounded-lg text-center p-4">
+          {postFileName !== "" && (
+            <span className="text-gray-700 font-medium text-sm">
+              {postFileName?.slice(0, 40) + "..."}
+            </span>
+          )}
+          <FaFilePdf className="w-6 h-6 text-gray-600" />
+          <span className="text-gray-700 font-medium text-sm">Open PDF</span>
+        </div>
+      </a>
+    )}
 
+    {/* If file is MP3 */}
+    {postfile.endsWith(".mp3") && (
+  <div className="flex flex-col py-2 items-center justify-center w-full">
+    <audio
+      controls
+      className="w-[90%]"
+      onPlay={(e) => {
+        // Pause all other audio elements when this one plays
+        const audios = document.querySelectorAll("audio");
+        audios.forEach((audio) => {
+          if (audio !== e.target) {
+            audio.pause();
+          }
+        });
+      }}
+    >
+      <source src={postfile} type="audio/mpeg" />
+      Your browser does not support the audio tag.
+    </audio>
+
+    {postFileName !== "" && (
+      <span className="text-gray-700 font-medium text-sm mt-2">
+        {postFileName?.slice(0, 40) + "..."}
+      </span>
+    )}
+  </div>
+)}
+
+  </>
+)}
+
+     
 
       <div className="p-4">
         <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
@@ -401,7 +447,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
 
           </div>
 
-          <button 
+          <button
             data-share-button
             className="flex items-center space-x-2 text-gray-600 hover:text-green-500 transition-colors cursor-pointer"
             onClick={toggleSharePopup}
@@ -510,18 +556,18 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                 }
               }}
             />
-            <div className="flex items-center space-x-2 ml-2 flex-shrink-0">
+            <div className="flex items-center space-x-6 ml-2 flex-shrink-0">
               <button className="text-gray-400 hover:text-gray-600 cursor-pointer">
-                <Share className="w-4 h-4" />
+                <Share className="w-6 h-6" />
               </button>
               <button className="text-gray-400 hover:text-gray-600 cursor-pointer">
-                <Smile className="w-4 h-4" />
+                <Smile className="w-6 h-6" />
               </button>
               <button
                 className="text-blue-500 hover:text-blue-600 cursor-pointer"
                 onClick={handleCommentPost}
               >
-                <FaPaperPlane className="w-4 h-4" />
+                <FaPaperPlane className="w-6 h-6" />
               </button>
             </div>
           </div>
@@ -541,10 +587,10 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
         onSocialShare={handleSocialShare}
         setLoading={setLoading}
         loading={loading}
-        />
-      
+      />
+
     </div>
-    
+
   );
 }
 

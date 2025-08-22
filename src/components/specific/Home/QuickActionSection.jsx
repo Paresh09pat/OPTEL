@@ -10,13 +10,14 @@ const QuickActionsSection = ({ className = '', fetchNewFeeds }) => {
       icon: () => <Icon icon="iconoir:post-solid" width="30" height="30" style={{ color: '#9748ff' }} />,
       color: 'text-purple-500',
       name: "text",
-      tooltip: 'Texts',
+      tooltip: 'Texts', 
+      // 'photos','video','music','files','maps','text'
 
     },
     {
       icon: () => <Icon icon="solar:album-bold" width="30" height="30" style={{ color: '#8BC34B' }} />,
       color: 'text-green-500',
-      name: "Images",
+      name: "photos",
       tooltip: 'images'
     },
     {
@@ -34,33 +35,33 @@ const QuickActionsSection = ({ className = '', fetchNewFeeds }) => {
     {
       icon: () => <Icon icon="mdi:audio-video" width="30" height="30" style={{ color: '#01A9F4' }} />,
       color: 'text-blue-500',
-      name: "audio",
+      name: "music",
       tooltip: 'audio'
     },
-    // {
-    //   icon: () => <Icon icon="fluent:document-one-page-multiple-24-filled" width="30" height="30" style={{ color: '#F69F58' }} />,
-    //   color: 'text-orange-500',
+    {
+      icon: () => <Icon icon="fluent:document-one-page-multiple-24-filled" width="30" height="30" style={{ color: '#F69F58' }} />,
+      color: 'text-orange-500',
 
-    //   tooltip: 'Pages'
-    // },
-    // {
-    //   icon: () => <Icon icon="bxl:blogger" width="30" height="30" style={{ color: '#F25D4D' }} />,
-    //   color: 'text-red-500',
+      tooltip: 'Pages'
+    },
+    {
+      icon: () => <Icon icon="bxl:blogger" width="30" height="30" style={{ color: '#F25D4D' }} />,
+      color: 'text-red-500',
 
-    //   tooltip: 'Blog'
-    // },
-    // {
-    //   icon: () => <Icon icon="mingcute:news-fill" width="30" height="30" style={{ color: '#009DA0' }} />,
-    //   color: 'text-teal-500',
+      tooltip: 'Blog'
+    },
+    {
+      icon: () => <Icon icon="mingcute:news-fill" width="30" height="30" style={{ color: '#009DA0' }} />,
+      color: 'text-teal-500',
 
-    //   tooltip: 'Articles'
-    // },
-    // {
-    //   icon: () => <Icon icon="hugeicons:new-job" width="30" height="30" style={{ color: '#4CAF50' }} />,
-    //   color: 'text-green-500',
+      tooltip: 'Articles'
+    },
+    {
+      icon: () => <Icon icon="hugeicons:new-job" width="30" height="30" style={{ color: '#4CAF50' }} />,
+      color: 'text-green-500',
 
-    //   tooltip: 'Jobs'
-    // },
+      tooltip: 'Jobs'
+    },
   ];
 
   return (

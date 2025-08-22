@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
 
-const InfiniteFriendSuggestions = ({ friendSuggestions, onAddFriend }) => {
+const InfiniteFriendSuggestions = ({ friendSuggestions, onAddFriend, followedUsers }) => {
     const [displayedFriends, setDisplayedFriends] = useState([]);
     const scrollRef = useRef(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -8,27 +8,12 @@ const InfiniteFriendSuggestions = ({ friendSuggestions, onAddFriend }) => {
     const scrollCheckRef = useRef(null);
     const isLoadingRef = useRef(false);
 
-    const generateMoreFriends = useCallback(() => {
-        const names = ['Alex Johnson', 'Sarah Wilson', 'Mike Chen', 'Emma Davis', 'David Kumar', 'Lisa Zhang', 'James Rodriguez', 'Anna Patel', 'Tom Brown', 'Maria Garcia', 'John Smith', 'Sophie Turner', 'Chris Lee', 'Rachel Green', 'Daniel Clark', 'Nina Sharma'];
-        const usernames = ['@alex_dev', '@sarah_designer', '@mike_photo', '@emma_writer', '@david_code', '@lisa_art', '@james_music', '@anna_travel', '@tom_fitness', '@maria_chef', '@john_travel', '@sophie_reads', '@chris_tech', '@rachel_yoga', '@daniel_art', '@nina_dance'];
-
-        const newFriends = [];
-        for (let i = 0; i < 20; i++) {
-            const randomIndex = Math.floor(Math.random() * names.length);
-            newFriends.push({
-                id: Date.now() + Math.random() + i,
-                name: names[randomIndex],
-                username: usernames[randomIndex],
-                avatar: '/api/placeholder/160/128'
-            });
-        }
-        return newFriends;
-    }, []);
+   
 
     useEffect(() => {
-        const initialFriends = [...friendSuggestions, ...generateMoreFriends()];
+        const initialFriends = [...friendSuggestions];
         setDisplayedFriends(initialFriends);
-    }, [friendSuggestions, generateMoreFriends]);
+    }, [friendSuggestions]);
 
     // Throttled scroll check function
     const checkScrollButtons = useCallback(() => {
@@ -79,7 +64,7 @@ const InfiniteFriendSuggestions = ({ friendSuggestions, onAddFriend }) => {
                 if (scrollLeft + clientWidth >= scrollWidth - 500) {
                     isLoadingRef.current = true;
                     requestAnimationFrame(() => {
-                        setDisplayedFriends(prev => [...prev, ...generateMoreFriends()]);
+                        setDisplayedFriends(prev => [...prev, ...friendSuggestions]);
                         setTimeout(() => {
                             isLoadingRef.current = false;
                         }, 300);
@@ -92,7 +77,7 @@ const InfiniteFriendSuggestions = ({ friendSuggestions, onAddFriend }) => {
                 setTimeout(checkScrollButtons, 300);
             });
         }
-    }, [checkScrollButtons, generateMoreFriends]);
+        }, [checkScrollButtons, friendSuggestions]);
 
     // Throttled scroll handler
     const handleScroll = useCallback(() => {
@@ -140,6 +125,7 @@ const InfiniteFriendSuggestions = ({ friendSuggestions, onAddFriend }) => {
                         key={friend.id}
                         user={friend}
                         onAddFriend={() => onAddFriend(friend.id)}
+                        followedUsers={followedUsers}
                     />
                 ))}
             </div>
@@ -150,11 +136,13 @@ const InfiniteFriendSuggestions = ({ friendSuggestions, onAddFriend }) => {
 export default memo(InfiniteFriendSuggestions);
 
 
-const FriendSuggestionCard = ({ user, onAddFriend }) => (
+    const FriendSuggestionCard = ({ user, onAddFriend, followedUsers }) => {
+        const isFollowed = followedUsers.has(user.id);
+        return (
     <div className="bg-white rounded-xl shadow-sm border border-[#808080] overflow-hidden min-w-[150px] max-w-[150px] md:min-w-[160px] md:max-w-[160px] flex-shrink-0 hover:shadow-md transition-shadow duration-200">
         <div className="relative">
             <img
-                src="/perimg.png"
+                src={user?.avatar}
                 alt={user.name}
                 className="w-full h-28 md:h-32 object-cover"
             />
@@ -163,11 +151,16 @@ const FriendSuggestionCard = ({ user, onAddFriend }) => (
             <h3 className="font-semibold text-gray-900 text-xs md:text-sm mb-1 truncate">{user.name}</h3>
             <p className="text-xs text-gray-500 mb-3 truncate">{user.username}</p>
             <button
-                onClick={onAddFriend}
-                className="bg-white border border-gray-300 text-gray-700 px-2 md:px-3 py-1.5 rounded-md text-xs md:text-sm hover:bg-gray-50 transition-colors w-full font-medium"
-            >
-                Add Friend
+               onClick={!isFollowed ? onAddFriend : undefined}
+               className={`px-2 md:px-3 py-1.5 rounded-md text-xs md:text-sm w-full font-medium transition-colors 
+                 ${isFollowed 
+                   ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
+                   : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                 }`}
+                >
+                {isFollowed ? "Requested" : "Add Friend"}
             </button>
         </div>
     </div>
 );
+    }
