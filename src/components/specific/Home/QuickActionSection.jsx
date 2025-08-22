@@ -2,60 +2,64 @@ import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 
-const QuickActionsSection = ({ className = '' }) => {
+const QuickActionsSection = ({ className = '', fetchNewFeeds }) => {
+
+
   const actions = [
     {
       icon: () => <Icon icon="iconoir:post-solid" width="30" height="30" style={{ color: '#9748ff' }} />,
       color: 'text-purple-500',
-      path: '/',
-      tooltip: 'Posts'
+      name: "text",
+      tooltip: 'Texts', 
+      // 'photos','video','music','files','maps','text'
+
     },
     {
       icon: () => <Icon icon="solar:album-bold" width="30" height="30" style={{ color: '#8BC34B' }} />,
       color: 'text-green-500',
-      path: '/albums',
-      tooltip: 'Albums'
+      name: "photos",
+      tooltip: 'images'
     },
     {
       icon: () => <Icon icon="solar:folder-bold" width="30" height="30" style={{ color: '#F44336' }} />,
       color: 'text-red-500',
-      path: '/my-albums',
-      tooltip: 'My Albums'
+      name: "files",
+      tooltip: 'files'
     },
     {
-      icon: () => <Icon icon="material-symbols:forum" width="30" height="30" style={{ color: '#8BC34B' }} />,
+      icon: () => <Icon icon="vscode-icons:file-type-video" width="30" height="30" style={{ color: '#8BC34B' }} />,
       color: 'text-green-600',
-      path: '/forum',
-      tooltip: 'Forum'
+      name: "video",
+      tooltip: 'videos'
     },
     {
-      icon: () => <Icon icon="mingcute:group-3-fill" width="30" height="30" style={{ color: '#01A9F4' }} />,
+      icon: () => <Icon icon="mdi:audio-video" width="30" height="30" style={{ color: '#01A9F4' }} />,
       color: 'text-blue-500',
-      path: '/my-groups',
-      tooltip: 'Groups'
+      name: "music",
+      tooltip: 'audio'
     },
     {
       icon: () => <Icon icon="fluent:document-one-page-multiple-24-filled" width="30" height="30" style={{ color: '#F69F58' }} />,
       color: 'text-orange-500',
-      path: '/my-pages',
+
       tooltip: 'Pages'
     },
     {
       icon: () => <Icon icon="bxl:blogger" width="30" height="30" style={{ color: '#F25D4D' }} />,
       color: 'text-red-500',
-      path: '/blog',
+
       tooltip: 'Blog'
     },
     {
       icon: () => <Icon icon="mingcute:news-fill" width="30" height="30" style={{ color: '#009DA0' }} />,
       color: 'text-teal-500',
-      path: '/article',
+
       tooltip: 'Articles'
     },
     {
       icon: () => <Icon icon="hugeicons:new-job" width="30" height="30" style={{ color: '#4CAF50' }} />,
       color: 'text-green-500',
-      path: '/jobs',
+
       tooltip: 'Jobs'
     },
   ];
@@ -64,16 +68,17 @@ const QuickActionsSection = ({ className = '' }) => {
     <div className={`bg-white rounded-2xl shadow-sm border border-[#808080] py-[8px] px-3 ${className}`}>
       <div className="flex items-center justify-between overflow-hidden space-x-1 md:space-x-2">
         {actions.map((action, index) => (
-          <Link to={action.path} key={index} className="flex-shrink-0">
-            <button
-              className={`flex flex-col items-center space-y-1 md:space-y-2`}
-              title={action.tooltip}
-            >
-              <div className={`w-7 h-7  rounded-xl ${action.bg} flex items-center justify-center cursor-pointer`}>
-                <action.icon />
-              </div>
-            </button>
-          </Link>
+
+          <button
+            className={`flex flex-col items-center space-y-1 md:space-y-2`}
+            title={action.tooltip}
+            onClick={() => fetchNewFeeds(action.name)}
+          >
+            <div className={`w-7 h-7  rounded-xl ${action.bg} flex items-center justify-center cursor-pointer`}>
+              <action.icon />
+            </div>
+          </button>
+
         ))}
       </div>
     </div>
