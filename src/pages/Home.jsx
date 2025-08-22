@@ -79,6 +79,7 @@ const Home = () => {
   const [notification, setNotification] = useState({ show: false, message: '', type: 'success' });
 
   const getNewFeeds = async (type) => {
+    setLoading(true);
     const formData = new URLSearchParams();
 
     if (type) {
@@ -87,7 +88,7 @@ const Home = () => {
       // formData.append('s', 'filter_posts');
     }
 
-    setLoading(true);
+   
     try {
       setError(null);
 
@@ -122,10 +123,12 @@ const Home = () => {
         });
       }
 
-      setLoading(false);
+     
     } catch (error) {
       console.error('Error fetching news:', error);
       setError(error.message);
+     
+    }finally{
       setLoading(false);
     }
   }
@@ -598,9 +601,10 @@ const Home = () => {
 
 
   const getSession = async () => {
+    setLoading(true);
     try {
 
-      setLoading(true);
+     
       setError(null);
 
       // Get access token from localStorage
@@ -630,11 +634,13 @@ const Home = () => {
       }
       setSession(data?.data[0]?.session_id);
 
-      setLoading(false);
+
 
     } catch (error) {
       console.error('Error fetching events:', error);
       setError(error.message);
+     
+    }finally{
       setLoading(false);
     }
 
