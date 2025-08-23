@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import Loader from '../components/loading/Loader';
 const BlogDetailed = () => {
     const { blogId } = useParams();
-    console.log("🚀 ~ BlogDetailed ~ blogId:", blogId)
     const [blog, setBlog] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -36,7 +35,6 @@ const BlogDetailed = () => {
         getBlog();
     }, []);
 
-    console.log("🚀 ~ BlogDetailed ~ blog:", blog)
 
     if (loading) {
         return <Loader />;
