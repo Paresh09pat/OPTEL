@@ -79,20 +79,19 @@ const Home = () => {
   const [notification, setNotification] = useState({ show: false, message: '', type: 'success' });
 
   const getNewFeeds = async (type) => {
-    setLoading(true);
     const formData = new URLSearchParams();
-
+    
     if (type) {
       formData.append('post_type', type);
       // formData.append('f', 'posts');
       // formData.append('s', 'filter_posts');
     }
 
-   
+    
     try {
       setError(null);
-
       const accessToken = localStorage.getItem("access_token");
+      setLoading(true);
       formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
       formData.append('type', 'get_news_feed');
       const response = await fetch(`https://ouptel.com/api/posts?access_token=${accessToken}`, {
@@ -529,7 +528,7 @@ const Home = () => {
   };
 
   const commentPost = async (post_id, comment = '') => {
-    console.log("comment>>>", comment);
+   
     setLoading(true);
     try {
       const accessToken = localStorage.getItem("access_token");
@@ -829,6 +828,7 @@ const Home = () => {
                       reportPost={reportPost}
                       hidePost={hidePost}
                       commentPost={commentPost}
+                      getNewsFeed={getNewFeeds}
                     />
                   );
                 })

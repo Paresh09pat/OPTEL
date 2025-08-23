@@ -43,7 +43,7 @@ const MainLayout = () => {
         </button>
 
         <div className="flex items-center">
-          <img src="/logo.png" alt="Optel Logo" className="h-8" />
+          <img src="/op_logo.png" alt="Optel Logo" className="w-[8rem] aspect-1" />
         </div>
 
         <button
