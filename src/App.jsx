@@ -58,7 +58,7 @@ function App() {
           <Route path="/article" element={<Article />} />
           <Route path="/jobs" element={<Jobs />} />
           <Route path="/more" element={<More />} />
-          <Route path="/chat-detailed" element={<ChatDetailed />} />
+          <Route path="/chat-detailed/:chatId" element={<ChatDetailed />} />
           <Route path="/my-albums" element={<MyAlbums />} />
           <Route path="/my-albums/:albumTitle" element={<FullAlbumView />} />
           <Route path="/my-albums/create" element={<CreateAlbum />} />

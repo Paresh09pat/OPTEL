@@ -1,16 +1,56 @@
-import React, { useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { FaCheck } from 'react-icons/fa'
+import { useParams } from 'react-router-dom'
 
 const ChatDetailed = () => {
+    const { chatId } = useParams();
+    console.log(chatId, 'chatId');
     const chatContainerRef = useRef(null)
+    const [chatMessages, setChatMessages] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const getchatmessages = async () => {
+        setLoading(true);
+        try {
+            const accessToken = localStorage.getItem("access_token");
+            const userid = localStorage.getItem("user_id");
+            const sessionid = localStorage.getItem("session_id");
+            const formData = new URLSearchParams();
 
+            formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
+            formData.append('recipient_id', chatId);
+            formData.append('s', sessionid);
+            formData.append('user_id', userid);
+            const response = await fetch(`https://ouptel.com/app_api.php?application=phone&type=get_user_messages`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    "Accept": "application/json"
+                },
+                body: formData.toString(),
+            })
+            const data = await response.json();
+            console.log(data, 'data-detailed');
+            if (data?.api_status === "200") {
+                setChatMessages(data?.messages);
+            }
+        } catch (error) {
+            console.log(error);
+        } finally {
+            setLoading(false);
+        }
+    }
+    useEffect(() => {
+        getchatmessages();
+    }, [chatId]);
+    console.log(chatMessages, 'chatMessages-detailed');
     // Sample chat messages with different dates
-    const chatMessages = [
+    const chatMessagess = [
         // Yesterday's messages
         {
             id: 1,
             text: "Hey! How's the project going?",
-            time: "10:30 AM",
+            time_text: "10:30 AM",
             date: "December 13, 2024",
             isMe: false,
             isDelivered: true,
@@ -47,7 +87,7 @@ const ChatDetailed = () => {
             isRead: true,
             avatar: "/perimg.png"
         },
-        
+
         // Day before yesterday's messages
         {
             id: 5,
@@ -99,7 +139,7 @@ const ChatDetailed = () => {
             isRead: true,
             avatar: "/perimg.png"
         },
-        
+
         // Today's messages
         {
             id: 10,
@@ -164,14 +204,16 @@ const ChatDetailed = () => {
     ]
 
     // Group messages by date
-    const groupedMessages = chatMessages.reduce((groups, message) => {
-        const date = message.date
-        if (!groups[date]) {
-            groups[date] = []
-        }
-        groups[date].push(message)
-        return groups
-    }, {})
+    // const groupedMessages = chatMessagess.reduce((groups, message) => {
+    //     const date = message.date
+    //     if (!groups[date]) {
+    //         groups[date] = []
+    //     }
+    //     groups[date].push(message)
+    //     return groups
+    // }, {})
+
+    console.log(chatMessages, 'chatMessages');
 
     const DeliveryStatus = ({ isDelivered, isRead }) => (
         <div className="flex items-center justify-center w-4 h-4 bg-[#EDF6F9] rounded-sm ml-2">
@@ -190,6 +232,20 @@ const ChatDetailed = () => {
             )}
         </div>
     )
+
+    if (loading) {
+        return <div className="flex items-center justify-center h-screen">
+            <div className="w-10 h-10 border-t-transparent border-b-transparent border-r-transparent border-l-transparent border-2 border-blue-500 rounded-full animate-spin"></div>
+        </div>
+    }
+
+    function formatToIST(unixTime) {
+        return new Intl.DateTimeFormat("en-IN", {
+            timeZone: "Asia/Kolkata",
+            hour: "2-digit",
+            minute: "2-digit",
+        }).format(new Date(unixTime * 1000));
+    }
 
     return (
         <div className="bg-[#EDF6F9] w-full h-full pt-8 flex flex-col gap-4">
@@ -216,51 +272,46 @@ const ChatDetailed = () => {
             </div>
 
             {/* Chat Messages Container */}
-            <div 
+            <div
                 className="flex-1 py-4 px-7 border border-[#808080] rounded-lg bg-white overflow-y-auto scrollbar-hide relative"
                 ref={chatContainerRef}
             >
                 {/* Chat Messages Grouped by Date */}
-                {Object.entries(groupedMessages).map(([date, messages]) => (
-                    <div key={date} className="mb-6">
+                {[...chatMessages].reverse().map((message) => (
+                    <div key={message?.time} className="mb-6">
                         {/* Sticky Date Header for each section */}
                         <div className="sticky top-0 z-20 bg-transparent py-2 mb-4 text-center">
                             <span className="bg-gray-100 px-3 py-1 rounded-full text-sm text-gray-600 border border-gray-300">
-                                {date === "December 15, 2024" ? "Today" : 
-                                 date === "December 14, 2024" ? "Yesterday" : 
-                                 date === "December 13, 2024" ? "2 days ago" : date}
+                                {formatToIST(message?.time)}
                             </span>
                         </div>
 
                         {/* Messages for this date */}
                         <div className="space-y-4">
-                            {messages.map((message) => (
-                                <div key={message.id} className={`flex ${message.isMe ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-[70%] ${message.isMe ? 'order-2' : 'order-1'}`}>
-                                        <div className={`rounded-lg p-3 ${
-                                            message.isMe 
-                                                ? 'bg-[#808080] text-white' 
-                                                : 'bg-gray-100 text-gray-800'
+                            <div key={message?.id} className={`flex ${message?.position === "right" ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-[70%] ${message?.position === "right" ? 'order-2' : 'order-1'}`}>
+                                    <div className={`rounded-lg p-3 ${message?.position === "right"
+                                            ? 'bg-[#808080] text-white'
+                                            : 'bg-gray-100 text-gray-800'
                                         }`}>
-                                            <p className="text-sm">{message.text}</p>
-                                            <div className="flex items-center justify-between mt-1">
-                                                <span className="text-xs opacity-70">{message.time}</span>
-                                                {message.isMe && (
-                                                    <DeliveryStatus isDelivered={message.isDelivered} isRead={message.isRead} />
-                                                )}
-                                            </div>
-                                        </div>
-                                        {/* Profile Photo at Bottom */}
-                                        <div className={`flex ${message.isMe ? 'justify-end' : 'justify-start'} mt-1`}>
-                                            <img 
-                                                src={message.avatar} 
-                                                alt="Profile" 
-                                                className="w-6 h-6 rounded-full"
-                                            />
+                                        <p className="text-sm">{message?.text}</p>
+                                        <div className="flex items-center justify-between mt-1">
+                                            <span className="text-xs opacity-70">{message.time}</span>
+                                            {message?.position === "right" && (
+                                                <DeliveryStatus isDelivered={message.isDelivered} isRead={message.isRead} />
+                                            )}
                                         </div>
                                     </div>
+                                    {/* Profile Photo at Bottom */}
+                                    <div className={`flex ${message?.position === "right" ? 'justify-end' : 'justify-start'} mt-1`}>
+                                        <img
+                                            src={message?.avatar_full}
+                                            alt="Profile"
+                                            className="w-6 h-6 rounded-full"
+                                        />
+                                    </div>
                                 </div>
-                            ))}
+                            </div>
                         </div>
                     </div>
                 ))}

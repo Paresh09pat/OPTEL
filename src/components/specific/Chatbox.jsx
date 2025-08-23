@@ -1,57 +1,54 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { FaPlus, FaUser, FaUsers } from 'react-icons/fa'
 import { CiCircleMore } from 'react-icons/ci'
 import { BiBell } from 'react-icons/bi'
 import { FaTimes } from 'react-icons/fa'
 import { HiUsers } from "react-icons/hi";
 import { FaArrowTrendUp } from "react-icons/fa6";
+import { useNavigate } from 'react-router-dom';
 
 
 
 const Chatbox = ({ onClose, isMobile = false }) => {
+
+  const [conversations, setConversations] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+const  getalluserchats = async () => {
+  setLoading(true); 
+  try {
+    const accessToken = localStorage.getItem("access_token");
+    const formData = new URLSearchParams();
+    formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
+    formData.append('data_type', 'users');
+    formData.append('user_type', 'online');
+    const response = await fetch(`https://ouptel.com/api/get_chats?access_token=${accessToken}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-Requested-With': 'XMLHttpRequest',
+        "Accept": "application/json"
+      },
+      body: formData.toString(),
+    });
+    const data = await response.json();
+    if(data?.api_status === 200){
+      setConversations(data?.data);
+    }
+  }catch(error){
+    console.log(error);
+  }
+  finally{
+    setLoading(false);
+  }
+}
+useEffect(() => {
+  getalluserchats();
+}, []);
+
+console.log(conversations, 'conversations');
   // Random conversation data
-  const conversations = [
-    {
-      id: 1,
-      name: "Sana Rizvi",
-      message: "I am sending the design...",
-      time: "now",
-      isOnline: true,
-      avatar: "/perimg.png"
-    },
-    {
-      id: 2,
-      name: "Alex Johnson",
-      message: "Hey! How's the project going?",
-      time: "2m",
-      isOnline: true,
-      avatar: "/perimg.png"
-    },
-    {
-      id: 3,
-      name: "Sarah Chen",
-      message: "Thanks for the meeting notes 📝",
-      time: "15m",
-      isOnline: false,
-      avatar: "/perimg.png"
-    },
-    {
-      id: 4,
-      name: "Mike Torres",
-      message: "Let's schedule a call tomorrow",
-      time: "1h",
-      isOnline: true,
-      avatar: "/perimg.png"
-    },
-    {
-      id: 5,
-      name: "Emma Davis",
-      message: "The presentation looks great!",
-      time: "2h",
-      isOnline: false,
-      avatar: "/perimg.png"
-    },
-  ];
+ 
 
   return (
     <div className={`bg-[#EDF6F9] px-6 py-8 h-full overflow-y-auto scrollbar-hide smooth-scroll pt-0  ${isMobile ? 'w-full' : 'w-full'
@@ -110,8 +107,8 @@ const Chatbox = ({ onClose, isMobile = false }) => {
         </div>
 
         <div className="flex flex-col xl:gap-4 lg:gap-2">
-          {conversations.map((conversation) => (
-            <div key={conversation.id} className="mt-6 w-full flex items-center justify-between xl:gap-4 lg:gap-2">
+            {conversations?.map((conversation) => (
+            <div key={conversation.id} className="mt-6 w-full flex items-center justify-between xl:gap-4 lg:gap-2 cursor-pointer" onClick={() => navigate(`/chat-detailed/${conversation?.user_id}`)}>
               {/* Profile photo */}
               <div className="grid size-8 lg:size-10 xl:size-11 rounded-full bg-black relative">
                 <div className={`size-3 lg:size-3 xl:size-4 rounded-full ${conversation.isOnline ? 'bg-[#4CAF50]' : 'bg-gray-400'} absolute -right-0 -bottom-0 border-2 border-inset border-white`}></div>

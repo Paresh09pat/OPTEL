@@ -259,7 +259,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
     }
 
     setLoadingReplies(prev => ({ ...prev, [comment_id]: true }));
-    
+
     try {
       const accessToken = localStorage.getItem("access_token");
       const formData = new URLSearchParams();
@@ -429,12 +429,12 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
       const data = await response.json();
       if (data?.api_status === 200) {
         console.log('Comment delete successful:', data);
-        
+
         // Call getNewsFeed to refresh the entire feed
         if (getNewsFeed && typeof getNewsFeed === 'function') {
           getNewsFeed();
         }
-        
+
         // Refresh comments to show updated list
         if (clickedComments) {
           const fetchedComments = await fetchComments(post_id);
@@ -554,7 +554,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
     }
   }, [replyInput, addCommentReply]);
 
-  
+
 
   // Get comments to display (initial 5 or all)
   const displayedComments = showAllComments ? localCommentsData : localCommentsData.slice(0, 5);
@@ -718,7 +718,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
     }
   }, [commentReplies, fetchReply]);
 
-
+  const ownerid = localStorage.getItem('user_id');
 
 
 
@@ -864,59 +864,59 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
       {audio && <audio src={audio} controls className="w-full h-auto object-cover" />}
 
       {postfile !== "" && (
-  <>
-    {/* If file is PDF */}
-    {postfile.endsWith(".pdf") && (
-      <a 
-        href={postfile} 
-        target="_blank" 
-        rel="noopener noreferrer"
-        className="flex flex-col py-2 items-center justify-center space-x-2 w-full"
-      >
-        <div className="flex items-center justify-center space-x-2 w-[90%] h-full bg-gray-100 hover:bg-gray-200 transition-colors rounded-lg text-center p-4">
-          {postFileName !== "" && (
-            <span className="text-gray-700 font-medium text-sm">
-              {postFileName?.slice(0, 40) + "..."}
-            </span>
+        <>
+          {/* If file is PDF */}
+          {postfile.endsWith(".pdf") && (
+            <a
+              href={postfile}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-col py-2 items-center justify-center space-x-2 w-full"
+            >
+              <div className="flex items-center justify-center space-x-2 w-[90%] h-full bg-gray-100 hover:bg-gray-200 transition-colors rounded-lg text-center p-4">
+                {postFileName !== "" && (
+                  <span className="text-gray-700 font-medium text-sm">
+                    {postFileName?.slice(0, 40) + "..."}
+                  </span>
+                )}
+                <FaFilePdf className="w-6 h-6 text-gray-600" />
+                <span className="text-gray-700 font-medium text-sm">Open PDF</span>
+              </div>
+            </a>
           )}
-          <FaFilePdf className="w-6 h-6 text-gray-600" />
-          <span className="text-gray-700 font-medium text-sm">Open PDF</span>
-        </div>
-      </a>
-    )}
 
-    {/* If file is MP3 */}
-    {postfile.endsWith(".mp3") && (
-  <div className="flex flex-col py-2 items-center justify-center w-full">
-    <audio
-      controls
-      className="w-[90%]"
-      onPlay={(e) => {
-        // Pause all other audio elements when this one plays
-        const audios = document.querySelectorAll("audio");
-        audios.forEach((audio) => {
-          if (audio !== e.target) {
-            audio.pause();
-          }
-        });
-      }}
-    >
-      <source src={postfile} type="audio/mpeg" />
-      Your browser does not support the audio tag.
-    </audio>
+          {/* If file is MP3 */}
+          {postfile.endsWith(".mp3") && (
+            <div className="flex flex-col py-2 items-center justify-center w-full">
+              <audio
+                controls
+                className="w-[90%]"
+                onPlay={(e) => {
+                  // Pause all other audio elements when this one plays
+                  const audios = document.querySelectorAll("audio");
+                  audios.forEach((audio) => {
+                    if (audio !== e.target) {
+                      audio.pause();
+                    }
+                  });
+                }}
+              >
+                <source src={postfile} type="audio/mpeg" />
+                Your browser does not support the audio tag.
+              </audio>
 
-    {postFileName !== "" && (
-      <span className="text-gray-700 font-medium text-sm mt-2">
-        {postFileName?.slice(0, 40) + "..."}
-      </span>
-    )}
-  </div>
-)}
+              {postFileName !== "" && (
+                <span className="text-gray-700 font-medium text-sm mt-2">
+                  {postFileName?.slice(0, 40) + "..."}
+                </span>
+              )}
+            </div>
+          )}
 
-  </>
-)}
+        </>
+      )}
 
-     
+
 
       <div className="p-4">
         <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
@@ -969,378 +969,378 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
             {isSaved ? <IoBookmark className="w-5 h-5 text-blue-900" /> : <Bookmark className="w-5 h-5 text-blue-900 hover:text-blue-500 transition-colors hover:scale-105  " />}
           </button>
         </div>
-                 {clickedComments && (
-           <div className="relative top-full left-0 right-0 bg-white  rounded-lg z-10 mt-2 p-4 max-h-96 overflow-y-auto w-full animate-in slide-in-from-top-2 duration-200" data-comments-section>
-             {isLoadingComments ? (
-               <div className="text-center py-6">
-                 <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mb-2"></div>
-                 <p className="text-gray-500 text-sm">Loading comments...</p>
-               </div>
-             ) : localCommentsData && localCommentsData.length > 0 ? (
-               <div className="space-y-3">
+        {clickedComments && (
+          <div className="relative top-full left-0 right-0 bg-white  rounded-lg z-10 mt-2 p-4 max-h-96 overflow-y-auto w-full animate-in slide-in-from-top-2 duration-200" data-comments-section>
+            {isLoadingComments ? (
+              <div className="text-center py-6">
+                <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mb-2"></div>
+                <p className="text-gray-500 text-sm">Loading comments...</p>
+              </div>
+            ) : localCommentsData && localCommentsData.length > 0 ? (
+              <div className="space-y-3">
 
 
-                 {/* Display comments */}
-                 {displayedComments.map((comment) => (
-                   <div key={comment.id} className="space-y-3">
-                     {/* Main Comment */}
-                     <div className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                       <img
-                         src={comment.publisher?.avatar || '/perimg.png'}
-                         alt={comment.publisher?.name || 'User'}
-                         className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                       />
-                       <div className="flex-1 min-w-0 max-w-full overflow-hidden">
-                         <div className="flex items-start justify-between mb-2">
-                           <div className="flex-1 min-w-0 overflow-hidden">
-                             <span className="font-medium text-sm text-gray-900 block truncate">
-                               {comment.publisher?.first_name || 'Unknown'} {comment.publisher?.last_name || ''}
-                             </span>
-                             <span className="text-xs text-gray-500 block truncate">
-                               {comment.time ? new Date(comment.time * 1000).toLocaleDateString() : 'Unknown time'}
-                             </span>
-                           </div>
-                           {/* Comment Actions Menu */}
-                           <div className="relative ml-2">
-                             <button
-                               className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-200 transition-colors"
-                               onClick={(e) => {
-                                 e.stopPropagation();
-                                 // TODO: Implement comment options menu
-                                 console.log('Comment options for:', comment.id);
-                               }}
-                             >
-                               <MoreHorizontal className="w-4 h-4" />
-                             </button>
-                           </div>
-                         </div>
-                         
-                                                   {/* Comment Text - Show edit input when editing */}
-                          {editingComment === comment.id ? (
-                            <div className="mb-3">
-                              <div className="flex items-center space-x-3">
-                                <img
-                                  src="/perimg.png"
-                                  alt="Your avatar"
-                                  className="w-6 h-6 rounded-full object-cover flex-shrink-0"
-                                />
-                                <div className="flex-1 flex items-center bg-white rounded-lg px-3 py-2 min-w-0 border border-blue-200">
-                                  <input
-                                    type="text"
-                                    placeholder="Edit your comment..."
-                                    className="flex-1 bg-transparent text-sm focus:outline-none min-w-0"
-                                    value={editText}
-                                    onChange={(e) => setEditText(e.target.value)}
-                                    onClick={(e) => e.stopPropagation()}
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter" && !e.shiftKey) {
-                                        e.preventDefault();
-                                        handleSubmitEdit(comment.id);
-                                      }
-                                    }}
-                                  />
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  <button
-                                    className="text-green-500 hover:text-green-600 cursor-pointer"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
+                {/* Display comments */}
+                {displayedComments.map((comment) => (
+                  <div key={comment.id} className="space-y-3">
+                    {/* Main Comment */}
+                    <div className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                      <img
+                        src={comment.publisher?.avatar || '/perimg.png'}
+                        alt={comment.publisher?.name || 'User'}
+                        className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                      />
+                      <div className="flex-1 min-w-0 max-w-full overflow-hidden">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1 min-w-0 overflow-hidden">
+                            <span className="font-medium text-sm text-gray-900 block truncate">
+                              {comment.publisher?.first_name || 'Unknown'} {comment.publisher?.last_name || ''}
+                            </span>
+                            <span className="text-xs text-gray-500 block truncate">
+                              {comment.time ? new Date(comment.time * 1000).toLocaleDateString() : 'Unknown time'}
+                            </span>
+                          </div>
+                          {/* Comment Actions Menu */}
+                          <div className="relative ml-2">
+                            <button
+                              className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-200 transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // TODO: Implement comment options menu
+                                console.log('Comment options for:', comment.id);
+                              }}
+                            >
+                              <MoreHorizontal className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Comment Text - Show edit input when editing */}
+                        {editingComment === comment.id ? (
+                          <div className="mb-3">
+                            <div className="flex items-center space-x-3">
+                              <img
+                                src="/perimg.png"
+                                alt="Your avatar"
+                                className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+                              />
+                              <div className="flex-1 flex items-center bg-white rounded-lg px-3 py-2 min-w-0 border border-blue-200">
+                                <input
+                                  type="text"
+                                  placeholder="Edit your comment..."
+                                  className="flex-1 bg-transparent text-sm focus:outline-none min-w-0"
+                                  value={editText}
+                                  onChange={(e) => setEditText(e.target.value)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" && !e.shiftKey) {
+                                      e.preventDefault();
                                       handleSubmitEdit(comment.id);
-                                    }}
-                                    disabled={commentActionLoading[`edit_${comment.id}`]}
-                                  >
-                                    {commentActionLoading[`edit_${comment.id}`] ? (
-                                      <div className="w-4 h-4 border border-current border-t-transparent rounded-full animate-spin"></div>
-                                    ) : (
-                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                      </svg>
-                                    )}
-                                  </button>
-                                  <button
-                                    className="text-red-500 hover:text-red-600 cursor-pointer"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleCancelEdit();
-                                    }}
-                                  >
-                                    <X className="w-4 h-4" />
-                                  </button>
-                                </div>
+                                    }
+                                  }}
+                                />
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  className="text-green-500 hover:text-green-600 cursor-pointer"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSubmitEdit(comment.id);
+                                  }}
+                                  disabled={commentActionLoading[`edit_${comment.id}`]}
+                                >
+                                  {commentActionLoading[`edit_${comment.id}`] ? (
+                                    <div className="w-4 h-4 border border-current border-t-transparent rounded-full animate-spin"></div>
+                                  ) : (
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  )}
+                                </button>
+                                <button
+                                  className="text-red-500 hover:text-red-600 cursor-pointer"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCancelEdit();
+                                  }}
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
                               </div>
                             </div>
-                          ) : (
-                            <p className="text-sm text-gray-700 break-words leading-relaxed overflow-hidden mb-3">
-                              {comment.Orginaltext || comment.text || 'No comment text'}
-                            </p>
-                          )}
-                         
-                                                   {/* Comment Action Buttons - Hide when editing */}
-                          {editingComment !== comment.id && (
-                            <div className="flex items-center space-x-4 mb-2">
-                           {/* Like Button - Toggles between liked/disliked */}
-                           <button 
-                             className={`flex items-center space-x-1 cursor-pointer transition-colors ${
-                               comment.is_comment_liked 
-                                 ? 'text-blue-600 hover:text-blue-700' 
-                                 : 'text-gray-400 hover:text-gray-600'
-                             }`}
-                             onClick={(e) => {
-                               e.stopPropagation();
-                               // Like button now toggles between liked/disliked states
-                               // When clicked, it will like if not liked, or unlike if already liked
-                               likeComment(comment.id);
-                             }}
-                             disabled={commentActionLoading[`like_${comment.id}`]}
-                           >
-                             {commentActionLoading[`like_${comment.id}`] ? (
-                               <div className="w-4 h-4 border border-current border-t-transparent rounded-full animate-spin"></div>
-                             ) : (
-                               <ThumbsUp className={`w-4 h-4 ${
-                                 comment.is_comment_liked ? 'fill-current' : ''
-                               }`} />
-                             )}
-                             {comment.comment_likes > 0 && (
-                               <span className="text-xs text-gray-500">
-                                 {comment.comment_likes}
-                               </span>
-                             )}
-                           </button>
-                           
+                          </div>
+                        ) : (
+                          <p className="text-sm text-gray-700 break-words leading-relaxed overflow-hidden mb-3">
+                            {comment.Orginaltext || comment.text || 'No comment text'}
+                          </p>
+                        )}
 
-                           
-                           {/* Reply Button */}
-                           <button 
-                             className="flex items-center space-x-1 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors"
-                             onClick={(e) => {
-                               e.stopPropagation();
-                               handleStartReply(comment.id, `${comment.publisher?.first_name || 'Unknown'} ${comment.publisher?.last_name || ''}`);
-                             }}
-                           >
-                             <MessageCircle className="w-4 h-4" />
-                             <span className="text-xs">Reply</span>
-                           </button>
-                           
-                                                       {/* Edit Button */}
-                            <button 
-                              className="flex items-center space-x-1 text-gray-400 hover:text-blue-600 cursor-pointer transition-colors"
+                        {/* Comment Action Buttons - Hide when editing */}
+                        {editingComment !== comment.id && (
+                          <div className="flex items-center space-x-4 mb-2">
+                            {/* Like Button - Toggles between liked/disliked */}
+                            <button
+                              className={`flex items-center space-x-1 cursor-pointer transition-colors ${comment.is_comment_liked
+                                  ? 'text-blue-600 hover:text-blue-700'
+                                  : 'text-gray-400 hover:text-gray-600'
+                                }`}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleStartEdit(comment.id, comment.Orginaltext || comment.text || '');
+                                // Like button now toggles between liked/disliked states
+                                // When clicked, it will like if not liked, or unlike if already liked
+                                likeComment(comment.id);
                               }}
+                              disabled={commentActionLoading[`like_${comment.id}`]}
                             >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                              <span className="text-xs">Edit</span>
-                            </button>
-                           
-                                                       {/* Delete Button */}
-                            <button 
-                              className="flex items-center space-x-1 text-gray-400 hover:text-red-600 cursor-pointer transition-colors"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteComment(comment.id);
-                              }}
-                              disabled={commentActionLoading[`delete_${comment.id}`]}
-                            >
-                              {commentActionLoading[`delete_${comment.id}`] ? (
+                              {commentActionLoading[`like_${comment.id}`] ? (
                                 <div className="w-4 h-4 border border-current border-t-transparent rounded-full animate-spin"></div>
                               ) : (
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
+                                <ThumbsUp className={`w-4 h-4 ${comment.is_comment_liked ? 'fill-current' : ''
+                                  }`} />
                               )}
-                              <span className="text-xs">Delete</span>
+                              {comment.comment_likes > 0 && (
+                                <span className="text-xs text-gray-500">
+                                  {comment.comment_likes}
+                                </span>
+                              )}
                             </button>
-                            </div>
-                          )}
-                         
-                         {/* Show replies count if comment has replies */}
-                         {comment.replies_count && comment.replies_count > 0 && (
-                           <div className="mt-2">
-                             <span 
-                               className="text-xs text-blue-600 font-medium cursor-pointer hover:text-blue-800 flex items-center space-x-1" 
-                               onClick={() => fetchReply(comment.id)}
-                             >
-                               {loadingReplies[comment.id] ? (
-                                 <>
-                                   <div className="w-3 h-3 border border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                                   <span>Loading...</span>
-                                 </>
-                               ) : (
-                                 <>
-                                   <span>{comment.replies_count} {comment.replies_count === 1 ? 'reply' : 'replies'}</span>
-                                   {commentReplies[comment.id] ? (
-                                     <span className="text-blue-400">(hide)</span>
-                                   ) : (
-                                     <span className="text-blue-400">(show)</span>
-                                   )}
-                                 </>
-                               )}
-                             </span>
-                           </div>
-                         )}
-                       </div>
-                     </div>
-                     
-                     {/* Reply Input Field - Positioned below the comment */}
-                     {replyingTo && replyingTo.id === comment.id && (
-                       <div className="ml-8 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                         <div className="flex items-center space-x-2 mb-2">
-                           <span className="text-sm text-blue-600 font-medium">
-                             Replying to {replyingTo.name}
-                           </span>
-                           <button
-                             onClick={(e) => {
-                               e.stopPropagation();
-                               handleCancelReply();
-                             }}
-                             className="text-blue-400 hover:text-blue-600 cursor-pointer"
-                           >
-                             <X className="w-4 h-4" />
-                           </button>
-                         </div>
-                         <div className="flex items-center space-x-3">
-                           <img
-                             src="/perimg.png"
-                             alt="Your avatar"
-                             className="w-6 h-6 rounded-full object-cover flex-shrink-0"
-                           />
-                           <div className="flex-1 flex items-center bg-white rounded-full px-3 py-2 min-w-0 border border-blue-200">
-                             <input
-                               type="text"
-                               placeholder={`Reply to ${replyingTo.name}...`}
-                               className="flex-1 bg-transparent text-sm focus:outline-none min-w-0"
-                               value={replyInput}
-                               onChange={(e) => setReplyInput(e.target.value)}
-                               onClick={(e) => e.stopPropagation()}
-                               onKeyDown={(e) => {
-                                 if (e.key === "Enter" && !e.shiftKey) {
-                                   e.preventDefault();
-                                   addCommentReply(replyingTo.id, replyInput);
-                                 }
-                               }}
-                             />
-                             <button
-                               className="text-blue-500 hover:text-blue-600 cursor-pointer ml-2"
-                               onClick={(e) => {
-                                 e.stopPropagation();
-                                 handleSubmitReply(replyingTo.id);
-                               }}
-                             >
-                               <FaPaperPlane className="w-4 h-4" />
-                             </button>
-                           </div>
-                         </div>
-                       </div>
-                     )}
-                     
-                     {/* Display replies if they exist */}
-                     {commentReplies[comment.id] && commentReplies[comment.id].length > 0 && (
-                       <div className="ml-8 space-y-2">
-                         {commentReplies[comment.id].map((reply) => (
-                           <div key={reply.id} className="p-3 bg-blue-50 rounded-lg border-l-2 border-blue-200">
-                             <div className="flex items-start space-x-2">
-                               <img
-                                 src={reply.publisher?.avatar || '/perimg.png'}
-                                 alt={reply.publisher?.name || 'User'}
-                                 className="w-6 h-6 rounded-full object-cover flex-shrink-0"
-                               />
-                               <div className="flex-1 min-w-0">
-                                 <div className="flex items-center justify-between mb-1">
-                                   <div className="flex items-center space-x-2">
-                                     <span className="font-medium text-xs text-gray-900">
-                                       {reply.publisher?.first_name || 'Unknown'} {reply.publisher?.last_name || ''}
-                                     </span>
-                                     <span className="text-xs text-gray-500">
-                                       {reply.time ? new Date(reply.time * 1000).toLocaleDateString() : 'Unknown time'}
-                                     </span>
-                                   </div>
-                                   {/* Reply Actions Menu */}
-                                   <div className="flex items-center space-x-2">
-                                     <button
-                                       className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-200 transition-colors"
-                                       onClick={(e) => {
-                                         e.stopPropagation();
-                                         // TODO: Implement reply options menu
-                                         console.log('Reply options for:', reply.id);
-                                       }}
-                                     >
-                                       <MoreHorizontal className="w-3 h-3" />
-                                     </button>
-                                   </div>
-                                 </div>
-                                 {/* Reply Text - Show edit input when editing */}
-                                 {editingReply === reply.id ? (
-                                   <div className="mb-2">
-                                     <div className="flex items-center space-x-2">
-                                       <img
-                                         src="/perimg.png"
-                                         alt="Your avatar"
-                                         className="w-5 h-5 rounded-full object-cover flex-shrink-0"
-                                       />
-                                       <div className="flex-1 flex items-center bg-white rounded-lg px-2 py-1 min-w-0 border border-blue-200">
-                                         <input
-                                           type="text"
-                                           placeholder="Edit your reply..."
-                                           className="flex-1 bg-transparent text-xs focus:outline-none min-w-0"
-                                           value={editReplyText}
-                                           onChange={(e) => setEditReplyText(e.target.value)}
-                                           onClick={(e) => e.stopPropagation()}
-                                           onKeyDown={(e) => {
-                                             if (e.key === "Enter" && !e.shiftKey) {
-                                               e.preventDefault();
-                                               handleSubmitEditReply(reply.id);
-                                             }
-                                           }}
-                                         />
-                                       </div>
-                                       <div className="flex items-center space-x-1">
-                                         <button
-                                           className="text-green-500 hover:text-green-600 cursor-pointer"
-                                           onClick={(e) => {
-                                             e.stopPropagation();
-                                             handleSubmitEditReply(reply.id);
-                                           }}
-                                           disabled={commentActionLoading[`edit_reply_${reply.id}`]}
-                                         >
-                                           {commentActionLoading[`edit_reply_${reply.id}`] ? (
-                                             <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin"></div>
-                                           ) : (
-                                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                             </svg>
-                                           )}
-                                         </button>
-                                         <button
-                                           className="text-red-500 hover:text-red-600 cursor-pointer"
-                                           onClick={(e) => {
-                                             e.stopPropagation();
-                                             handleCancelEditReply();
-                                           }}
-                                         >
-                                           <X className="w-3 h-3" />
-                                         </button>
-                                       </div>
-                                     </div>
-                                   </div>
-                                 ) : (
-                                   <p className="text-xs text-gray-700 break-words leading-relaxed mb-2">
-                                     {reply.Orginaltext || reply.text || 'No reply text'}
-                                   </p>
-                                 )}
-                                 
-                                 {/* Reply Action Buttons - Hide when editing */}
-                                 {editingReply !== reply.id && (
-                                   <div className="flex items-center space-x-3">
-                                                                       {/* Like Button for Reply - Uses new reply_like API */}
-                                    <button 
-                                      className={`flex items-center space-x-1 cursor-pointer transition-colors ${
-                                        reply.is_comment_liked 
-                                          ? 'text-blue-600 hover:text-blue-700' 
+
+
+
+                            {/* Reply Button */}
+                            <button
+                              className="flex items-center space-x-1 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStartReply(comment.id, `${comment.publisher?.first_name || 'Unknown'} ${comment.publisher?.last_name || ''}`);
+                              }}
+                            >
+                              <MessageCircle className="w-4 h-4" />
+                              <span className="text-xs">Reply</span>
+                            </button>
+
+                            {/* Edit Button - Only show for current user's comments */}
+                            {comment.publisher?.user_id == ownerid && (
+                              <button
+                                className="flex items-center space-x-1 text-gray-400 hover:text-blue-600 cursor-pointer transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleStartEdit(comment.id, comment.Orginaltext || comment.text || '');
+                                }}
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                                <span className="text-xs">Edit</span>
+                              </button>
+                            )}
+                            {/* Delete Button - Only show for current user's comments */}
+                            {comment.publisher?.user_id == ownerid && (
+                              <button
+                                className="flex items-center space-x-1 text-gray-400 hover:text-red-600 cursor-pointer transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteComment(comment.id);
+                                }}
+                                disabled={commentActionLoading[`delete_${comment.id}`]}
+                              >
+                                {commentActionLoading[`delete_${comment.id}`] ? (
+                                  <div className="w-4 h-4 border border-current border-t-transparent rounded-full animate-spin"></div>
+                                ) : (
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                )}
+                                <span className="text-xs">Delete</span>
+                              </button>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Show replies count if comment has replies */}
+                        {comment.replies_count && comment.replies_count > 0 && (
+                          <div className="mt-2">
+                            <span
+                              className="text-xs text-blue-600 font-medium cursor-pointer hover:text-blue-800 flex items-center space-x-1"
+                              onClick={() => fetchReply(comment.id)}
+                            >
+                              {loadingReplies[comment.id] ? (
+                                <>
+                                  <div className="w-3 h-3 border border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                                  <span>Loading...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <span>{comment.replies_count} {comment.replies_count === 1 ? 'reply' : 'replies'}</span>
+                                  {commentReplies[comment.id] ? (
+                                    <span className="text-blue-400">(hide)</span>
+                                  ) : (
+                                    <span className="text-blue-400">(show)</span>
+                                  )}
+                                </>
+                              )}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Reply Input Field - Positioned below the comment */}
+                    {replyingTo && replyingTo.id === comment.id && (
+                      <div className="ml-8 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <span className="text-sm text-blue-600 font-medium">
+                            Replying to {replyingTo.name}
+                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCancelReply();
+                            }}
+                            className="text-blue-400 hover:text-blue-600 cursor-pointer"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <img
+                            src="/perimg.png"
+                            alt="Your avatar"
+                            className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+                          />
+                          <div className="flex-1 flex items-center bg-white rounded-full px-3 py-2 min-w-0 border border-blue-200">
+                            <input
+                              type="text"
+                              placeholder={`Reply to ${replyingTo.name}...`}
+                              className="flex-1 bg-transparent text-sm focus:outline-none min-w-0"
+                              value={replyInput}
+                              onChange={(e) => setReplyInput(e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                  e.preventDefault();
+                                  addCommentReply(replyingTo.id, replyInput);
+                                }
+                              }}
+                            />
+                            <button
+                              className="text-blue-500 hover:text-blue-600 cursor-pointer ml-2"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSubmitReply(replyingTo.id);
+                              }}
+                            >
+                              <FaPaperPlane className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Display replies if they exist */}
+                    {commentReplies[comment.id] && commentReplies[comment.id].length > 0 && (
+                      <div className="ml-8 space-y-2">
+                        {commentReplies[comment.id].map((reply) => (
+                          <div key={reply.id} className="p-3 bg-blue-50 rounded-lg border-l-2 border-blue-200">
+                            <div className="flex items-start space-x-2">
+                              <img
+                                src={reply.publisher?.avatar || '/perimg.png'}
+                                alt={reply.publisher?.name || 'User'}
+                                className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between mb-1">
+                                  <div className="flex items-center space-x-2">
+                                    <span className="font-medium text-xs text-gray-900">
+                                      {reply.publisher?.first_name || 'Unknown'} {reply.publisher?.last_name || ''}
+                                    </span>
+                                    <span className="text-xs text-gray-500">
+                                      {reply.time ? new Date(reply.time * 1000).toLocaleDateString() : 'Unknown time'}
+                                    </span>
+                                  </div>
+                                  {/* Reply Actions Menu */}
+                                  <div className="flex items-center space-x-2">
+                                    <button
+                                      className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-200 transition-colors"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        // TODO: Implement reply options menu
+                                        console.log('Reply options for:', reply.id);
+                                      }}
+                                    >
+                                      <MoreHorizontal className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                </div>
+                                {/* Reply Text - Show edit input when editing */}
+                                {editingReply === reply.id ? (
+                                  <div className="mb-2">
+                                    <div className="flex items-center space-x-2">
+                                      <img
+                                        src="/perimg.png"
+                                        alt="Your avatar"
+                                        className="w-5 h-5 rounded-full object-cover flex-shrink-0"
+                                      />
+                                      <div className="flex-1 flex items-center bg-white rounded-lg px-2 py-1 min-w-0 border border-blue-200">
+                                        <input
+                                          type="text"
+                                          placeholder="Edit your reply..."
+                                          className="flex-1 bg-transparent text-xs focus:outline-none min-w-0"
+                                          value={editReplyText}
+                                          onChange={(e) => setEditReplyText(e.target.value)}
+                                          onClick={(e) => e.stopPropagation()}
+                                          onKeyDown={(e) => {
+                                            if (e.key === "Enter" && !e.shiftKey) {
+                                              e.preventDefault();
+                                              handleSubmitEditReply(reply.id);
+                                            }
+                                          }}
+                                        />
+                                      </div>
+                                      <div className="flex items-center space-x-1">
+                                        <button
+                                          className="text-green-500 hover:text-green-600 cursor-pointer"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleSubmitEditReply(reply.id);
+                                          }}
+                                          disabled={commentActionLoading[`edit_reply_${reply.id}`]}
+                                        >
+                                          {commentActionLoading[`edit_reply_${reply.id}`] ? (
+                                            <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin"></div>
+                                          ) : (
+                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                            </svg>
+                                          )}
+                                        </button>
+                                        <button
+                                          className="text-red-500 hover:text-red-600 cursor-pointer"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleCancelEditReply();
+                                          }}
+                                        >
+                                          <X className="w-3 h-3" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <p className="text-xs text-gray-700 break-words leading-relaxed mb-2">
+                                    {reply.Orginaltext || reply.text || 'No reply text'}
+                                  </p>
+                                )}
+
+                                {/* Reply Action Buttons - Hide when editing */}
+                                {editingReply !== reply.id && (
+                                  <div className="flex items-center space-x-3">
+                                    {/* Like Button for Reply - Uses new reply_like API */}
+                                    <button
+                                      className={`flex items-center space-x-1 cursor-pointer transition-colors ${reply.is_comment_liked
+                                          ? 'text-blue-600 hover:text-blue-700'
                                           : 'text-gray-400 hover:text-gray-600'
-                                      }`}
+                                        }`}
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         // Use the new likeCommentReply function for replies
@@ -1351,9 +1351,8 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                                       {commentActionLoading[`reply_like_${reply.id}`] ? (
                                         <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin"></div>
                                       ) : (
-                                        <ThumbsUp className={`w-3 h-3 ${
-                                          reply.is_comment_liked ? 'fill-current' : ''
-                                        }`} />
+                                        <ThumbsUp className={`w-3 h-3 ${reply.is_comment_liked ? 'fill-current' : ''
+                                          }`} />
                                       )}
                                       {reply.comment_likes > 0 && (
                                         <span className="text-xs text-gray-500">
@@ -1361,95 +1360,99 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                                         </span>
                                       )}
                                     </button>
-                                    
 
-                                   
-                                   {/* Reply to Reply Button */}
-                                   <button 
-                                     className="flex items-center space-x-1 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors"
-                                     onClick={(e) => {
-                                       e.stopPropagation();
-                                       // TODO: Implement reply to reply functionality
-                                       console.log('Reply to reply:', reply.id);
-                                     }}
-                                   >
-                                     <MessageCircle className="w-3 h-3" />
-                                     <span className="text-xs">Reply</span>
-                                   </button>
-                                   
-                                                                       {/* Edit Reply Button */}
-                                    <button 
-                                      className="flex items-center space-x-1 text-gray-400 hover:text-blue-600 cursor-pointer transition-colors"
+
+
+                                    {/* Reply to Reply Button */}
+                                    <button
+                                      className="flex items-center space-x-1 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        handleStartEditReply(reply.id, reply.Orginaltext || reply.text || '');
+                                        // TODO: Implement reply to reply functionality
+                                        console.log('Reply to reply:', reply.id);
                                       }}
                                     >
-                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                      </svg>
-                                      <span className="text-xs">Edit</span>
+                                      <MessageCircle className="w-3 h-3" />
+                                      <span className="text-xs">Reply</span>
                                     </button>
-                                   
-                                   {/* Delete Reply Button */}
-                                   <button 
-                                     className="flex items-center space-x-1 text-gray-400 hover:text-red-600 cursor-pointer transition-colors"
-                                     onClick={(e) => {
-                                       e.stopPropagation();
-                                       deleteCommentReply(reply.id);
-                                     }}
-                                     disabled={commentActionLoading[`delete_reply_${reply.id}`]}
-                                   >
-                                     {commentActionLoading[`delete_reply_${reply.id}`] ? (
-                                       <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin"></div>
-                                     ) : (
-                                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                       </svg>
+
+                                                                         {/* Edit Reply Button - Only show for current user's replies */}
+                                     {reply.publisher?.user_id == ownerid && (
+                                       <button 
+                                         className="flex items-center space-x-1 text-gray-400 hover:text-blue-600 cursor-pointer transition-colors"
+                                         onClick={(e) => {
+                                           e.stopPropagation();
+                                           handleStartEditReply(reply.id, reply.Orginaltext || reply.text || '');
+                                         }}
+                                       >
+                                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                         </svg>
+                                         <span className="text-xs">Edit</span>
+                                       </button>
                                      )}
-                                     <span className="text-xs">Delete</span>
-                                   </button>
-                                 </div>
-                                 )}
-                               </div>
-                             </div>
-                           </div>
-                         ))}
-                       </div>
-                     )}
-                   </div>
-                 ))}
+                                    
+                                    {/* Delete Reply Button - Only show for current user's replies */}
+                                    {reply.publisher?.user_id == ownerid && (
+                                      <button 
+                                        className="flex items-center space-x-1 text-gray-400 hover:text-red-600 cursor-pointer transition-colors"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          deleteCommentReply(reply.id);
+                                        }}
+                                        disabled={commentActionLoading[`delete_reply_${reply.id}`]}
+                                      >
+                                        {commentActionLoading[`delete_reply_${reply.id}`] ? (
+                                          <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin"></div>
+                                        ) : (
+                                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                          </svg>
+                                        )}
+                                        <span className="text-xs">Delete</span>
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
 
-                 {/* Remove the old reply input field since it's now positioned below each comment */}
+                {/* Remove the old reply input field since it's now positioned below each comment */}
 
-                 {/* Show more/less button */}
-                 {hasMoreComments && (
-                   <button
-                     onClick={toggleShowAllComments}
-                     className="w-full text-center py-3 text-blue-600 hover:text-blue-800 font-medium text-sm transition-colors border-t border-gray-200 mt-4 hover:bg-blue-50 rounded-lg cursor-pointer"
-                   >
-                     {showAllComments ? (
-                       <span className="flex items-center justify-center space-x-1">
-                         <ChevronUp className="w-4 h-4" />
-                         Show less
-                       </span>
-                     ) : (
-                       <span className="flex items-center justify-center space-x-1">
-                         Show {localCommentsData.length - 5} more comments
-                         <ChevronDown className="w-4 h-4" />
-                       </span>
-                     )}
-                   </button>
-                 )}
-               </div>
-             ) : (
-               <div className="text-center py-6">
-                 <p className="text-gray-500 text-sm">No comments yet</p>
-                 <p className="text-xs text-gray-400 mt-1">Be the first to comment!</p>
-               </div>
-             )}
-           </div>
-         )}
+                {/* Show more/less button */}
+                {hasMoreComments && (
+                  <button
+                    onClick={toggleShowAllComments}
+                    className="w-full text-center py-3 text-blue-600 hover:text-blue-800 font-medium text-sm transition-colors border-t border-gray-200 mt-4 hover:bg-blue-50 rounded-lg cursor-pointer"
+                  >
+                    {showAllComments ? (
+                      <span className="flex items-center justify-center space-x-1">
+                        <ChevronUp className="w-4 h-4" />
+                        Show less
+                      </span>
+                    ) : (
+                      <span className="flex items-center justify-center space-x-1">
+                        Show {localCommentsData.length - 5} more comments
+                        <ChevronDown className="w-4 h-4" />
+                      </span>
+                    )}
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <p className="text-gray-500 text-sm">No comments yet</p>
+                <p className="text-xs text-gray-400 mt-1">Be the first to comment!</p>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="flex items-center space-x-3 mt-4">
           <img
