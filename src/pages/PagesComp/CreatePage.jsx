@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { MdOutlineAddPhotoAlternate } from 'react-icons/md';
+import { baseUrl } from '../../utils/constant';
 
 const CreatePage = () => {
     const [pageName, setPageName] = useState('');
@@ -20,7 +21,8 @@ const CreatePage = () => {
         'Fashion',
     ];
 
-    const handleSubmit = (e) => {
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!pageName.trim()) {
@@ -47,6 +49,22 @@ const CreatePage = () => {
 
         console.log('Submitting form...', formData);
         alert('Page created successfully!');
+
+        const accessToken = localStorage.getItem("access_token");
+        setLoading(true);
+        formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
+        formData.append('type', 'create');
+        const response = await fetch(`${baseUrl}/create-page?access_token=${accessToken}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          },
+          body: formData.toString(),
+        })
+        const data = await response.json();
+        
 
         // Reset form
         setPageName('');
