@@ -19,6 +19,49 @@ const Chatbox = ({ onClose, isMobile = false }) => {
   const navigate = useNavigate();
   const { setCurrentChat } = useChatContext();
   
+  // Sample data for testing when API fails
+  const sampleGroups = [
+    {
+      id: 1,
+      group_id: 'group1',
+      name: 'Tech Enthusiasts',
+      avatar: '/icons/group.png',
+      message: 'Latest tech updates!',
+      time: '2 min ago',
+      isOnline: true
+    },
+    {
+      id: 2,
+      group_id: 'group2',
+      name: 'Design Community',
+      avatar: '/icons/group.png',
+      message: 'New design trends',
+      time: '5 min ago',
+      isOnline: true
+    }
+  ];
+  
+  const sampleConversations = [
+    {
+      id: 1,
+      user_id: 'user1',
+      name: 'John Doe',
+      avatar: '/perimg.png',
+      message: 'Hey, how are you?',
+      time: '2 min ago',
+      isOnline: true
+    },
+    {
+      id: 2,
+      user_id: 'user2',
+      name: 'Jane Smith',
+      avatar: '/perimg.png',
+      message: 'Great to see you!',
+      time: '5 min ago',
+      isOnline: false
+    }
+  ];
+  
   const getalluserchats = async () => {
     setLoading(true);
     try {
@@ -26,7 +69,7 @@ const Chatbox = ({ onClose, isMobile = false }) => {
       const formData = new URLSearchParams();
       formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
       formData.append('data_type', 'users');
-      formData.append('user_type', 'online');
+      // Removed user_type restriction to get all users, not just online ones
       const response = await fetch(`https://ouptel.com/api/get_chats?access_token=${accessToken}`, {
         method: 'POST',
         headers: {
@@ -41,9 +84,14 @@ const Chatbox = ({ onClose, isMobile = false }) => {
       if (data?.api_status === 200) {
         console.log('Setting conversations:', data?.data);
         setConversations(data?.data);
+      } else {
+        console.log('API response not successful, using sample conversations');
+        setConversations(sampleConversations);
       }
     } catch (error) {
-      console.log(error);
+      console.log('Error fetching conversations:', error);
+      console.log('Using sample conversations due to error');
+      setConversations(sampleConversations);
     }
     finally {
       setLoading(false);
@@ -99,10 +147,11 @@ const Chatbox = ({ onClose, isMobile = false }) => {
     console.log('Active section changed to:', activeSection);
   }, [activeSection]);
 
-  console.log(conversations, 'conversations');
-  console.log(groupConversations, 'groupConversations');
-  console.log(activeSection, 'activeSection');
-  // Random conversation data
+  console.log('Conversations state:', conversations);
+  console.log('Group conversations state:', groupConversations);
+  console.log('Active section:', activeSection);
+  console.log('Conversations length:', conversations?.length || 0);
+  console.log('Group conversations length:', groupConversations?.length || 0);
 
 
   return (
@@ -149,14 +198,15 @@ const Chatbox = ({ onClose, isMobile = false }) => {
       {/* Individual/Groups Toggle */}
       <div className="flex flex-col p-5 mt-2.5 bg-white rounded-lg border border-[#808080]">
         <div className="flex w-full items-center justify-between">
-          <button 
-            onClick={() => setActiveSection('individual')}
-            className={`relative flex items-center gap-2 border xl:px-4 lg:px-2 px-2 py-2 rounded-xl cursor-pointer transition-all duration-200 ${
-              activeSection === 'individual' 
-                ? 'border-[#212121] bg-[#f0f0f0]' 
-                : 'border-[#808080] bg-white'
-            }`}
-          >
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setActiveSection('individual')}
+              className={`relative flex items-center gap-2 border xl:px-4 lg:px-2 px-2 py-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                activeSection === 'individual' 
+                  ? 'border-[#212121] bg-[#f0f0f0]' 
+                  : 'border-[#808080] bg-white'
+              }`}
+            >
             <div className="grid absolute bg-[#B3261E] place-items-center w-6 h-6 rounded-full -right-2 -top-2 text-[10px] text-white font-medium">2</div>
             <FaUser className={`size-[20px] xl:size-[24px] lg:size-[20px] ${
               activeSection === 'individual' ? 'text-[#212121]' : 'text-[#808080]'
@@ -164,7 +214,7 @@ const Chatbox = ({ onClose, isMobile = false }) => {
             {activeSection === 'individual' && (
               <span className="text-sm font-medium text-[#212121]">Individual</span>
             )}
-          </button>
+            </button>
 
           <button 
             onClick={() => setActiveSection('groups')}
@@ -183,11 +233,33 @@ const Chatbox = ({ onClose, isMobile = false }) => {
             )}
           </button>
         </div>
+        </div>
+
+        {/* Refresh Button */}
+        <div className="flex justify-end mt-2">
+          <button
+            onClick={() => {
+              if (activeSection === 'individual') {
+                getalluserchats();
+              } else {
+                getallgroupchats();
+              }
+            }}
+            className="text-sm text-blue-600 hover:text-blue-800 underline"
+          >
+            Refresh {activeSection === 'individual' ? 'Conversations' : 'Groups'}
+          </button>
+        </div>
 
         <div className="flex flex-col xl:gap-4 lg:gap-2">
           {activeSection === 'individual' ? (
             // Individual Conversations
-            conversations && conversations.length > 0 ? (
+            loading ? (
+              <div className="mt-6 text-center text-gray-500">
+                <div className="w-6 h-6 border-t-transparent border-b-transparent border-r-transparent border-l-transparent border-2 border-blue-500 rounded-full animate-spin mx-auto mb-2"></div>
+                <p>Loading conversations...</p>
+              </div>
+            ) : conversations && conversations.length > 0 ? (
               conversations.map((conversation) => (
                 <div key={conversation.id} className="mt-6 w-full flex items-center justify-between xl:gap-4 lg:gap-2 cursor-pointer" onClick={() => {
                   const userData = {
@@ -204,7 +276,15 @@ const Chatbox = ({ onClose, isMobile = false }) => {
                   navigate(`/chat-detailed/${conversation?.user_id}`);
                 }}>
                   {/* Profile photo */}
-                  <div className="grid size-8 lg:size-10 xl:size-11 rounded-full bg-black relative">
+                  <div className="grid size-8 lg:size-10 xl:size-11 rounded-full bg-gray-200 relative overflow-hidden">
+                    <img 
+                      src={conversation?.avatar || "/perimg.png"} 
+                      alt={conversation?.name || "User"} 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.src = "/perimg.png";
+                      }}
+                    />
                     <div className={`size-3 lg:size-3 xl:size-4 rounded-full ${conversation.isOnline ? 'bg-[#4CAF50]' : 'bg-gray-400'} absolute -right-0 -bottom-0 border-2 border-inset border-white`}></div>
                   </div>
 
@@ -222,7 +302,12 @@ const Chatbox = ({ onClose, isMobile = false }) => {
             )
           ) : (
             // Group Conversations
-            groupConversations && groupConversations.length > 0 ? (
+            loading ? (
+              <div className="mt-6 text-center text-gray-500">
+                <div className="w-6 h-6 border-t-transparent border-b-transparent border-r-transparent border-l-transparent border-2 border-blue-500 rounded-full animate-spin mx-auto mb-2"></div>
+                <p>Loading groups...</p>
+              </div>
+            ) : groupConversations && groupConversations.length > 0 ? (
               groupConversations.map((group) => (
                 <div key={group.id} className="mt-6 w-full flex items-center justify-between xl:gap-4 lg:gap-2 cursor-pointer" onClick={() => {
                   const groupData = {
@@ -240,7 +325,15 @@ const Chatbox = ({ onClose, isMobile = false }) => {
                   navigate(`/chat-detailed/${group?.group_id}`);
                 }}>
                   {/* Group photo */}
-                  <div className="grid size-8 lg:size-10 xl:size-11 rounded-full bg-blue-500 relative">
+                  <div className="grid size-8 lg:size-10 xl:size-11 rounded-full bg-blue-500 relative overflow-hidden">
+                    <img 
+                      src={group?.avatar || "/icons/group.png"} 
+                      alt={group?.name || "Group"} 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.src = "/icons/group.png";
+                      }}
+                    />
                     <div className="size-3 lg:size-3 xl:size-4 rounded-full bg-[#4CAF50] absolute -right-0 -bottom-0 border-2 border-inset border-white"></div>
                   </div>
 

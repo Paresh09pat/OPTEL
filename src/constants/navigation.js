@@ -34,7 +34,7 @@ export const navigationItems = [
   {
     id: 'saved-posts',
     name: 'Saved Posts',
-    path: '/',
+    path: '/saved-posts',
     icon: savedIcon,
   },
   {
