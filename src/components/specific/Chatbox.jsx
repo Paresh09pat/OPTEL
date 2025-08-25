@@ -6,49 +6,104 @@ import { FaTimes } from 'react-icons/fa'
 import { HiUsers } from "react-icons/hi";
 import { FaArrowTrendUp } from "react-icons/fa6";
 import { useNavigate } from 'react-router-dom';
+import { useChatContext } from '../../context/ChatContext';
 
 
 
 const Chatbox = ({ onClose, isMobile = false }) => {
 
   const [conversations, setConversations] = useState([]);
+  const [groupConversations, setGroupConversations] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [activeSection, setActiveSection] = useState('individual'); // 'individual' or 'groups'
   const navigate = useNavigate();
-const  getalluserchats = async () => {
-  setLoading(true); 
-  try {
-    const accessToken = localStorage.getItem("access_token");
-    const formData = new URLSearchParams();
-    formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
-    formData.append('data_type', 'users');
-    formData.append('user_type', 'online');
-    const response = await fetch(`https://ouptel.com/api/get_chats?access_token=${accessToken}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'X-Requested-With': 'XMLHttpRequest',
-        "Accept": "application/json"
-      },
-      body: formData.toString(),
-    });
-    const data = await response.json();
-    if(data?.api_status === 200){
-      setConversations(data?.data);
+  const { setCurrentChat } = useChatContext();
+  
+  const getalluserchats = async () => {
+    setLoading(true);
+    try {
+      const accessToken = localStorage.getItem("access_token");
+      const formData = new URLSearchParams();
+      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
+      formData.append('data_type', 'users');
+      formData.append('user_type', 'online');
+      const response = await fetch(`https://ouptel.com/api/get_chats?access_token=${accessToken}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-Requested-With': 'XMLHttpRequest',
+          "Accept": "application/json"
+        },
+        body: formData.toString(),
+      });
+      const data = await response.json();
+      console.log('Chatbox API response:', data);
+      if (data?.api_status === 200) {
+        console.log('Setting conversations:', data?.data);
+        setConversations(data?.data);
+      }
+    } catch (error) {
+      console.log(error);
     }
-  }catch(error){
-    console.log(error);
+    finally {
+      setLoading(false);
+    }
   }
-  finally{
-    setLoading(false);
-  }
-}
-useEffect(() => {
-  getalluserchats();
-}, []);
 
-console.log(conversations, 'conversations');
+  const getallgroupchats = async () => {
+    setLoading(true);
+    try {
+      const accessToken = localStorage.getItem("access_token");
+      const formData = new URLSearchParams();
+      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
+      formData.append('type', 'get_list');
+      const response = await fetch(`https://ouptel.com/api/group_chat?access_token=${accessToken}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-Requested-With': 'XMLHttpRequest',
+          "Accept": "application/json"
+        },
+        body: formData.toString(),
+      });
+      const data = await response.json();
+      console.log('Group Chatbox API response:', data);
+      if (data?.api_status === 200) {
+        console.log('Setting group conversations:', data?.data);
+        setGroupConversations(data?.data);
+
+
+        console.log( 'data?.data', groupConversations);
+
+      } else {
+
+        console.log('Using sample group data:', sampleGroups);
+        setGroupConversations(sampleGroups);
+      }
+    } catch (error) {
+      console.log(error);
+
+      console.log('Using sample group data due to error:', sampleGroups);
+      setGroupConversations(sampleGroups);
+    }
+    finally {
+      setLoading(false);
+    }
+  }
+  useEffect(() => {
+    getalluserchats();
+    getallgroupchats();
+  }, []);
+
+  useEffect(() => {
+    console.log('Active section changed to:', activeSection);
+  }, [activeSection]);
+
+  console.log(conversations, 'conversations');
+  console.log(groupConversations, 'groupConversations');
+  console.log(activeSection, 'activeSection');
   // Random conversation data
- 
+
 
   return (
     <div className={`bg-[#EDF6F9] px-6 py-8 h-full overflow-y-auto scrollbar-hide smooth-scroll pt-0  ${isMobile ? 'w-full' : 'w-full'
@@ -94,34 +149,114 @@ console.log(conversations, 'conversations');
       {/* Individual/Groups Toggle */}
       <div className="flex flex-col p-5 mt-2.5 bg-white rounded-lg border border-[#808080]">
         <div className="flex w-full items-center justify-between">
-          <button className='relative flex items-center gap-2 border border-[#212121] xl:px-4 lg:px-2 px-2 py-2 rounded-xl cursor-pointer'>
+          <button 
+            onClick={() => setActiveSection('individual')}
+            className={`relative flex items-center gap-2 border xl:px-4 lg:px-2 px-2 py-2 rounded-xl cursor-pointer transition-all duration-200 ${
+              activeSection === 'individual' 
+                ? 'border-[#212121] bg-[#f0f0f0]' 
+                : 'border-[#808080] bg-white'
+            }`}
+          >
             <div className="grid absolute bg-[#B3261E] place-items-center w-6 h-6 rounded-full -right-2 -top-2 text-[10px] text-white font-medium">2</div>
-            <FaUser className='text-[#212121] size-[20px] xl:size-[24px] lg:size-[20px]' />
-            <span className='text-[#212121] text-sm font-medium '>Individual</span>
+            <FaUser className={`size-[20px] xl:size-[24px] lg:size-[20px] ${
+              activeSection === 'individual' ? 'text-[#212121]' : 'text-[#808080]'
+            }`} />
+            {activeSection === 'individual' && (
+              <span className="text-sm font-medium text-[#212121]">Individual</span>
+            )}
           </button>
 
-          <button className='relative flex items-center gap-2 cursor-pointer px-1'>
+          <button 
+            onClick={() => setActiveSection('groups')}
+            className={`relative flex items-center gap-2 border xl:px-4 lg:px-2 px-2 py-2 rounded-xl cursor-pointer transition-all duration-200 ${
+              activeSection === 'groups' 
+                ? 'border-[#212121] bg-[#f0f0f0]' 
+                : 'border-[#808080] bg-white'
+            }`}
+          >
             <div className="grid absolute bg-[#B3261E] place-items-center w-5 h-5 rounded-full -right-2 -top-2 text-[10px] text-white font-medium">2</div>
-            <FaUsers className='text-[#808080] size-[24px] xl:size-[32px] lg:size-[24px]' />
+            <FaUsers className={`size-[24px] xl:size-[32px] lg:size-[24px] ${
+              activeSection === 'groups' ? 'text-[#212121]' : 'text-[#808080]'
+            }`} />
+            {activeSection === 'groups' && (
+              <span className="text-sm font-medium text-[#212121]">Groups</span>
+            )}
           </button>
         </div>
 
         <div className="flex flex-col xl:gap-4 lg:gap-2">
-            {conversations?.map((conversation) => (
-            <div key={conversation.id} className="mt-6 w-full flex items-center justify-between xl:gap-4 lg:gap-2 cursor-pointer" onClick={() => navigate(`/chat-detailed/${conversation?.user_id}`)}>
-              {/* Profile photo */}
-              <div className="grid size-8 lg:size-10 xl:size-11 rounded-full bg-black relative">
-                <div className={`size-3 lg:size-3 xl:size-4 rounded-full ${conversation.isOnline ? 'bg-[#4CAF50]' : 'bg-gray-400'} absolute -right-0 -bottom-0 border-2 border-inset border-white`}></div>
-              </div>
+          {activeSection === 'individual' ? (
+            // Individual Conversations
+            conversations && conversations.length > 0 ? (
+              conversations.map((conversation) => (
+                <div key={conversation.id} className="mt-6 w-full flex items-center justify-between xl:gap-4 lg:gap-2 cursor-pointer" onClick={() => {
+                  const userData = {
+                    name: conversation?.name,
+                    avatar: conversation?.avatar,
+                    isOnline: conversation?.isOnline
+                  };
+                  console.log('Setting current chat:', conversation?.user_id, userData);
+                  setCurrentChat(conversation?.user_id, userData);
+                  
+                  // Store user data in localStorage for persistence
+                  localStorage.setItem(`chat_user_${conversation?.user_id}`, JSON.stringify(userData));
+                  
+                  navigate(`/chat-detailed/${conversation?.user_id}`);
+                }}>
+                  {/* Profile photo */}
+                  <div className="grid size-8 lg:size-10 xl:size-11 rounded-full bg-black relative">
+                    <div className={`size-3 lg:size-3 xl:size-4 rounded-full ${conversation.isOnline ? 'bg-[#4CAF50]' : 'bg-gray-400'} absolute -right-0 -bottom-0 border-2 border-inset border-white`}></div>
+                  </div>
 
-
-              <div className="flex flex-col gap-1">
-                <p className="xl:text-sm lg:text-xs text-sm font-semibold text-[#212121]">{conversation.name}</p>
-                <p className="xl:text-xs lg:text-xs text-xs text-[#212121] line-clamp-1">{conversation.message}</p>
+                  <div className="flex flex-col gap-1">
+                    <p className="xl:text-sm lg:text-xs text-sm font-semibold text-[#212121]">{conversation.name}</p>
+                    <p className="xl:text-xs lg:text-xs text-xs text-[#212121] line-clamp-1">{conversation.message}</p>
+                  </div>
+                  <span className='text-[#212121] xl:text-sm lg:text-xs text-xs font-medium'>{conversation.time}</span>
+                </div>
+              ))
+            ) : (
+              <div className="mt-6 text-center text-gray-500">
+                <p>No individual conversations found</p>
               </div>
-              <span className='text-[#212121] xl:text-sm lg:text-xs text-xs font-medium'>{conversation.time}</span>
-            </div>
-          ))}
+            )
+          ) : (
+            // Group Conversations
+            groupConversations && groupConversations.length > 0 ? (
+              groupConversations.map((group) => (
+                <div key={group.id} className="mt-6 w-full flex items-center justify-between xl:gap-4 lg:gap-2 cursor-pointer" onClick={() => {
+                  const groupData = {
+                    name: group?.name,
+                    avatar: group?.avatar,
+                    isOnline: group?.isOnline,
+                    type: 'group'
+                  };
+                  console.log('Setting current group chat:', group?.group_id, groupData);
+                  setCurrentChat(group?.group_id, groupData);
+                  
+                  // Store group data in localStorage for persistence
+                  localStorage.setItem(`chat_user_${group?.group_id}`, JSON.stringify(groupData));
+                  
+                  navigate(`/chat-detailed/${group?.group_id}`);
+                }}>
+                  {/* Group photo */}
+                  <div className="grid size-8 lg:size-10 xl:size-11 rounded-full bg-blue-500 relative">
+                    <div className="size-3 lg:size-3 xl:size-4 rounded-full bg-[#4CAF50] absolute -right-0 -bottom-0 border-2 border-inset border-white"></div>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <p className="xl:text-sm lg:text-xs text-sm font-semibold text-[#212121]">{group.name}</p>
+                    <p className="xl:text-xs lg:text-xs text-xs text-[#212121] line-clamp-1">{group.message}</p>
+                  </div>
+                  <span className='text-[#212121] xl:text-sm lg:text-xs text-xs font-medium'>{group.time}</span>
+                </div>
+              ))
+            ) : (
+              <div className="mt-6 text-center text-gray-500">
+                <p>No group conversations found</p>
+              </div>
+            )
+          )}
         </div>
       </div>
 

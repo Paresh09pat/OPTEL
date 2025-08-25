@@ -1,13 +1,151 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { FaCheck } from 'react-icons/fa'
 import { useParams } from 'react-router-dom'
+import { useChatContext } from '../context/ChatContext';
 
-const ChatDetailed = () => {
+const ChatDetailed = ({name}) => {
     const { chatId } = useParams();
+    const { currentChatUser, setCurrentChat, clearCurrentChat } = useChatContext();
     console.log(chatId, 'chatId');
+    console.log('Current chat user from context:', currentChatUser);
     const chatContainerRef = useRef(null)
     const [chatMessages, setChatMessages] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [userLoading, setUserLoading] = useState(false);
+
+    // Function to fetch user data by chatId
+    const getUserData = async () => {
+        // Only fetch if we don't have the user data for this chatId
+        if (currentChatUser && currentChatUser.chatId === chatId) {
+            console.log('User data already available for chatId:', chatId);
+            return;
+        }
+        
+        // Prevent multiple simultaneous API calls
+        if (userLoading) {
+            console.log('User data already being fetched, skipping...');
+            return;
+        }
+        
+        // Ensure chatId is valid
+        if (!chatId) {
+            console.log('No chatId provided, skipping user data fetch');
+            setUserLoading(false);
+            return;
+        }
+        
+        console.log('Fetching user data for chatId:', chatId);
+        setUserLoading(true);
+        
+        // First, try to get user data from localStorage (if it was stored when navigating from Chatbox)
+        const storedUserData = localStorage.getItem(`chat_user_${chatId}`);
+        if (storedUserData) {
+            try {
+                const parsedData = JSON.parse(storedUserData);
+                const userData = {
+                    ...parsedData,
+                    chatId: chatId
+                };
+                console.log('Using stored user data:', userData);
+                setCurrentChat(chatId, userData);
+                setUserLoading(false);
+                return;
+            } catch (e) {
+                console.log('Error parsing stored user data:', e);
+            }
+        }
+        
+        try {
+            const accessToken = localStorage.getItem("access_token");
+            if (!accessToken) {
+                console.log('No access token found, using fallback user data');
+                const fallbackUserData = {
+                    name: 'Unknown User',
+                    avatar: "/perimg.png",
+                    isOnline: false,
+                    chatId: chatId
+                };
+                setCurrentChat(chatId, fallbackUserData);
+                localStorage.setItem(`chat_user_${chatId}`, JSON.stringify(fallbackUserData));
+                return;
+            }
+            
+            const formData = new URLSearchParams();
+
+            formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
+            formData.append('data_type', 'users');
+            formData.append('user_type', 'online');
+            
+            const response = await fetch(`https://ouptel.com/api/get_chats?access_token=${accessToken}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    "Accept": "application/json"
+                },
+                body: formData.toString(),
+            });
+            
+            const data = await response.json();
+            console.log('User data API response:', data);
+            
+            if (data?.api_status === 200 && data?.data && Array.isArray(data.data)) {
+                // Find the specific user by chatId
+                const user = data.data.find(u => u.user_id === chatId);
+                if (user && user.name) {
+                    const userData = {
+                        name: user.name || 'Unknown User',
+                        avatar: user.avatar || "/perimg.png",
+                        isOnline: user.isOnline || false,
+                        chatId: chatId
+                    };
+                    
+                    console.log('Setting user data in context:', userData);
+                    setCurrentChat(chatId, userData);
+                    
+                    // Store in localStorage for future use
+                    localStorage.setItem(`chat_user_${chatId}`, JSON.stringify(userData));
+                    return;
+                } else {
+                    console.log('User not found or invalid user data:', user);
+                }
+            } else {
+                console.log('API response not in expected format:', data);
+            }
+            
+            // Fallback: create basic user data if user not found
+            const fallbackUserData = {
+                name: 'Unknown User',
+                avatar: "/perimg.png",
+                isOnline: false,
+                chatId: chatId
+            };
+            
+            console.log('Setting fallback user data in context:', fallbackUserData);
+            setCurrentChat(chatId, fallbackUserData);
+            
+            // Store fallback data in localStorage
+            localStorage.setItem(`chat_user_${chatId}`, JSON.stringify(fallbackUserData));
+        } catch (error) {
+            console.log('Error fetching user data:', error);
+            // Fallback: create basic user data if API fails
+            const fallbackUserData = {
+                name: 'Unknown User',
+                avatar: "/perimg.png",
+                isOnline: false,
+                chatId: chatId
+            };
+            
+            console.log('Setting fallback user data in context due to error:', fallbackUserData);
+            setCurrentChat(chatId, fallbackUserData);
+            
+            // Store fallback data in localStorage
+            localStorage.setItem(`chat_user_${chatId}`, JSON.stringify(fallbackUserData));
+        } finally {
+            setUserLoading(false);
+        }
+    };
+
     const getchatmessages = async () => {
         setLoading(true);
         try {
@@ -40,178 +178,35 @@ const ChatDetailed = () => {
             setLoading(false);
         }
     }
+
     useEffect(() => {
+        // Always fetch user data when chatId changes
+        getUserData();
         getchatmessages();
+        
+        // Cleanup function to remove old user data from localStorage
+        return () => {
+            // Keep only the current chat user data, remove others
+            const currentChatUserKey = `chat_user_${chatId}`;
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('chat_user_') && key !== currentChatUserKey) {
+                    localStorage.removeItem(key);
+                }
+            });
+            
+            // Note: We don't clear the context here to preserve user data when navigating back
+        };
     }, [chatId]);
+
+    useEffect(() => {
+        console.log('Context changed - currentChatUser:', currentChatUser);
+        console.log('Current chatId from params:', chatId);
+        console.log('Context currentChatId:', currentChatUser?.chatId);
+        
+    }, [currentChatUser, chatId]);
+    
     console.log(chatMessages, 'chatMessages-detailed');
-    // Sample chat messages with different dates
-    const chatMessagess = [
-        // Yesterday's messages
-        {
-            id: 1,
-            text: "Hey! How's the project going?",
-            time_text: "10:30 AM",
-            date: "December 13, 2024",
-            isMe: false,
-            isDelivered: true,
-            isRead: true,
-            avatar: "/perimg.png"
-        },
-        {
-            id: 2,
-            text: "It's going great! Just finished the UI mockups.",
-            time: "10:32 AM",
-            date: "December 13, 2024",
-            isMe: true,
-            isDelivered: true,
-            isRead: true,
-            avatar: "/perimg.png"
-        },
-        {
-            id: 3,
-            text: "Awesome! Can you send them over?",
-            time: "10:33 AM",
-            date: "December 13, 2024",
-            isMe: false,
-            isDelivered: true,
-            isRead: true,
-            avatar: "/perimg.png"
-        },
-        {
-            id: 4,
-            text: "Sure! I'll send them in a few minutes.",
-            time: "10:35 AM",
-            date: "December 13, 2024",
-            isMe: true,
-            isDelivered: true,
-            isRead: true,
-            avatar: "/perimg.png"
-        },
 
-        // Day before yesterday's messages
-        {
-            id: 5,
-            text: "Good morning! Ready for today's meeting?",
-            time: "9:15 AM",
-            date: "December 14, 2024",
-            isMe: false,
-            isDelivered: true,
-            isRead: true,
-            avatar: "/perimg.png"
-        },
-        {
-            id: 6,
-            text: "Yes! I've prepared all the documents we need.",
-            time: "9:18 AM",
-            date: "December 14, 2024",
-            isMe: true,
-            isDelivered: true,
-            isRead: true,
-            avatar: "/perimg.png"
-        },
-        {
-            id: 7,
-            text: "Perfect! The client will be impressed.",
-            time: "9:20 AM",
-            date: "December 14, 2024",
-            isMe: false,
-            isDelivered: true,
-            isRead: true,
-            avatar: "/perimg.png"
-        },
-        {
-            id: 8,
-            text: "Meeting went great! Thanks for your help.",
-            time: "2:45 PM",
-            date: "December 14, 2024",
-            isMe: true,
-            isDelivered: true,
-            isRead: true,
-            avatar: "/perimg.png"
-        },
-        {
-            id: 9,
-            text: "Anytime! We make a great team.",
-            time: "2:47 PM",
-            date: "December 14, 2024",
-            isMe: false,
-            isDelivered: true,
-            isRead: true,
-            avatar: "/perimg.png"
-        },
-
-        // Today's messages
-        {
-            id: 10,
-            text: "Hey! How was your weekend?",
-            time: "8:30 AM",
-            date: "December 15, 2024",
-            isMe: false,
-            isDelivered: true,
-            isRead: true,
-            avatar: "/perimg.png"
-        },
-        {
-            id: 11,
-            text: "It was amazing! Went hiking with friends.",
-            time: "8:35 AM",
-            date: "December 15, 2024",
-            isMe: true,
-            isDelivered: true,
-            isRead: true,
-            avatar: "/perimg.png"
-        },
-        {
-            id: 12,
-            text: "That sounds fun! I spent time with family.",
-            time: "8:37 AM",
-            date: "December 15, 2024",
-            isMe: false,
-            isDelivered: true,
-            isRead: true,
-            avatar: "/perimg.png"
-        },
-        {
-            id: 13,
-            text: "Here are the mockups I've been working on. Let me know what you think!",
-            time: "10:40 AM",
-            date: "December 15, 2024",
-            isMe: true,
-            isDelivered: true,
-            isRead: false,
-            avatar: "/perimg.png"
-        },
-        {
-            id: 14,
-            text: "These look amazing! Great work on the color scheme.",
-            time: "10:42 AM",
-            date: "December 15, 2024",
-            isMe: false,
-            isDelivered: true,
-            isRead: true,
-            avatar: "/perimg.png"
-        },
-        {
-            id: 15,
-            text: "Thanks! I'm really happy with how it turned out.",
-            time: "10:43 AM",
-            date: "December 15, 2024",
-            isMe: true,
-            isDelivered: false,
-            isRead: false,
-            avatar: "/perimg.png"
-        }
-    ]
-
-    // Group messages by date
-    // const groupedMessages = chatMessagess.reduce((groups, message) => {
-    //     const date = message.date
-    //     if (!groups[date]) {
-    //         groups[date] = []
-    //     }
-    //     groups[date].push(message)
-    //     return groups
-    // }, {})
 
     console.log(chatMessages, 'chatMessages');
 
@@ -233,7 +228,7 @@ const ChatDetailed = () => {
         </div>
     )
 
-    if (loading) {
+    if (loading || userLoading) {
         return <div className="flex items-center justify-center h-screen">
             <div className="w-10 h-10 border-t-transparent border-b-transparent border-r-transparent border-l-transparent border-2 border-blue-500 rounded-full animate-spin"></div>
         </div>
@@ -253,12 +248,25 @@ const ChatDetailed = () => {
             <div className="py-4 px-7 border border-[#808080] rounded-lg flex items-center justify-between bg-white">
                 <div className="flex items-center">
                     <div className=" size-14 rounded-full border-inset border-[4px] border-[#fff] shadow-lg relative">
-                        <img src="/perimg.png" alt="User Profile" className="w-full h-full rounded-full object-cover" />
-                        <div className="absolute bottom-0 right-0 size-4 rounded-full bg-[#4CAF50] border-2 border-inset border-[#fff]"></div>
+                        <img 
+                            src={currentChatUser?.avatar || "/perimg.png"} 
+                            alt="User Profile" 
+                            className="w-full h-full rounded-full object-cover" 
+                        />
+                        <div className={`absolute bottom-0 right-0 size-4 rounded-full ${currentChatUser?.isOnline ? 'bg-[#4CAF50]' : 'bg-gray-400'} border-2 border-inset border-[#fff]`}></div>
                     </div>
                     <div className=" text-[#212121] ml-4">
-                        <h5 className=' text-lg font-medium'>Sana Rizvi</h5>
-                        <span className=' text-sm font-medium'>Now</span>
+                        {userLoading ? (
+                            <div className="animate-pulse">
+                                <div className="h-5 bg-gray-300 rounded w-24 mb-2"></div>
+                                <div className="h-4 bg-gray-300 rounded w-16"></div>
+                            </div>
+                        ) : (
+                            <>
+                                <h5 className=' text-lg font-medium'>{currentChatUser?.name || 'Unknown User'}</h5>
+                                <span className=' text-sm font-medium'>{currentChatUser?.isOnline ? 'Online' : 'Offline'}</span>
+                            </>
+                        )}
                     </div>
                 </div>
 
@@ -276,8 +284,21 @@ const ChatDetailed = () => {
                 className="flex-1 py-4 px-7 border border-[#808080] rounded-lg bg-white overflow-y-auto scrollbar-hide relative"
                 ref={chatContainerRef}
             >
-                {/* Chat Messages Grouped by Date */}
-                {[...chatMessages].reverse().map((message) => (
+                {/* Show loading or no user data message */}
+                {userLoading ? (
+                    <div className="flex items-center justify-center h-full">
+                        <div className="text-center">
+                            <div className="w-8 h-8 border-t-transparent border-b-transparent border-r-transparent border-l-transparent border-2 border-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
+                            <p className="text-gray-500">Loading user data...</p>
+                        </div>
+                    </div>
+                ) : !currentChatUser ? (
+                    <div className="flex items-center justify-center h-full">
+                        <p className="text-gray-500">User data not available</p>
+                    </div>
+                ) : (
+                    /* Chat Messages Grouped by Date */
+                    [...chatMessages].reverse().map((message) => (
                     <div key={message?.time} className="mb-6">
                         {/* Sticky Date Header for each section */}
                         <div className="sticky top-0 z-20 bg-transparent py-2 mb-4 text-center">
@@ -314,7 +335,8 @@ const ChatDetailed = () => {
                             </div>
                         </div>
                     </div>
-                ))}
+                    ))
+                )}
             </div>
         </div>
     )

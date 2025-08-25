@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import MainLayout from './components/layout/MainLayout';
+import { ChatProvider } from './context/ChatContext';
 
 // Page imports
 import Home from './pages/Home';
@@ -36,39 +37,41 @@ function App() {
 
 
   return (
-    <Routes>
-      {/* Public Routes (no layout) */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+    <ChatProvider>
+      <Routes>
+        {/* Public Routes (no layout) */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
-      {/* Protected / Layout Routes */}
-      <Route path="/" element={<ProtectedRoute />}>
-        <Route element={<MainLayout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/explore" element={<Explore />} />
-          <Route path="/albums" element={<Albums />} />
-          <Route path="/saved-posts" element={<SavedPosts />} />
-          <Route path="/events" element={<Events />} />
-          <Route path="/forum" element={<Forum />} />
-          <Route path="/PagesComp/MainPages" element={<MainPages />} />
-          <Route path="/my-groups" element={<MyGroups />} />
-          <Route path="/my-pages" element={<MyPages />} />
-          <Route path="/blog" element={<Blog />} />
-            <Route path="/blog/:blogId" element={<BlogDetailed />} />
-          <Route path="/article" element={<Article />} />
-          <Route path="/jobs" element={<Jobs />} />
-          <Route path="/more" element={<More />} />
-          <Route path="/chat-detailed/:chatId" element={<ChatDetailed />} />
-          <Route path="/my-albums" element={<MyAlbums />} />
-          <Route path="/my-albums/:albumTitle" element={<FullAlbumView />} />
-          <Route path="/my-albums/create" element={<CreateAlbum />} />
-          <Route path="/pagescomp/mainpages/createpage" element={<CreatePage />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/pagescomp/mainpages/pagesetting/mainpagesetting" element={<MainPageSetting />} />
-          <Route path="/PageProfile" element={<PageProfile />} />
+        {/* Protected / Layout Routes */}
+        <Route path="/" element={<ProtectedRoute />}>
+          <Route element={<MainLayout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/explore" element={<Explore />} />
+            <Route path="/albums" element={<Albums />} />
+            <Route path="/saved-posts" element={<SavedPosts />} />
+            <Route path="/events" element={<Events />} />
+            <Route path="/forum" element={<Forum />} />
+            <Route path="/PagesComp/MainPages" element={<MainPages />} />
+            <Route path="/my-groups" element={<MyGroups />} />
+            <Route path="/my-pages" element={<MyPages />} />
+            <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/:blogId" element={<BlogDetailed />} />
+            <Route path="/article" element={<Article />} />
+            <Route path="/jobs" element={<Jobs />} />
+            <Route path="/more" element={<More />} />
+            <Route path="/chat-detailed/:chatId" element={<ChatDetailed />} />
+            <Route path="/my-albums" element={<MyAlbums />} />
+            <Route path="/my-albums/:albumTitle" element={<FullAlbumView />} />
+            <Route path="/my-albums/create" element={<CreateAlbum />} />
+            <Route path="/pagescomp/mainpages/createpage" element={<CreatePage />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/pagescomp/mainpages/pagesetting/mainpagesetting" element={<MainPageSetting />} />
+            <Route path="/PageProfile" element={<PageProfile />} />
+          </Route>
         </Route>
-      </Route>
-    </Routes>
+      </Routes>
+    </ChatProvider>
   );
 }
 

@@ -838,7 +838,7 @@ const Home = () => {
 
 
 
-            <div className="space-y-4 md:mb-6 bg-white rounded-xl border border-[#808080]">
+            <div className="space-y-4 md:mb-6 bg-white rounded-xl ">
               {posts.slice(1).map(post => (
                 <PostCard
                   key={post.id}
