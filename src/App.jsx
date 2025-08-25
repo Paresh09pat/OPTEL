@@ -4,37 +4,37 @@ import MainLayout from './components/layout/MainLayout';
 import { ChatProvider } from './context/ChatContext';
 
 // Page imports
-import Home from './pages/Home';
-import Explore from './pages/Explore';
-import Albums from './pages/Albums';
-import SavedPosts from './pages/SavedPosts';
-import Events from './pages/Events';
-import Forum from './pages/Forum';
-import MyGroups from './pages/MyGroups';
-import MyPages from './pages/MyPages';
-import Blog from './pages/Blog';
-import Article from './pages/Article';
-import Jobs from './pages/Jobs';
-import More from './pages/More';
-import ChatDetailed from './pages/ChatDetailed';
-import MyAlbums from './pages/MyAlbums';
-import FullAlbumView from './pages/FullAlbum';
-import CreateAlbum from './pages/CreateAlbum';
-import MainPages from './pages/PagesComp/MainPages';
-import CreatePage from './pages/PagesComp/CreatePage';
-import MainPageSetting from './pages/PageSetting/MainPageSetting';
-import Profile from './pages/Profile';
-import PageProfile from './pages/PageSetting/PageProfile';
-import Login from './pages/Login';
-import Register from './pages/PageSetting/Register';
-import ProtectedRoute from './components/ProtectedRoute';
-import BlogDetailed from './pages/BlogDetailed';
+import Home from "./pages/Home";
+import Explore from "./pages/Explore";
+import Albums from "./pages/Albums";
+import SavedPosts from "./pages/SavedPosts";
+import Events from "./pages/Events";
+import Forum from "./pages/Forum";
+import MyGroups from "./pages/MyGroups";
+import MyPages from "./pages/MyPages";
+import Blog from "./pages/Blog";
+import Article from "./pages/Article";
+import Jobs from "./pages/Jobs";
+import More from "./pages/More";
+import ChatDetailed from "./pages/ChatDetailed";
+import MyAlbums from "./pages/MyAlbums";
+import FullAlbumView from "./pages/FullAlbum";
+import CreateAlbum from "./pages/CreateAlbum";
+import MainPages from "./pages/PagesComp/MainPages";
+import CreatePage from "./pages/PagesComp/CreatePage";
+import MainPageSetting from "./pages/PageSetting/MainPageSetting";
+import Profile from "./pages/Profile";
+import PageProfile from "./pages/PageSetting/PageProfile";
+import Login from "./pages/Login";
+import Register from "./pages/PageSetting/Register";
+import ProtectedRoute from "./components/ProtectedRoute";
+import BlogDetailed from "./pages/BlogDetailed";
+import { ToastContainer } from "react-toastify";
 
 function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [session, setSession] = useState(localStorage.getItem("session_id"));
-
 
   return (
     <ChatProvider>
