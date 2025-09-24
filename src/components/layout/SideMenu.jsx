@@ -24,7 +24,7 @@ const SideMenu = ({ onClose, isMobile = false }) => {
   return (
     <div className={`${isMobile ? 'w-full' : 'w-60 xl:w-80'} h-screen bg-[#EDF6F9] flex flex-col`}>
       {/* Logo Section */}
-      <div className="p-1 border-b border-gray-200 flex items-center justify-between">
+      <div className="p-1 border-b border-[#d3d1d1] flex items-center justify-between">
         <div className="flex items-center justify-center space-x-3 flex-1">
           <img src="/op_logo.png" alt="Optel Logo" className="w-[11rem] aspect-1" />
         </div>
@@ -49,8 +49,8 @@ const SideMenu = ({ onClose, isMobile = false }) => {
                 key={item.id}
                 to={item.path}
                 onClick={handleLinkClick}
-                className={`flex items-center space-x-4 py-2 px-7 rounded-lg transition-colors duration-200 ${active
-                  ? 'bg-white border border-[#808080]'
+                className={`flex items-center space-x-2 py-1 px-7 rounded-lg transition-colors duration-200 ${active
+                  ? 'bg-white border border-[#d3d1d1]'
                   : 'hover:bg-gray-100'
                   }`}
               >
@@ -79,7 +79,7 @@ const SideMenu = ({ onClose, isMobile = false }) => {
 
       <button
         onClick={handleLinkClick}
-        className="  bg-transparent  text-[#212121] font-semibold text-xl py-3.5 px-6 rounded-full flex items-center justify-between transition-colors cursor-pointer border border-[#808080] mx-auto w-[90%]"
+        className="  bg-transparent  text-[#212121] font-semibold text-xl py-3.5 px-6 rounded-full flex items-center justify-between transition-colors cursor-pointer border border-[#d3d1d1] mx-auto w-[90%]"
       >
         <span>Create post</span>
         <Icon icon="lets-icons:send-hor-light" width="30" height="30" style={{ color: '#000' }} />

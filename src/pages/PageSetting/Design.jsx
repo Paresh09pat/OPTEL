@@ -21,14 +21,14 @@ const Design = () => {
   };
 
   return (
-    <div className="bg-white rounded-xl p-3.5 px-9 border border-[#808080]">
-      <h2 className="text-xl font-semibold text-[#808080] text-center border-b border-[#808080] pb-2 mb-2">Design</h2>
+    <div className="bg-white rounded-xl p-3.5 px-9 border border-[#d3d1d1]">
+      <h2 className="text-xl font-semibold text-[#808080] text-center border-b border-[#d3d1d1] pb-2 mb-2">Design</h2>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Background Picture :</label>
 
         <div
-          className="border border-[#212121] rounded-3xl p-12 text-center cursor-pointer"
+          className="border border-[#d3d1d1] rounded-3xl p-12 text-center cursor-pointer"
           onClick={handleImageClick}
         >
           <div className="flex flex-col items-center">

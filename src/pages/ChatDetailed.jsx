@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { FaCheck } from 'react-icons/fa'
+import { FaCheck, FaPaperPlane } from 'react-icons/fa'
 import { useParams } from 'react-router-dom'
 import { useChatContext } from '../context/ChatContext';
 
-const ChatDetailed = ({name}) => {
+const ChatDetailed = ({ name }) => {
     const { chatId } = useParams();
     const { currentChatUser, setCurrentChat, clearCurrentChat } = useChatContext();
     console.log(chatId, 'chatId');
@@ -12,6 +12,7 @@ const ChatDetailed = ({name}) => {
     const [chatMessages, setChatMessages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [userLoading, setUserLoading] = useState(false);
+    const [messageText, setMessageText] = useState('');
 
     // Function to fetch user data by chatId
     const getUserData = async () => {
@@ -20,23 +21,23 @@ const ChatDetailed = ({name}) => {
             console.log('User data already available for chatId:', chatId);
             return;
         }
-        
+
         // Prevent multiple simultaneous API calls
         if (userLoading) {
             console.log('User data already being fetched, skipping...');
             return;
         }
-        
+
         // Ensure chatId is valid
         if (!chatId) {
             console.log('No chatId provided, skipping user data fetch');
             setUserLoading(false);
             return;
         }
-        
+
         console.log('Fetching user data for chatId:', chatId);
         setUserLoading(true);
-        
+
         // First, try to get user data from localStorage (if it was stored when navigating from Chatbox)
         const storedUserData = localStorage.getItem(`chat_user_${chatId}`);
         if (storedUserData) {
@@ -54,7 +55,7 @@ const ChatDetailed = ({name}) => {
                 console.log('Error parsing stored user data:', e);
             }
         }
-        
+
         try {
             const accessToken = localStorage.getItem("access_token");
             if (!accessToken) {
@@ -69,13 +70,13 @@ const ChatDetailed = ({name}) => {
                 localStorage.setItem(`chat_user_${chatId}`, JSON.stringify(fallbackUserData));
                 return;
             }
-            
+
             const formData = new URLSearchParams();
 
             formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
             formData.append('data_type', 'users');
             formData.append('user_type', 'online');
-            
+
             const response = await fetch(`https://ouptel.com/api/get_chats?access_token=${accessToken}`, {
                 method: 'POST',
                 headers: {
@@ -85,10 +86,10 @@ const ChatDetailed = ({name}) => {
                 },
                 body: formData.toString(),
             });
-            
+
             const data = await response.json();
             console.log('User data API response:', data);
-            
+
             if (data?.api_status === 200 && data?.data && Array.isArray(data.data)) {
                 // Find the specific user by chatId
                 const user = data.data.find(u => u.user_id === chatId);
@@ -99,10 +100,10 @@ const ChatDetailed = ({name}) => {
                         isOnline: user.isOnline || false,
                         chatId: chatId
                     };
-                    
+
                     console.log('Setting user data in context:', userData);
                     setCurrentChat(chatId, userData);
-                    
+
                     // Store in localStorage for future use
                     localStorage.setItem(`chat_user_${chatId}`, JSON.stringify(userData));
                     return;
@@ -112,7 +113,7 @@ const ChatDetailed = ({name}) => {
             } else {
                 console.log('API response not in expected format:', data);
             }
-            
+
             // Fallback: create basic user data if user not found
             const fallbackUserData = {
                 name: 'Unknown User',
@@ -120,10 +121,10 @@ const ChatDetailed = ({name}) => {
                 isOnline: false,
                 chatId: chatId
             };
-            
+
             console.log('Setting fallback user data in context:', fallbackUserData);
             setCurrentChat(chatId, fallbackUserData);
-            
+
             // Store fallback data in localStorage
             localStorage.setItem(`chat_user_${chatId}`, JSON.stringify(fallbackUserData));
         } catch (error) {
@@ -135,10 +136,10 @@ const ChatDetailed = ({name}) => {
                 isOnline: false,
                 chatId: chatId
             };
-            
+
             console.log('Setting fallback user data in context due to error:', fallbackUserData);
             setCurrentChat(chatId, fallbackUserData);
-            
+
             // Store fallback data in localStorage
             localStorage.setItem(`chat_user_${chatId}`, JSON.stringify(fallbackUserData));
         } finally {
@@ -183,7 +184,7 @@ const ChatDetailed = ({name}) => {
         // Always fetch user data when chatId changes
         getUserData();
         getchatmessages();
-        
+
         // Cleanup function to remove old user data from localStorage
         return () => {
             // Keep only the current chat user data, remove others
@@ -193,7 +194,7 @@ const ChatDetailed = ({name}) => {
                     localStorage.removeItem(key);
                 }
             });
-            
+
             // Note: We don't clear the context here to preserve user data when navigating back
         };
     }, [chatId]);
@@ -202,9 +203,9 @@ const ChatDetailed = ({name}) => {
         console.log('Context changed - currentChatUser:', currentChatUser);
         console.log('Current chatId from params:', chatId);
         console.log('Context currentChatId:', currentChatUser?.chatId);
-        
+
     }, [currentChatUser, chatId]);
-    
+
     console.log(chatMessages, 'chatMessages-detailed');
 
 
@@ -242,16 +243,31 @@ const ChatDetailed = ({name}) => {
         }).format(new Date(unixTime * 1000));
     }
 
+    const handleSendMessage = () => {
+        if (messageText.trim()) {
+            console.log('Sending message:', messageText);
+            // TODO: Implement actual message sending logic
+            setMessageText(''); // Clear input after sending
+        }
+    }
+
+    const handleKeyPress = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSendMessage();
+        }
+    }
+
     return (
         <div className="bg-[#EDF6F9] w-full h-full pt-8 flex flex-col gap-4">
             {/* Chat Header */}
-            <div className="py-4 px-7 border border-[#808080] rounded-lg flex items-center justify-between bg-white">
+                            <div className="py-4 px-7 border border-[#d3d1d1] rounded-lg flex items-center justify-between bg-white">
                 <div className="flex items-center">
                     <div className=" size-14 rounded-full border-inset border-[4px] border-[#fff] shadow-lg relative">
-                        <img 
-                            src={currentChatUser?.avatar || "/perimg.png"} 
-                            alt="User Profile" 
-                            className="w-full h-full rounded-full object-cover" 
+                        <img
+                            src={currentChatUser?.avatar || "/perimg.png"}
+                            alt="User Profile"
+                            className="w-full h-full rounded-full object-cover"
                         />
                         <div className={`absolute bottom-0 right-0 size-4 rounded-full ${currentChatUser?.isOnline ? 'bg-[#4CAF50]' : 'bg-gray-400'} border-2 border-inset border-[#fff]`}></div>
                     </div>
@@ -280,64 +296,92 @@ const ChatDetailed = ({name}) => {
             </div>
 
             {/* Chat Messages Container */}
-            <div
-                className="flex-1 py-4 px-7 border border-[#808080] rounded-lg bg-white overflow-y-auto scrollbar-hide relative"
-                ref={chatContainerRef}
-            >
-                {/* Show loading or no user data message */}
-                {userLoading ? (
-                    <div className="flex items-center justify-center h-full">
-                        <div className="text-center">
-                            <div className="w-8 h-8 border-t-transparent border-b-transparent border-r-transparent border-l-transparent border-2 border-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
-                            <p className="text-gray-500">Loading user data...</p>
+                            <div className="flex-1 flex flex-col border border-[#d3d1d1] rounded-lg bg-white">
+                {/* Scrollable Messages Area */}
+                <div
+                    className="flex-1 py-4 px-7 overflow-y-auto scrollbar-hide"
+                    ref={chatContainerRef}
+                >
+                    {/* Show loading or no user data message */}
+                    {userLoading ? (
+                        <div className="flex items-center justify-center h-full">
+                            <div className="text-center">
+                                <div className="w-8 h-8 border-t-transparent border-b-transparent border-r-transparent border-l-transparent border-2 border-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
+                                <p className="text-gray-500">Loading user data...</p>
+                            </div>
                         </div>
-                    </div>
-                ) : !currentChatUser ? (
-                    <div className="flex items-center justify-center h-full">
-                        <p className="text-gray-500">User data not available</p>
-                    </div>
-                ) : (
-                    /* Chat Messages Grouped by Date */
-                    [...chatMessages].reverse().map((message) => (
-                    <div key={message?.time} className="mb-6">
-                        {/* Sticky Date Header for each section */}
-                        <div className="sticky top-0 z-20 bg-transparent py-2 mb-4 text-center">
-                            <span className="bg-gray-100 px-3 py-1 rounded-full text-sm text-gray-600 border border-gray-300">
-                                {formatToIST(message?.time)}
-                            </span>
+                    ) : !currentChatUser ? (
+                        <div className="flex items-center justify-center h-full">
+                            <p className="text-gray-500">User data not available</p>
                         </div>
+                    ) : (
+                        /* Chat Messages Grouped by Date */
+                        [...chatMessages].reverse().map((message) => (
+                            <div key={message?.time} className="mb-6">
+                                {/* Sticky Date Header for each section */}
+                                <div className="sticky top-0 z-20 bg-transparent py-2 mb-4 text-center">
+                                    <span className="bg-gray-100 px-3 py-1 rounded-full text-sm text-gray-600 border border-gray-300">
+                                        {formatToIST(message?.time)}
+                                    </span>
+                                </div>
 
-                        {/* Messages for this date */}
-                        <div className="space-y-4">
-                            <div key={message?.id} className={`flex ${message?.position === "right" ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[70%] ${message?.position === "right" ? 'order-2' : 'order-1'}`}>
-                                    <div className={`rounded-lg p-3 ${message?.position === "right"
-                                            ? 'bg-[#808080] text-white'
-                                            : 'bg-gray-100 text-gray-800'
-                                        }`}>
-                                        <p className="text-sm">{message?.text}</p>
-                                        <div className="flex items-center justify-between mt-1">
-                                            <span className="text-xs opacity-70">{message.time}</span>
-                                            {message?.position === "right" && (
-                                                <DeliveryStatus isDelivered={message.isDelivered} isRead={message.isRead} />
-                                            )}
+                                {/* Messages for this date */}
+                                <div className="space-y-4">
+                                    <div key={message?.id} className={`flex ${message?.position === "right" ? 'justify-end' : 'justify-start'}`}>
+                                        <div className={`max-w-[70%] ${message?.position === "right" ? 'order-2' : 'order-1'}`}>
+                                            <div className={`rounded-lg p-3 ${message?.position === "right"
+                                                ? 'bg-[#808080] text-white'
+                                                : 'bg-gray-100 text-gray-800'
+                                                }`}>
+                                                <p className="text-sm">{message?.text}</p>
+                                                <div className="flex items-center justify-between mt-1">
+                                                    <span className="text-xs opacity-70">{message.time}</span>
+                                                    {message?.position === "right" && (
+                                                        <DeliveryStatus isDelivered={message.isDelivered} isRead={message.isRead} />
+                                                    )}
+                                                </div>
+                                            </div>
+                                            {/* Profile Photo at Bottom */}
+                                            <div className={`flex ${message?.position === "right" ? 'justify-end' : 'justify-start'} mt-1`}>
+                                                <img
+                                                    src={message?.avatar_full}
+                                                    alt="Profile"
+                                                    className="w-6 h-6 rounded-full"
+                                                />
+                                            </div>
                                         </div>
-                                    </div>
-                                    {/* Profile Photo at Bottom */}
-                                    <div className={`flex ${message?.position === "right" ? 'justify-end' : 'justify-start'} mt-1`}>
-                                        <img
-                                            src={message?.avatar_full}
-                                            alt="Profile"
-                                            className="w-6 h-6 rounded-full"
-                                        />
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                    ))
-                )}
+                        ))
+                    )}
+                </div>
+
+                {/* Fixed Input Field at Bottom */}
+                <div className='flex px-7 py-4 gap-2 bg-white border-t border-gray-200'>
+                    <input 
+                        type="text" 
+                        placeholder='Type a message' 
+                        value={messageText}
+                        onChange={(e) => setMessageText(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        className='flex-1 border border-[#d3d1d1] rounded-md p-2 focus:outline-none focus:border-blue-500' 
+                    />
+                    <button 
+                        className={`px-4 py-2 rounded-md cursor-pointer transition-colors ${
+                            messageText.trim() 
+                                ? 'bg-blue-500 text-white hover:bg-blue-600' 
+                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        }`}
+                        onClick={handleSendMessage}
+                        disabled={!messageText.trim()}
+                    >
+                        <FaPaperPlane className='text-white' size={20} />
+                    </button>
+                </div>
             </div>
+
+
         </div>
     )
 }

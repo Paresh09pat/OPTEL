@@ -50,8 +50,7 @@ const CreateAlbum = () => {
       });
 
       setLoading(true)
-      const response = await fetch(
-        `${baseUrl}/albums?access_token=${accessToken}`,
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/albums?access_token=${accessToken}`,
         {
           method: "POST",
           headers: {
@@ -92,7 +91,7 @@ const CreateAlbum = () => {
             <div className="flex gap-6 items-center">
               <Link
                 to={"/create-album"}
-                className="border border-[#808080] cursor-pointer py-1.5 px-3.5 rounded-2xl flex items-center gap-1.5"
+                className="border border-[#d3d1d1] cursor-pointer py-1.5 px-3.5 rounded-2xl flex items-center gap-1.5"
               >
                 <img
                   src="/icons/gridicons_create.svg"
@@ -132,7 +131,7 @@ const CreateAlbum = () => {
               <input
                 type="text"
                 id="album-name"
-                className="w-full p-2 px-4 border border-[#212121] rounded-full"
+                className="w-full p-2 px-4 border border-[#d3d1d1] rounded-full"
                 placeholder="Enter Album Name"
                 value={albumName}
                 onChange={(e) => setAlbumName(e.target.value)}
@@ -159,7 +158,7 @@ const CreateAlbum = () => {
 
               <label
                 htmlFor="album-media"
-                className="w-full min-h-[200px] border border-[#212121] rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer text-[#555] p-4"
+                className="w-full min-h-[200px] border border-[#d3d1d1] rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer text-[#555] p-4"
               >
                 {selectedFiles.length === 0 ? (
                   <>
@@ -217,7 +216,7 @@ const CreateAlbum = () => {
             <div className="w-full text-center">
               <button
                 type="submit"
-                className="w-[20rem] h-[50px] border border-[#A3D36C] text-[#76B82A] font-semibold  text-[20px] py-2 px-8 rounded-lg hover:bg-[#8BC34B] transition hover:text-[#fff] "
+                className="w-[20rem] cursor-pointer h-[50px] border border-[#d3d1d1] text-[#76B82A] font-semibold  text-[20px] py-2 px-8 rounded-lg hover:bg-[#8BC34B] transition hover:text-[#fff] "
               >
                 Publish Album
               </button>

@@ -3,9 +3,8 @@ import { BsImage, BsCameraVideo, BsFolder } from 'react-icons/bs';
 import { BiBarChartAlt2 } from 'react-icons/bi';
 import { CiCirclePlus } from 'react-icons/ci';
 import { Icon } from '@iconify/react';
-import { BarChart3, MapPin, Send, Smile } from 'lucide-react';
+import { BarChart3, MapPin, Send, Smile, X } from 'lucide-react';
 import { Palette } from 'lucide-react';
-import { X } from 'lucide-react';
 
 const CreatePostSection = ({ fetchNewFeeds }) => {
     const [postText, setPostText] = useState('');
@@ -13,8 +12,46 @@ const CreatePostSection = ({ fetchNewFeeds }) => {
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [loading, setLoading] = useState(false);
 
+    // Poll state
+    const [showPoll, setShowPoll] = useState(false);
+    const [pollQuestion, setPollQuestion] = useState('');
+    const [pollOptions, setPollOptions] = useState(['', '']); // Start with 2 empty options
+    const [pollDuration, setPollDuration] = useState('7'); // Default 7 days
+
     const handleMoreClick = () => {
         setShowPopup(true);
+    };
+
+    const handlePollClick = () => {
+        setShowPoll(true);
+        setShowPopup(true);
+    };
+
+
+
+    const addPollOption = () => {
+        if (pollOptions.length < 10) { // Limit to 10 options
+            setPollOptions([...pollOptions, '']);
+        }
+    };
+
+    const removePollOption = (index) => {
+        if (pollOptions.length > 2) { // Keep minimum 2 options
+            setPollOptions(pollOptions.filter((_, i) => i !== index));
+        }
+    };
+
+    const updatePollOption = (index, value) => {
+        const newOptions = [...pollOptions];
+        newOptions[index] = value;
+        setPollOptions(newOptions);
+    };
+
+    const resetPoll = () => {
+        setPollQuestion('');
+        setPollOptions(['', '']);
+        setPollDuration('7');
+        setShowPoll(false);
     };
 
     // 👉 File selector logic
@@ -101,8 +138,10 @@ const CreatePostSection = ({ fetchNewFeeds }) => {
     //     }
     // }
 
+    console.log("poll", showPoll)
 
-    const createNewPost = async (postText, selectedFiles) => {
+
+    const createNewPost = async (postText, selectedFiles, pollData = null) => {
         setLoading(true);
         try {
             const accessToken = localStorage.getItem("access_token");
@@ -115,6 +154,14 @@ const CreatePostSection = ({ fetchNewFeeds }) => {
             formData.append('id', '169');
             formData.append('postText', postText);
             formData.append('user_id', user_id);
+
+            // Add poll data if available
+            if (pollData && pollData.showPoll) {
+                formData.append('poll_question', pollData.pollQuestion);
+                formData.append('poll_options', JSON.stringify(pollData.pollOptions.filter(opt => opt.trim())));
+                formData.append('poll_duration', pollData.pollDuration);
+                formData.append('has_poll', 'true');
+            }
 
             // Append files correctly
             selectedFiles.forEach((fileObj) => {
@@ -164,7 +211,7 @@ const CreatePostSection = ({ fetchNewFeeds }) => {
             {loading && <div className="fixed inset-0 bg-black/30 backdrop-blur-md flex items-center justify-center z-50">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
             </div>}
-                <div className="bg-white rounded-xl border border-[#808080] px-6 py-8 shadow-sm">
+            <div className="bg-white rounded-xl border border-[#d3d1d1] px-6 py-8 shadow-sm">
                 {/* Input Field */}
                 <div className="relative mb-4">
                     <img
@@ -175,20 +222,20 @@ const CreatePostSection = ({ fetchNewFeeds }) => {
 
                     <input
                         type="text"
-                        placeholder="Share something"
+                        placeholder={showPoll ? "Share something with a poll..." : "Share something"}
                         value={postText}
                         onChange={(e) => setPostText(e.target.value)}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter') {
-                                createNewPost(postText, selectedFiles);
+                                createNewPost(postText, selectedFiles, { showPoll, pollQuestion, pollOptions, pollDuration });
                             }
                         }}
                         className="w-full pl-16 pr-12 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
 
                     <button
-                        onClick={() => createNewPost(postText, selectedFiles)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 bg-white"
+                        onClick={() => createNewPost(postText, selectedFiles, { showPoll, pollQuestion, pollOptions, pollDuration })}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 bg-white cursor-pointer"
                     >
                         <Icon
                             icon="lets-icons:send-hor-light"
@@ -198,6 +245,29 @@ const CreatePostSection = ({ fetchNewFeeds }) => {
                         />
                     </button>
                 </div>
+
+                {/* Poll Indicator */}
+                {showPoll && (
+                    <div className="mb-4 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                                <BiBarChartAlt2 className="w-5 h-5 text-purple-600 mr-2" />
+                                <span className="text-sm font-medium text-purple-800">Poll Active</span>
+                            </div>
+                            <button
+                                onClick={resetPoll}
+                                className="text-purple-600 hover:text-purple-800 text-sm underline cursor-pointer"
+                            >
+                                Remove Poll
+                            </button>
+                        </div>
+                        {pollQuestion && (
+                            <p className="text-sm text-gray-700 mt-2">
+                                <strong>Q:</strong> {pollQuestion}
+                            </p>
+                        )}
+                    </div>
+                )}
 
                 {/* Action Buttons */}
                 <div className="flex justify-around px-2 pt-4 text-sm text-gray-600">
@@ -226,7 +296,10 @@ const CreatePostSection = ({ fetchNewFeeds }) => {
                     </button>
 
                     <button
-                        onClick={() => console.log('Poll clicked')}
+                        onClick={() => {
+                            console.log('Poll button clicked in main section, current showPoll:', showPoll);
+                            handlePollClick();
+                        }}
                         className="flex flex-col items-center hover:text-purple-600 cursor-pointer"
                     >
                         <BiBarChartAlt2 className="w-5 h-5 text-purple-500" />
@@ -274,6 +347,18 @@ const CreatePostSection = ({ fetchNewFeeds }) => {
                 onClose={() => setShowPopup(false)}
                 createNewPost={createNewPost}
                 setShowPopup={setShowPopup}
+                showPoll={showPoll}
+                pollQuestion={pollQuestion}
+                pollOptions={pollOptions}
+                pollDuration={pollDuration}
+                setPollQuestion={setPollQuestion}
+                setPollOptions={setPollOptions}
+                setPollDuration={setPollDuration}
+                addPollOption={addPollOption}
+                removePollOption={removePollOption}
+                updatePollOption={updatePollOption}
+                resetPoll={resetPoll}
+                setShowPoll={setShowPoll}
             />
         </>
     );
@@ -282,7 +367,7 @@ const CreatePostSection = ({ fetchNewFeeds }) => {
 export default memo(CreatePostSection);
 
 
-const CreatePostPopup = ({ isOpen, onClose, createNewPost, setShowPopup }) => {
+const CreatePostPopup = ({ isOpen, onClose, createNewPost, setShowPopup, showPoll, pollQuestion, pollOptions, pollDuration, setPollQuestion, setPollOptions, setPollDuration, addPollOption, removePollOption, updatePollOption, resetPoll, setShowPoll }) => {
     const [postText, setPostText] = useState('');
     const [showSharing, setShowSharing] = useState(false);
     const [commentsEnabled, setCommentsEnabled] = useState(true);
@@ -350,10 +435,28 @@ const CreatePostPopup = ({ isOpen, onClose, createNewPost, setShowPopup }) => {
     if (!isOpen) return null;
 
     const handlePost = async () => {
-        console.log('Posting:', { postText, commentsEnabled, showSharing });
+        console.log('Posting:', { postText, commentsEnabled, showSharing, showPoll, pollQuestion, pollOptions, pollDuration });
+
+        // Validate poll if it's enabled
+        if (showPoll) {
+            if (!pollQuestion.trim()) {
+                alert('Please enter a poll question');
+                return;
+            }
+            if (!pollOptions.some(opt => opt.trim())) {
+                alert('Please enter at least one poll option');
+                return;
+            }
+        }
+
         setPostText('');
-        await createNewPost(postText, selectedFiles);
+        await createNewPost(postText, selectedFiles, { showPoll, pollQuestion, pollOptions, pollDuration });
         setShowPopup(false);
+
+        // Reset poll if it was created
+        if (showPoll) {
+            resetPoll();
+        }
     };
 
     return (
@@ -374,7 +477,15 @@ const CreatePostPopup = ({ isOpen, onClose, createNewPost, setShowPopup }) => {
                             alt="Profile"
                             className="w-12 h-12 rounded-full object-cover"
                         />
-                        <h2 className="text-xl font-semibold text-gray-800">Create a Post</h2>
+                        <div className="flex items-center space-x-2">
+                            <h2 className="text-xl font-semibold text-gray-800">Create a Post</h2>
+                            {showPoll && (
+                                <div className="flex items-center px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+                                    <BiBarChartAlt2 className="w-3 h-3 mr-1" />
+                                    Poll ({pollOptions.filter(opt => opt.trim()).length} options)
+                                </div>
+                            )}
+                        </div>
                     </div>
                     <div className="flex items-center space-x-2 md:space-x-4">
                         <button className="p-2 hover:bg-gray-100 rounded-full">
@@ -401,10 +512,131 @@ const CreatePostPopup = ({ isOpen, onClose, createNewPost, setShowPopup }) => {
                     <textarea
                         value={postText}
                         onChange={(e) => setPostText(e.target.value)}
-                        placeholder="What's on your mind?"
+                        placeholder={showPoll ? "What's on your mind? (Poll will be included)" : "What's on your mind?"}
                         className="w-full resize-none border-none outline-none text-lg placeholder-gray-500 min-h-[120px]"
                         rows="5"
                     />
+
+                    {/* Poll Creation Section */}
+                    {showPoll && (
+                        <div className="mt-6 p-4 bg-purple-50 rounded-lg border border-purple-200 relative animate-in slide-in-from-top-2 duration-300">
+                            {/* Close button for poll section */}
+                            <button
+                                onClick={resetPoll}
+                                className="absolute top-2 right-2 p-1 text-purple-600 hover:text-purple-800 hover:bg-purple-100 rounded-full transition-colors"
+                                title="Close poll"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+
+                            <div className="mb-4">
+                                <h3 className="text-lg font-semibold text-purple-800">Create Poll</h3>
+                            </div>
+
+                            {/* Poll Question */}
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Poll Question *
+                                </label>
+                                <input
+                                    type="text"
+                                    value={pollQuestion}
+                                    onChange={(e) => setPollQuestion(e.target.value)}
+                                    placeholder="Ask a question..."
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    maxLength={200}
+                                />
+                            </div>
+
+                            {/* Poll Options */}
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Poll Options *
+                                </label>
+                                {pollOptions.map((option, index) => (
+                                    <div key={index} className="flex items-center mb-2 animate-in slide-in-from-left-2 duration-200">
+                                        <input
+                                            type="text"
+                                            value={option}
+                                            onChange={(e) => updatePollOption(index, e.target.value)}
+                                            placeholder={`Option ${index + 1}`}
+                                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                            maxLength={100}
+                                        />
+                                        {pollOptions.length > 2 && (
+                                            <button
+                                                onClick={() => removePollOption(index)}
+                                                className="ml-2 p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full cursor-pointer"
+                                                title="Remove option"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+
+                                {/* Add Option Button */}
+                                {pollOptions.length < 10 && (
+                                    <button
+                                        onClick={addPollOption}
+                                        className="flex items-center text-purple-600 hover:text-purple-800 text-sm font-medium mt-2"
+                                    >
+                                        <CiCirclePlus className="w-4 h-4 mr-1" />
+                                        Add Option
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Poll Duration */}
+                            {/* <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Poll Duration
+                                </label>
+                                <select
+                                    value={pollDuration}
+                                    onChange={(e) => setPollDuration(e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                >
+                                    <option value="1">1 day</option>
+                                    <option value="3">3 days</option>
+                                    <option value="7">1 week</option>
+                                    <option value="14">2 weeks</option>
+                                    <option value="30">1 month</option>
+                                </select>
+                            </div> */}
+
+                            {/* Poll Preview */}
+                            {pollQuestion && pollOptions.some(opt => opt.trim()) && (
+                                <div className="mt-4 p-3 bg-white rounded-lg border border-purple-200">
+                                    <h4 className="text-sm font-medium text-gray-700 mb-2">Poll Preview:</h4>
+                                    <p className="text-gray-800 font-medium mb-3">{pollQuestion}</p>
+                                    <div className="space-y-2">
+                                        {pollOptions.map((option, index) => (
+                                            option.trim() && (
+                                                <div key={index} className="flex items-center p-2 bg-gray-50 rounded border">
+                                                    <div className="w-4 h-4 border-2 border-gray-300 rounded-full mr-3"></div>
+                                                    <span className="text-gray-700">{option}</span>
+                                                </div>
+                                            )
+                                        ))}
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-2">
+                                        Duration: {pollDuration} {pollDuration === '1' ? 'day' : pollDuration === '7' ? 'days' : pollDuration === '30' ? 'days' : 'days'}
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Reset Poll Button */}
+                            {/* <div className="mt-4 text-center">
+                                 <button
+                                     onClick={resetPoll}
+                                     className="text-purple-600 hover:text-purple-800 text-sm underline hover:no-underline"
+                                 >
+                                     Reset Poll
+                                 </button>
+                             </div> */}
+                        </div>
+                    )}
 
                     {/* Media Options */}
                     <div className="mt-6">
@@ -463,12 +695,31 @@ const CreatePostPopup = ({ isOpen, onClose, createNewPost, setShowPopup }) => {
                             </button>
 
                             {/* Poll */}
-                            <button className="flex items-center space-x-3 p-3 cursor-pointer">
-                                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                                    <BiBarChartAlt2 className="w-5 h-5 text-purple-600" />
+                            <button
+                                className={`flex items-center space-x-3 p-3 cursor-pointer transition-all duration-200 ${showPoll ? 'bg-purple-100 rounded-lg border-2 border-purple-300' : 'hover:bg-purple-50'
+                                    }`}
+                                onClick={() => {
+                                    console.log("showPoll", showPoll)
+                                    if (showPoll) {
+                                        resetPoll();
+                                    } else {
+                                        setShowPoll(true);
+                                    }
+
+                                }}
+                                title={showPoll ? "Hide poll creation" : "Create a poll"}
+                            >
+                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${showPoll ? 'bg-purple-200' : 'bg-purple-100'
+                                    }`}>
+                                    <BiBarChartAlt2 className={`w-5 h-5 transition-colors ${showPoll ? 'text-purple-700' : 'text-purple-600'
+                                        }`} />
                                 </div>
-                                <span className="text-gray-700 font-medium">Poll</span>
+                                <span className={`font-medium transition-colors ${showPoll ? 'text-purple-800' : 'text-gray-700'
+                                    }`}>
+                                    {showPoll ? 'Hide Poll' : 'Poll'}
+                                </span>
                             </button>
+
 
                             {/* Audio */}
                             <button
@@ -541,7 +792,7 @@ const CreatePostPopup = ({ isOpen, onClose, createNewPost, setShowPopup }) => {
                     <X className="w-5 h-5 text-gray-600" />
                 </button>
             </div>
-        </div>
+        </div >
 
     );
 };

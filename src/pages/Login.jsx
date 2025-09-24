@@ -15,32 +15,36 @@ const Login = () => {
     setError('');
     try {
       const response = await axios.post(
-        `https://ouptel.com/api/auth`,
+        `${import.meta.env.VITE_API_URL}/api/v1/login`,
         {
-          username,
+          email: username,
           password,
-          server_key: "24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179",
-          device_type: "windows"
+          // server_key: "24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179",
+          // device_type: "windows"
         },
         {
           headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'X-Requested-With': 'XMLHttpRequest',
-            
+            'Content-Type': 'application/json',
           },
         }
       );
+      console.log(response, "response");
 
-      if (response.data.api_status === 200) {
-        localStorage.setItem("user_id", response?.data?.user_id);
-        localStorage.setItem("access_token", response?.data?.access_token);
-        localStorage.setItem("membership", response?.data?.membership);
+      if (response.data.ok === true) {
+        console.log(response?.data, "response data");
+        localStorage.setItem("user_id", response?.data?.data?.user_id);
+        localStorage.setItem("access_token", response?.data?.data?.token);
+        localStorage.setItem("membership", response?.data?.data?.membership);
+        localStorage.setItem("isVerified", response?.data?.data?.isVerified);
+
         navigate("/");
       } else {
-        setError(response?.data?.errors?.error_text);
+        setError(response?.data?.message);
+        console.log(response?.data?.message, "error");
       }
     } catch (error) {
-      setError('Invalid username or password');
+      setError(error?.response?.data?.message);
+      console.log("error>>>", error.response.data.message);
     } finally {
       setLoading(false);
     }
@@ -64,7 +68,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-[#EDF6F9] flex items-center justify-center">
-      <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-sm border border-[#808080]">
+      <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-sm border border-[#d3d1d1]">
         <h1 className="text-2xl font-bold text-center text-[#808080] mb-6">Login</h1>
         {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
         <form onSubmit={handleLogin} className="space-y-4">
@@ -73,14 +77,14 @@ const Login = () => {
             placeholder="Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="w-full px-4 py-2 border border-[#808080] rounded-md focus:outline-none focus:ring-2 focus:ring-[#EDF6F9] bg-[#EDF6F9] text-[#333]"
+            className="w-full px-4 py-2 border border-[#d3d1d1] rounded-md focus:outline-none focus:ring-2 focus:ring-[#EDF6F9] bg-[#EDF6F9] text-[#333]"
           />
           <input
             type="password"
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-2 border border-[#808080] rounded-md focus:outline-none focus:ring-2 focus:ring-[#EDF6F9] bg-[#EDF6F9] text-[#333]"
+            className="w-full px-4 py-2 border border-[#d3d1d1] rounded-md focus:outline-none focus:ring-2 focus:ring-[#EDF6F9] bg-[#EDF6F9] text-[#333]"
           />
           <button
             type="submit"

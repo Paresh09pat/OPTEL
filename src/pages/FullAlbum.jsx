@@ -36,7 +36,7 @@ const FullAlbumView = () => {
                 <div className="flex flex-row items-center justify-between h-full px-4 md:px-7 md:flex-row gap-4">
                     <h1 className="text-2xl font-bold text-[#212121] mb-4">My Albums</h1>
                     <div className="flex gap-6 items-center">
-                        <Link to={"/my-albums/create"} className='border border-[#808080] cursor-pointer py-1.5 px-3.5 rounded-2xl flex items-center gap-1.5'>
+                        <Link to={"/my-albums/create"} className='border border-[#d3d1d1] cursor-pointer py-1.5 px-3.5 rounded-2xl flex items-center gap-1.5'>
                             <img src="/icons/gridicons_create.svg" alt="create" className='size-[15px]' />
                             <span className='text-[#808080] text-base font-medium'>Create Album</span>
                         </Link>
@@ -48,10 +48,10 @@ const FullAlbumView = () => {
 
 
             {/* Images Grid */}
-            <div className="px-4 py-4 w-full bg-white border border-[#808080] rounded-lg">
+            <div className="px-4 py-4 w-full bg-white border border-[#d3d1d1] rounded-lg">
 
                 {/* User Info Header */}
-                <div className="bg-white border-b border-[#808080] px-4 py-3">
+                <div className="bg-white border-b border-[#d3d1d1] px-4 py-3">
                     <div className="flex items-center justify-between">
                         <div className="flex items-start md:items-center gap-3 w-1/2 md:w-full flex-col md:flex-row">
                             <div className="flex items-center gap-3">
@@ -75,7 +75,7 @@ const FullAlbumView = () => {
                                 <span className="text-sm text-black">{albumData?.length || '50'} Photos</span>
                                 <span className="text-sm text-gray-500">{timeStamp || '3 Days Ago'}</span>
                             </div>
-                            <button className="p-2 hover:bg-gray-100 rounded-full border border-[#808080]">
+                            <button className="p-2 hover:bg-gray-100 rounded-full border border-[#d3d1d1]">
                                 <MoreHorizontal className="w-5 h-5 text-gray-500" />
                             </button>
                         </div>

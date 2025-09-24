@@ -30,7 +30,7 @@ const MainLayout = () => {
   return (
     <div className="h-auto bg-white overflow-hidden scrollbar-hide stable-layout">
       {/* Mobile Header with Hamburger */}
-      <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between relative z-50 h-16">
+      <div className="lg:hidden bg-white border-b border-[#d3d1d1] px-4 py-3 flex items-center justify-between relative z-50 h-16">
         <button
           onClick={toggleSidebar}
           className="p-2 rounded-lg hover:bg-gray-100 transition-colors flex items-center justify-center will-change-transform"

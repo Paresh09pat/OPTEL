@@ -12,8 +12,8 @@ const PageAnalytics = () => {
 
   return (
     
-      <div className="bg-white rounded-xl p-3.5 px-9 border border-[#808080]">
-        <h2 className="text-xl font-semibold text-[#808080] text-center border-b border-[#808080] pb-2 mb-2">
+      <div className="bg-white rounded-xl p-3.5 px-9 border border-[#d3d1d1]">
+        <h2 className="text-xl font-semibold text-[#808080] text-center border-b border-[#d3d1d1] pb-2 mb-2">
           Page Analytics
         </h2>
         
@@ -23,7 +23,7 @@ const PageAnalytics = () => {
             <input
               type="text"
               placeholder="Search"
-              className="px-4 py-3 pl-10 border border-[#212121] rounded-3xl w-80 focus:outline-none focus:ring-2 focus:ring-blue-300 text-[#212121] placeholder-[#808080]"
+              className="px-4 py-3 pl-10 border border-[#d3d1d1] rounded-3xl w-80 focus:outline-none focus:ring-2 focus:ring-blue-300 text-[#212121] placeholder-[#808080]"
             />
           </div>
           

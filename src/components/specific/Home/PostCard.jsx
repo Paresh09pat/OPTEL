@@ -723,7 +723,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
 
 
   return (
-    <div className="bg-white rounded-xl overflow-hidden border border-[#808080] smooth-content-transition max-w-full" key={post_id}>
+                    <div className="bg-white rounded-xl overflow-hidden border border-[#d3d1d1] smooth-content-transition max-w-full" key={post_id}>
       <div className="p-4 flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <img
@@ -749,7 +749,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
           {showOptionsMenu && (
             <div
               data-options-menu
-              className="absolute right-0 top-0 z-50 bg-white rounded-lg shadow-xl border border-gray-200 py-2 min-w-[160px] md:min-w-[200px] max-w-[250px] animate-in slide-in-from-top-2 duration-200"
+                                className="absolute right-0 top-0 z-50 bg-white rounded-lg shadow-xl border border-[#d3d1d1] py-2 min-w-[160px] md:min-w-[200px] max-w-[250px] animate-in slide-in-from-top-2 duration-200"
             >
               <button
                 onClick={handleSavePost}
@@ -927,7 +927,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-3 border-t border-gray-100 relative">
+                        <div className="flex items-center justify-between pt-3 border-t border-[#d3d1d1] relative">
           <button
             className={`inline-block items-center space-x-2 transition-all duration-200 hover:scale-105 cursor-pointer ${isLiked ? 'text-red-500' : 'text-gray-600 hover:text-red-500'
               }`}
@@ -1429,7 +1429,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                 {hasMoreComments && (
                   <button
                     onClick={toggleShowAllComments}
-                    className="w-full text-center py-3 text-blue-600 hover:text-blue-800 font-medium text-sm transition-colors border-t border-gray-200 mt-4 hover:bg-blue-50 rounded-lg cursor-pointer"
+                    className="w-full text-center py-3 text-blue-600 hover:text-blue-800 font-medium text-sm transition-colors border-t border-[#d3d1d1] mt-4 hover:bg-blue-50 rounded-lg cursor-pointer"
                   >
                     {showAllComments ? (
                       <span className="flex items-center justify-center space-x-1">

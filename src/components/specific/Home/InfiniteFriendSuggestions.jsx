@@ -8,7 +8,7 @@ const InfiniteFriendSuggestions = ({ friendSuggestions, onAddFriend, followedUse
     const scrollCheckRef = useRef(null);
     const isLoadingRef = useRef(false);
 
-   
+
 
     useEffect(() => {
         const initialFriends = [...friendSuggestions];
@@ -77,7 +77,7 @@ const InfiniteFriendSuggestions = ({ friendSuggestions, onAddFriend, followedUse
                 setTimeout(checkScrollButtons, 300);
             });
         }
-        }, [checkScrollButtons, friendSuggestions]);
+    }, [checkScrollButtons, friendSuggestions]);
 
     // Throttled scroll handler
     const handleScroll = useCallback(() => {
@@ -121,6 +121,7 @@ const InfiniteFriendSuggestions = ({ friendSuggestions, onAddFriend, followedUse
                 onScroll={handleScroll}
             >
                 {displayedFriends.map(friend => (
+
                     <FriendSuggestionCard
                         key={friend.id}
                         user={friend}
@@ -136,31 +137,31 @@ const InfiniteFriendSuggestions = ({ friendSuggestions, onAddFriend, followedUse
 export default memo(InfiniteFriendSuggestions);
 
 
-    const FriendSuggestionCard = ({ user, onAddFriend, followedUsers }) => {
-        const isFollowed = followedUsers.has(user.id);
-        return (
-    <div className="bg-white rounded-xl shadow-sm border border-[#808080] overflow-hidden min-w-[150px] max-w-[150px] md:min-w-[160px] md:max-w-[160px] flex-shrink-0 hover:shadow-md transition-shadow duration-200">
-        <div className="relative">
-            <img
-                src={user?.avatar}
-                alt={user.name}
-                className="w-full h-28 md:h-32 object-cover"
-            />
-        </div>
-        <div className="p-3 text-center">
-            <h3 className="font-semibold text-gray-900 text-xs md:text-sm mb-1 truncate">{user.name}</h3>
-            <p className="text-xs text-gray-500 mb-3 truncate">{user.username}</p>
-            <button
-               onClick={!isFollowed ? onAddFriend : undefined}
-               className={`px-2 md:px-3 py-1.5 rounded-md text-xs md:text-sm w-full font-medium transition-colors 
-                 ${isFollowed 
-                   ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
-                   : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                 }`}
+const FriendSuggestionCard = ({ user, onAddFriend, followedUsers }) => {
+    const isFollowed = followedUsers.has(user.id);
+    return (
+                        <div className="bg-white rounded-xl shadow-sm border border-[#d3d1d1] overflow-hidden min-w-[150px] max-w-[150px] md:min-w-[160px] md:max-w-[160px] flex-shrink-0 hover:shadow-md transition-shadow duration-200">
+            <div className="relative">
+                <img
+                    src={user?.avatar}
+                    alt={user.name}
+                    className="w-full h-28 md:h-32 object-cover"
+                />
+            </div>
+            <div className="p-3 text-center">
+                <h3 className="font-semibold text-gray-900 text-xs md:text-sm mb-1 truncate">{user.name}</h3>
+                <p className="text-xs text-gray-500 mb-3 truncate">{user.username}</p>
+                <button
+                    onClick={!isFollowed ? onAddFriend : undefined}
+                    className={`px-2 md:px-3 py-1.5 rounded-md text-xs md:text-sm w-full font-medium transition-colors 
+                 ${isFollowed
+                            ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                            : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                        }`}
                 >
-                {isFollowed ? "Requested" : "Add Friend"}
-            </button>
+                    {isFollowed ? "Requested" : "Add Friend"}
+                </button>
+            </div>
         </div>
-    </div>
-);
-    }
+    );
+}

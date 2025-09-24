@@ -71,7 +71,7 @@ const SharePopup = memo(({
         <div className="fixed top-0 left-0 right-0 bottom-0 w-screen h-screen bg-gradient-to-br from-white/10 via-white/5 to-white/15 backdrop-blur-lg flex items-center justify-center z-[9999] overflow-hidden">
             <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/30 w-[95%] md:max-w-md mx-4 animate-in slide-in-from-bottom-4 duration-200">
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                <div className="flex items-center justify-between p-4 border-b border-[#d3d1d1]">
                     <h3 className="text-lg font-semibold text-gray-900">Share Post</h3>
                     <button
                         onClick={onClose}
@@ -126,7 +126,7 @@ const SharePopup = memo(({
                     </button>
 
                     {/* Social Media Sharing */}
-                    <div className="pt-3 border-t border-gray-200">
+                    <div className="pt-3 border-t border-[#d3d1d1]">
                         <p className="text-sm font-medium text-gray-700 mb-3">Share on social media</p>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             {/* Facebook */}
@@ -160,7 +160,7 @@ const SharePopup = memo(({
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t border-gray-200">
+                <div className="p-4 border-t border-[#d3d1d1]">
                     <button
                         onClick={onClose}
                         className="w-full py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium"

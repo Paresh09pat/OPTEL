@@ -869,7 +869,7 @@ const Home = () => {
       {showStoriesPreview && selectedUserForStories && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg max-w-md w-full max-h-[80vh] h-full overflow-y-auto">
-            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                            <div className="p-4 border-b border-[#d3d1d1] flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <img
                   src={selectedUserForStories.avatar || "/perimg.png"}
@@ -898,7 +898,7 @@ const Home = () => {
               {selectedUserForStories.stories && selectedUserForStories.stories.length > 0 ? (
                 <div className="space-y-4">
                   {selectedUserForStories.stories.map((story, index) => (
-                    <div key={story.id} className="border border-gray-200 rounded-lg p-3">
+                    <div key={story.id} className="border border-[#d3d1d1] rounded-lg p-3">
                       {story.thumbnail && (
                         <img
                           src={story.thumbnail}

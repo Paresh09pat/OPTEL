@@ -18,7 +18,7 @@ const Events = () => {
   // Update eventOptions when selectedOption changes
   useEffect(() => {
     const mapping = {
-      Events: 'my_events',
+      Events: 'upcoming',
       Going: 'going',
       Invited: 'invited',
       Interested: 'interested',
@@ -48,25 +48,25 @@ const Events = () => {
       setLoading(true);
       setError(null);
 
-      const accessToken =
-        localStorage.getItem('access_token');
+      // const accessToken =
+      //   localStorage.getItem('access_token');
 
-      const formData = new URLSearchParams();
-      formData.append(
-        'server_key',
-        '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179'
-      );
-      formData.append('fetch', eventOptions);
+      // const formData = new URLSearchParams();
+      // formData.append(
+      //   'server_key',
+      //   '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179'
+      // );
+      // formData.append('fetch', eventOptions);
 
       const response = await fetch(
-        `https://ouptel.com/api/get-events?access_token=${accessToken}`,
+        `${import.meta.env.VITE_API_URL}/api/v1/events?status=${eventOptions}&per_page=12`,
         {
-          method: 'POST',
+          method: 'GET',
           headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'X-Requested-With': 'XMLHttpRequest'
+            'Content-Type': 'application/json',
+           
           },
-          body: formData.toString()
+         
         }
       );
 
@@ -75,7 +75,7 @@ const Events = () => {
       }
 
       const data = await response.json();
-      setMyEvents(data?.my_events || []);
+      setMyEvents(data?.data );
     } catch (error) {
       console.error('Error fetching events:', error);
       setError(error.message);
@@ -90,7 +90,7 @@ const Events = () => {
   }, [eventOptions]);
 
   if (loading) return <Loader />;
-  console.log(myEvents , "my events");
+  console.log(myEvents , "my events list");
 
     return (
       <div className="bg-[#EDF6F9] w-full h-full pt-8 flex flex-col gap-4">
@@ -113,7 +113,7 @@ const Events = () => {
 
               {/* Dropdown Options */}
               {isDropdownOpen && (
-                <div className="absolute right-0 mt-2 py-2 bg-white rounded-lg shadow-lg border border-gray-200 min-w-[120px] z-10">
+                <div className="absolute right-0 mt-2 py-2 bg-white rounded-lg shadow-lg border border-[#d3d1d1] min-w-[120px] z-10">
                   {dropdownOptions.map((option) => (
                     <button
                       key={option}
@@ -128,16 +128,24 @@ const Events = () => {
               )}
             </div>
 
-            <button className='border border-[#808080] cursor-pointer py-1.5 px-3.5 rounded-2xl flex items-center gap-1.5'>
+                            <button className='border border-[#d3d1d1] cursor-pointer py-1.5 px-3.5 rounded-2xl flex items-center gap-1.5'>
               <img src="/icons/gridicons_create.svg" alt="create" className='size-[15px]' />
               <span className='text-[#808080] text-base font-medium'>Create Event</span>
             </button>
           </div>
         </div>
 
-        <div className="pt-5 pb-6 px-7 border border-[#808080] rounded-lg grid grid-cols-1 md:grid-cols-2  gap-4 bg-white">
+        {myEvents.length === 0 && !loading && (
+            <div className="bg-white rounded-lg shadow-sm p-8 w-full flex items-center justify-center border border-[#d3d1d1] text-center">
+              <p className="text-gray-500 text-lg">No events found. Create your first event!</p>
+            </div>
+          ) }
+        <div className="pt-5 pb-6 px-7 border border-[#d3d1d1] rounded-lg grid grid-cols-1 md:grid-cols-2  gap-4 bg-white">
+        
+            
+         
           {myEvents?.map((event) => 
-          <div className="flex flex-col gap-2 min-w-full bg-[#FFFFFF] shadow-2xl  pb-3 px-0.5 shadow-[#21212140] rounded-lg border border-[#21212140]" key={event?.id}>
+          <div className="flex flex-col gap-2 min-w-full bg-[#FFFFFF] shadow-2xl  pb-3 px-0.5 shadow-[#21212140] rounded-lg border border-[#d3d1d1]" key={event?.id}>
             <img src={event?.cover || "/pagesCardImg.png"} alt="cardImg" className=' w-full h-[160px] object-cover rounded-lg' />
             <div className="flex flex-col gap-2.5 w-full px-2.5">
               <h5 className='text-sm font-medium text-[#212121] w-full text-left'>{event?.name}</h5>
@@ -153,7 +161,7 @@ const Events = () => {
               </div>
             </div>
 
-            <button className='bg-[#ffff] text-black px-7 py-0.5 rounded-lg  mx-auto mt-6 border border-[#212121]'>Join Now</button>
+            <button className='bg-[#ffff] text-black px-7 py-0.5 rounded-lg  mx-auto mt-6 border border-[#d3d1d1]'>Join Now</button>
 
           </div>
           )}

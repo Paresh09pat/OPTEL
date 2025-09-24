@@ -37,11 +37,11 @@ const Profile = () => {
       ];
   return (
     <div className=" w-full h-full pt-8 bg-[#EDF6F9]">
-        <div className="flex flex-col  border border-[#808080] rounded-xl overflow-hidden">
+        <div className="flex flex-col  border border-[#d3d1d1] rounded-xl overflow-hidden">
             <div className="relative h-[200px] w-full " style={{backgroundImage: "url('/profilebannerbg.png')", backgroundSize: "cover", backgroundPosition: "center"}}></div>
             <div className=" relative w-full bg-[#FFFFFF] px-10 py-5 flex items-center justify-between">
                     <div className="flex items-center gap-6">
-                        <img src="/perimg.png" alt="profile photo" className=' size-36 rounded-full object-cover mt-[-5rem] z-10 border border-gray-300 shadow-lg' />
+                        <img src="/perimg.png" alt="profile photo" className=' size-36 rounded-full object-cover mt-[-5rem] z-10 border border-[#d3d1d1] shadow-lg' />
                         <div className="flex flex-col gap-2 text-[#212121]">
                             <h3 className='text-xl font-medium'>Aman Shaikh</h3>
                             <p className='text-sm font-medium'>@aman.shaikh</p>

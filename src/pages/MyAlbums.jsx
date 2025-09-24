@@ -33,7 +33,7 @@ const MyAlbums = () => {
             formData.append("offset", "0");
 
             const response = await fetch(
-                `${baseUrl}/albums?access_token=${accessToken}`,
+                `${import.meta.env.VITE_API_URL}/api/albums?access_token=${accessToken}`,
                 {
                     method: "POST",
                     headers: {
@@ -90,7 +90,7 @@ const MyAlbums = () => {
                     <div className="flex items-center justify-between h-full px-4 md:px-7 flex-col md:flex-row gap-4">
                         <h1 className="text-2xl font-bold text-[#212121] mb-4">My Albums</h1>
                         <div className="flex gap-6 items-center">
-                            <Link to={"/my-albums/create"} className='border border-[#808080] cursor-pointer py-1.5 px-3.5 rounded-2xl flex items-center gap-1.5'>
+                            <Link to={"/my-albums/create"} className='border border-[#d3d1d1] cursor-pointer py-1.5 px-3.5 rounded-2xl flex items-center gap-1.5'>
                                 <img src="/icons/gridicons_create.svg" alt="create" className='size-[15px]' />
                                 <span className='text-[#808080] text-base font-medium'>Create Album</span>
                             </Link>
@@ -99,7 +99,7 @@ const MyAlbums = () => {
                 </div>
 
                 {albums.length === 0 && !loading ? (
-                    <div className="bg-white rounded-lg shadow-sm p-8 w-full mx-auto border border-[#808080] text-center">
+                    <div className="bg-white rounded-lg shadow-sm p-8 w-full mx-auto border border-[#d3d1d1] text-center">
                         <p className="text-gray-500 text-lg">No albums found. Create your first album!</p>
                     </div>
                 ) : (
@@ -301,9 +301,9 @@ const ImageGallery = ({
     };
 
     return (
-        <div className="bg-white rounded-lg shadow-sm p-4 w-full mx-auto border border-[#808080]">
+        <div className="bg-white rounded-lg shadow-sm p-4 w-full mx-auto border border-[#d3d1d1]">
             {/* Header */}
-            <div className="flex items-center justify-between mb-4 gap-4 border-b border-[#808080] pb-4">
+            <div className="flex items-center justify-between mb-4 gap-4 border-b border-[#d3d1d1] pb-4">
                 <div className="flex items-center gap-3">
                     <h2 className="text-[20px] font-semibold text-gray-900 pl-4">{albumTitle}</h2>
                 </div>

@@ -1,76 +1,83 @@
 import React from "react";
-import { FaEye, FaShareAlt } from "react-icons/fa";
+import { FaEye, FaShareAlt, FaComment, FaHeart } from "react-icons/fa";
 
 const BlogCard = ({ blog, onClick }) => {
+  // Format the posted date
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
   return (
-    <div className="bg-white rounded-xl shadow-md overflow-hidden border hover:shadow-lg transition" onClick={onClick}>
+    <div className="bg-white rounded-xl shadow-md overflow-hidden border hover:shadow-lg transition cursor-pointer" onClick={onClick}>
       {/* Thumbnail */}
-      <a href={`/blog/${blog?.id}`}  rel="noopener noreferrer">
+      <div className="relative">
         <img
-          src={blog?.thumbnail}
+          src={blog?.thumbnail || '/icons/blog.png'}
           alt={blog?.title}
           className="w-full h-56 object-cover"
+          onError={(e) => {
+            e.target.src = '/icons/blog.png';
+          }}
         />
-      </a>
+      </div>
 
       {/* Content */}
       <div className="p-4 flex flex-col gap-3">
         {/* Category & Time */}
         <div className="flex justify-between text-xs text-gray-500">
-          <a
-            href={blog?.category_link}
-            className="hover:text-blue-500 font-medium"
-          >
-            {blog?.category_name}
-          </a>
-          <span>{blog?.posted}</span>
+          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+            Category {blog?.category}
+          </span>
+          <span>{formatDate(blog?.posted_at)}</span>
         </div>
 
         {/* Title */}
-        <h2 className="text-lg font-bold text-gray-900 hover:text-blue-600">
-            <a href={`/blog/${blog?.id}`}  rel="noopener noreferrer">
-            {blog?.title}
-          </a>
+        <h2 className="text-lg font-bold text-gray-900 hover:text-blue-600 line-clamp-2">
+          {blog?.title}
         </h2>
 
         {/* Description */}
         <p className="text-sm text-gray-600 line-clamp-3">
-          {blog?.description}
+          {blog?.excerpt}
         </p>
 
-        {/* Tags */}
-        <div className="flex flex-wrap gap-2 mt-1">
-          {blog?.tags_array?.map((tag, idx) => (
-            <span
-              key={idx}
-              className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full"
-            >
-              #{tag}
-            </span>
-          ))}
-        </div>
-
         {/* Author */}
-        <div className="flex items-center gap-3 mt-3">
-          <img
-            src={blog?.author?.avatar}
-            alt={blog?.author?.name}
-            className="w-10 h-10 rounded-full object-cover"
-          />
-          <div>
-            <h3 className="text-sm font-semibold">{blog?.author?.name}</h3>
-            <p className="text-xs text-gray-500">{blog?.author?.gender}</p>
+        {blog?.user?.username && (
+          <div className="flex items-center gap-3 mt-3">
+            <img
+              src={blog?.user?.avatar_url || '/perimg.png'}
+              alt={blog?.user?.username}
+              className="w-10 h-10 rounded-full object-cover"
+              onError={(e) => {
+                e.target.src = '/perimg.png';
+              }}
+            />
+            <div>
+              <h3 className="text-sm font-semibold">{blog?.user?.username}</h3>
+              <p className="text-xs text-gray-500">Author</p>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Stats */}
         <div className="flex items-center justify-between text-xs text-gray-500 mt-3">
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1">
-              <FaEye /> {blog?.view} views
+              <FaEye /> {blog?.views || 0} views
             </span>
             <span className="flex items-center gap-1">
-              <FaShareAlt /> {blog?.shared} shares
+              <FaShareAlt /> {blog?.shares || 0} shares
+            </span>
+            <span className="flex items-center gap-1">
+              <FaComment /> {blog?.comments || 0} comments
+            </span>
+            <span className="flex items-center gap-1">
+              <FaHeart /> {blog?.reactions || 0} reactions
             </span>
           </div>
         </div>
