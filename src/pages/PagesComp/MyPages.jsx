@@ -6,8 +6,10 @@ import Loader from '../../components/loading/Loader';
 
 const MyPages = () => {
     const [myPages, setMyPages] = useState([]);
+    const [myPagesType, setMyPagesType] = useState('my_pages');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [noData, setNoData] = useState(false);
 
     const myPagesData = [
         {
@@ -48,7 +50,7 @@ const MyPages = () => {
             setError(null);
             
             // Get access token from localStorage
-            const accessToken = localStorage.getItem("access_token") || '39bceb4226d88a2749417a759ec5ec477b1bddc3e151c25e6b1c05897a01455068ff5d4f223574132d5951d1e3b31dfb7fd2dcc172df17fd';
+            const accessToken = localStorage.getItem("access_token") ;
             
             // Create form-encoded data
             const formData = new URLSearchParams();
@@ -59,18 +61,18 @@ const MyPages = () => {
             
             // SOLUTION: Remove withCredentials to avoid CORS issue
             const response = await fetch(
-                `https://ouptel.com/api/get-my-pages?access_token=${accessToken}`,
+                `${import.meta.env.VITE_API_URL}/api/v1/pages?type=${myPagesType}`,
                 {
-                    method: 'POST',
+                    method: 'GET',
                     headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Content-Type': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest',
-                        // 'credentials': 'include',
+                        'Authorization': 'Bearer ' + accessToken,
                         // 'withCredentials': true,
                     },
                     // DON'T include credentials - this causes the CORS error
                     // credentials: 'include', // REMOVE THIS LINE
-                    body: formData.toString()
+                    // body: formData.toString()
                 }
             );
 
@@ -79,10 +81,10 @@ const MyPages = () => {
             }
 
             const data = await response.json();
-            // console.log('API Response:', data);
-            
+           if(data.data.length=== 0) 
+            setNoData(true);
             // Transform API data to match component structure
-            if (data && data.api_status === 200 && data.data) {
+            if (data) {
                 const transformedData = data.data.map(page => ({
                     id: page.page_id,
                     name: page.page_name || page.name,
@@ -150,6 +152,11 @@ const MyPages = () => {
 
     return (
         <div className="space-y-6">
+            {noData && (
+                <div className="flex items-center justify-center h-full">
+                    <p className="text-gray-500">No data found</p>
+                </div>
+            )}
             {myPages?.map((page) => (
                 <div key={page.id} className="bg-white rounded-lg border border-[#808080] p-4 sm:p-6">
                     {/* Top Row */}
