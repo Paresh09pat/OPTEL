@@ -12,7 +12,8 @@ const MyAlbums = () => {
     const [albums, setAlbums] = useState([]);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
-
+    const [perPage, setPerPage] = useState(10);
+    const [noData, setNoData] = useState(false);
     // Fetch albums from API
     const fetchAlbums = async () => {
         try {
@@ -25,31 +26,29 @@ const MyAlbums = () => {
                 return;
             }
 
-            const formData = new FormData();
-            formData.append("server_key", "24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179");
-            formData.append("type", "fetch");
-            formData.append("user_id", userId);
-            formData.append("limit", "10");
-            formData.append("offset", "0");
+
 
             const response = await fetch(
-                `${import.meta.env.VITE_API_URL}/api/albums?access_token=${accessToken}`,
+                `${import.meta.env.VITE_API_URL}/api/v1/albums?per_page=${perPage}`,
                 {
-                    method: "POST",
+                    method: "GET",
                     headers: {
-                        "X-Requested-With": "XMLHttpRequest",
-                        Accept: "application/json",
+                        "Authorization": "Bearer " + accessToken,
+                        "Content-Type": "application/json",
                     },
-                    body: formData,
+                    
                 }
             );
 
             const data = await response.json();
-
-            if (data.api_status === 200) {
+          
+            if (data.data && data.data.length === 0) {
+                setNoData(true);
+            }
+            if (data.data && data.data.length > 0) {
                 setAlbums(data.data || []);
             } else {
-                toast.error("Failed to fetch albums: " + (data.message || "Unknown error"));
+                setNoData(true);
             }
         } catch (error) {
             console.error("Error fetching albums:", error);
@@ -98,7 +97,7 @@ const MyAlbums = () => {
                     </div>
                 </div>
 
-                {albums.length === 0 && !loading ? (
+                {noData && !loading ? (
                     <div className="bg-white rounded-lg shadow-sm p-8 w-full mx-auto border border-[#d3d1d1] text-center">
                         <p className="text-gray-500 text-lg">No albums found. Create your first album!</p>
                     </div>
@@ -122,10 +121,10 @@ const ImageGallery = ({
 }) => {
     const navigate = useNavigate();
     
-    // Extract images from photo_album array
-    const images = album.photo_album?.map(photo => photo.image) || [];
+    // Extract images - using cover_image as primary image for new format
+    const images = album.cover_image ? [album.cover_image] : [];
     const albumTitle = album.album_name || "Untitled Album";
-    const timeStamp = album.post_time || "Unknown time";
+    const timeStamp = album.created_at || "Unknown time";
     const imageCount = images.length;
 
     const handleMoreClick = () => {
@@ -134,7 +133,8 @@ const ImageGallery = ({
                 albumData: images, 
                 albumTitle: albumTitle, 
                 timeStamp: timeStamp,
-                album: album 
+                album: album,
+                user: album.user
             } 
         });
     };
