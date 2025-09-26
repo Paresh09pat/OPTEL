@@ -5,6 +5,7 @@ import FullAlbumView from './FullAlbum';
 import { baseUrl } from '../utils/constant';
 import { toast } from 'react-toastify';
 import Loader from '../components/loading/Loader';
+import axios from 'axios';
 
 const MyAlbums = () => {
     const [currentView, setCurrentView] = useState('albums'); // 'albums' or 'fullAlbum'
@@ -32,15 +33,13 @@ const MyAlbums = () => {
             formData.append("limit", "10");
             formData.append("offset", "0");
 
-            const response = await fetch(
-                `${import.meta.env.VITE_API_URL}/api/albums?access_token=${accessToken}`,
+            const response = await axios(
+                `${import.meta.env.VITE_API_URL}/api/v1/albums`,
                 {
-                    method: "POST",
                     headers: {
-                        "X-Requested-With": "XMLHttpRequest",
+                        // "Authorization": `Bearer ${accessToken}`,
                         Accept: "application/json",
-                    },
-                    body: formData,
+                    }
                 }
             );
 
@@ -121,7 +120,7 @@ const ImageGallery = ({
     onViewMore
 }) => {
     const navigate = useNavigate();
-    
+
     // Extract images from photo_album array
     const images = album.photo_album?.map(photo => photo.image) || [];
     const albumTitle = album.album_name || "Untitled Album";
@@ -129,13 +128,13 @@ const ImageGallery = ({
     const imageCount = images.length;
 
     const handleMoreClick = () => {
-        navigate(`/my-albums/${album.id}`, { 
-            state: { 
-                albumData: images, 
-                albumTitle: albumTitle, 
+        navigate(`/my-albums/${album.id}`, {
+            state: {
+                albumData: images,
+                albumTitle: albumTitle,
                 timeStamp: timeStamp,
-                album: album 
-            } 
+                album: album
+            }
         });
     };
 
@@ -277,7 +276,7 @@ const ImageGallery = ({
 
     const renderImages = () => {
         const layout = getGridLayout();
-        
+
         switch (layout) {
             case "single":
                 return renderSingleImage();

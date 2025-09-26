@@ -36,25 +36,20 @@ const CreateAlbum = () => {
       const accessToken = localStorage.getItem("access_token");
       const formData = new FormData();
 
-      // Add the required fields
-      formData.append(
-        "server_key",
-        "24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179"
-      );
-      formData.append("type", "create");
       formData.append("album_name", albumName);
 
       // Add all selected files to postPhotos array
       selectedFiles.forEach((file, index) => {
-        formData.append("postPhotos[]", file);
+        console.log("file", file);
+        formData.append("images[]", file);
       });
 
       setLoading(true)
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/albums?access_token=${accessToken}`,
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/create-album`,
         {
           method: "POST",
           headers: {
-            "X-Requested-With": "XMLHttpRequest",
+            // "Authorization": `Bearer ${accessToken}`,
             Accept: "application/json",
           },
           body: formData,
@@ -63,7 +58,7 @@ const CreateAlbum = () => {
 
       const data = await response.json();
 
-      if (data.api_status === 200) {
+      if (data.ok === true) {
         setAlbumName("");
         setSelectedFiles([]);
         toast.success("Album created successfully!");
