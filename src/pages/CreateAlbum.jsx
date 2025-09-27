@@ -50,11 +50,10 @@ const CreateAlbum = () => {
       });
 
       setLoading(true)
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/albums?access_token=${accessToken}`,
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/albums`,
         {
           method: "POST",
           headers: {
-            "X-Requested-With": "XMLHttpRequest",
             Accept: "application/json",
           },
           body: formData,

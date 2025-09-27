@@ -1,77 +1,103 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { MdOutlineAddPhotoAlternate } from 'react-icons/md';
 import { baseUrl } from '../../utils/constant';
+import axios from 'axios';
+import { toast } from 'react-toastify';
 
 const CreatePage = () => {
     const [pageName, setPageName] = useState('');
+    const [pageTitle, setPageTitle] = useState('');
     const [pageDescription, setPageDescription] = useState('');
     const [pageUrl, setPageUrl] = useState('');
     const [pageCategory, setPageCategory] = useState('');
+    const [loading,setLoading] = useState(false);
+    const [categories,setCategories] = useState([]);
 
-    const categories = [
-        'Car and Vehicle',
-        'Technology',
-        'Business',
-        'Entertainment',
-        'Sports',
-        'Health',
-        'Education',
-        'Travel',
-        'Food',
-        'Fashion',
-    ];
+   
+    
 
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!pageName.trim()) {
-            alert('Please enter page name');
+            toast.error('Please enter page name');
             return;
         }
 
         if (!pageUrl.trim()) {
-            alert('Please enter page URL');
+            toast.error('Please enter page URL');
             return;
         }
 
+        console.log("pageCatt>>",pageCategory);
+
         if (!pageCategory) {
-            alert('Please select page category');
+            toast.error('Please select page category');
             return;
         }
 
         const formData = {
-            pageName,
-            pageDescription,
-            pageUrl,
-            pageCategory,
+            page_name:pageName,
+            page_title:pageTitle,
+            page_description:pageDescription,
+            page_url:pageUrl,
+            page_category:pageCategory,
         };
 
         console.log('Submitting form...', formData);
-        alert('Page created successfully!');
+        // alert('Page created successfully!');
 
         const accessToken = localStorage.getItem("access_token");
         setLoading(true);
-        formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
-        formData.append('type', 'create');
-        const response = await fetch(`${baseUrl}/create-page?access_token=${accessToken}`, {
-          method: 'POST',
+        // formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
+        // formData.append('type', 'create');
+        const response = await axios.post(`${baseUrl}/api/v1/pages`, formData, {
           headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'X-Requested-With': 'XMLHttpRequest',
-            'Accept': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
           },
-          body: formData.toString(),
         })
-        const data = await response.json();
-        
+        const data = await response.data;
+        console.log(data, "data");
+
+        if (data.ok === true) {
+            toast.success('Page created successfully!');
+        } else {
+            toast.error('Failed to create page: ' + data.message);
+        }
 
         // Reset form
         setPageName('');
+        setPageTitle('');
         setPageDescription('');
         setPageUrl('');
         setPageCategory('');
+        setLoading(false);
     };
+
+    const getCategories = async()=>{
+        try{
+            const res = await axios.get(`${baseUrl}/api/v1/pages/meta`);
+
+            console.log("catt>>",res.data);
+            if(res.data.ok === true){
+                setCategories(res.data?.data?.categories);
+                console.log(res.data.categories);
+            }
+        }
+        catch(error){
+            console.log(error);
+        }
+        finally{
+            setLoading(false);
+        }
+    }
+
+    useEffect(()=>{
+        getCategories();
+    },[]);
 
     return (
         <div className="bg-[#EDF6F9] w-full min-h-screen flex items-center justify-start flex-col">
@@ -126,6 +152,23 @@ const CreatePage = () => {
                         />
                     </div>
 
+                    <div className="flex flex-col gap-2">
+                        <label
+                            htmlFor="page-title"
+                            className="text-lg text-black flex items-center gap-2"
+                        >
+                            Page Title : <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            id="page-title"
+                            className="w-full p-2 px-4 border border-[#212121] rounded-full"
+                            placeholder="Page Title"
+                            value={pageTitle}
+                            onChange={(e) => setPageTitle(e.target.value)}
+                        />
+                    </div>
+
                     {/* Page Description */}
                     <div className="flex flex-col gap-2">
                         <label
@@ -175,12 +218,17 @@ const CreatePage = () => {
                                 id="page-category"
                                 className="w-full p-2 px-4 border border-[#212121] rounded-full appearance-none cursor-pointer"
                                 value={pageCategory}
-                                onChange={(e) => setPageCategory(e.target.value)}
+                                onChange={(e) => setPageCategory(categories.find((category)=>{
+                                    console.log("category>>",category.id);
+                                    console.log("e.target.value>>",e.target.value);
+                                    console.log("category>>",category);
+                                    return category.id === e.target.value
+                                }))}
                             >
                                 <option value="">Select category</option>
-                                {categories.map((category, index) => (
-                                    <option key={index} value={category}>
-                                        {category}
+                                {categories?.map((category, index) => (
+                                    <option key={index} value={category.id} >
+                                        {category.name}
                                     </option>
                                 ))}
                             </select>
