@@ -24,7 +24,7 @@ const SideMenu = ({ onClose, isMobile = false }) => {
   return (
     <div className={`${isMobile ? 'w-full' : 'w-60 xl:w-80'} h-screen bg-[#EDF6F9] flex flex-col`}>
       {/* Logo Section */}
-      <div className="p-1 border-b border-[#d3d1d1] flex items-center justify-between">
+      <div className="pt-3 border-b border-[#d3d1d1] flex items-center justify-between">
         <div className="flex items-center justify-center space-x-3 flex-1">
           <img src="/op_logo.png" alt="Optel Logo" className="w-[11rem] aspect-1" />
         </div>
