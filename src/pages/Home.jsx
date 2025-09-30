@@ -7,6 +7,7 @@ import PostCard from '../components/specific/Home/PostCard';
 import QuickActionsSection from '../components/specific/Home/QuickActionSection';
 import ScrollableSection from '../components/specific/Home/ScrollableSection';
 import Loader from '../components/loading/Loader';
+import axios from 'axios';
 
 const feedCards = [
   {
@@ -92,25 +93,32 @@ const Home = () => {
       setError(null);
       const accessToken = localStorage.getItem("access_token");
       setLoading(true);
-      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
-      formData.append('type', 'get_news_feed');
-      const response = await fetch(`https://ouptel.com/api/posts?access_token=${accessToken}`, {
-        method: 'POST',
+     
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/v1/new-feed`, {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-Requested-With': 'XMLHttpRequest',
-          'Accept': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
         },
-        body: formData.toString(),
+
       })
-      const data = await response.json();
+      const data = await response.data;
       console.log("📰 Setting newFeeds:", data?.data);
-      setNewFeeds(data?.data);
+      
+      // Handle new API response structure
+      if (data?.data) {
+        setNewFeeds(data.data);
+      } else if (Array.isArray(data)) {
+        // Handle case where response is directly an array
+        setNewFeeds(data);
+      } else {
+        setNewFeeds([]);
+      }
 
       // Initialize saved posts from API data
-      if (data?.data) {
+      const feedData = data?.data || data || [];
+      if (Array.isArray(feedData)) {
         const savedFromAPI = new Set();
-        data.data.forEach(post => {
+        feedData.forEach(post => {
           if (post.is_post_saved) {
             savedFromAPI.add(post.id);
           }
@@ -221,9 +229,10 @@ const Home = () => {
             post.id === post_id
               ? {
                 ...post,
-                post_likes: wasLiked
-                  ? Math.max(0, parseInt(post.post_likes || 0) - 1)
-                  : parseInt(post.post_likes || 0) + 1
+                reactions_count: wasLiked
+                  ? Math.max(0, parseInt(post.reactions_count || post.post_likes || 0) - 1)
+                  : parseInt(post.reactions_count || post.post_likes || 0) + 1,
+                is_liked: !wasLiked
               }
               : post
           )
@@ -278,9 +287,10 @@ const Home = () => {
             post.id === post_id
               ? {
                 ...post,
-                post_likes: wasLiked
-                  ? Math.max(0, parseInt(post.post_likes || 0) - 1)
-                  : parseInt(post.post_likes || 0) + 1
+                reactions_count: wasLiked
+                  ? Math.max(0, parseInt(post.reactions_count || post.post_likes || 0) - 1)
+                  : parseInt(post.reactions_count || post.post_likes || 0) + 1,
+                is_liked: !wasLiked
               }
               : post
           )
@@ -474,7 +484,27 @@ const Home = () => {
       return `https://ouptel.com/${url.replace(/^\//, '')}`;
     };
 
-    // Handle multiple images from photo_multi array (PRIORITY)
+    // Handle new API album_images structure (HIGHEST PRIORITY)
+    if (post?.album_images && Array.isArray(post.album_images) && post.album_images.length > 0) {
+      const processedImages = post.album_images.map(img => ({
+        id: img.id,
+        image: ensureFullUrl(img.image_url),
+        image_org: ensureFullUrl(img.image_url)
+      }));
+
+      return {
+        image: processedImages[0]?.image || processedImages[0]?.image_org,
+        multipleImages: processedImages,
+        hasMultipleImages: processedImages.length > 1
+      };
+    }
+
+    // Handle new API single post_photo_url
+    if (post?.post_photo_url) {
+      return { image: ensureFullUrl(post.post_photo_url) };
+    }
+
+    // Handle multiple images from photo_multi array (LEGACY)
     if (post?.photo_multi && Array.isArray(post.photo_multi) && post.photo_multi.length > 0) {
       // Process all images to ensure they have full URLs
       const processedImages = post.photo_multi.map(img => ({
@@ -490,7 +520,7 @@ const Home = () => {
       };
     }
 
-    // Handle single image from postPhoto (PRIORITY)
+    // Handle single image from postPhoto (LEGACY)
     if (post?.postPhoto) {
       return { image: ensureFullUrl(post.postPhoto) };
     }
@@ -579,7 +609,10 @@ const Home = () => {
         setNewFeeds(prev =>
           prev.map(post =>
             post.id === post_id
-              ? { ...post, post_comments: Number(post.post_comments || 0) + 1 }
+              ? { 
+                  ...post, 
+                  comments_count: Number(post.comments_count || post.post_comments || 0) + 1 
+                }
               : post
           )
         );
@@ -806,21 +839,21 @@ const Home = () => {
                     <PostCard
                       key={postId}
                       post_id={postId}
-                      user={post?.publisher}
-                      content={post?.postText}
+                      user={post?.author || post?.publisher}
+                      content={post?.post_text || post?.postText}
                       blog={post?.blog}
-                      iframelink={post?.postYoutube}
-                      postfile={post?.postFile}
+                      iframelink={post?.post_youtube || post?.postYoutube}
+                      postfile={post?.post_file || post?.postFile}
                       postFileName={post?.postFileName}
                       {...getFileTypeProps(post)}
-                      likes={post?.post_likes}
-                      comments={post?.post_comments}
-                      shares={post?.post_shares}
+                      likes={post?.reactions_count || post?.post_likes}
+                      comments={post?.comments_count || post?.post_comments}
+                      shares={post?.shares_count || post?.post_shares}
                       saves={post?.is_post_saved}
-                      timeAgo={post?.post_created_at}
+                      timeAgo={post?.created_at_human || post?.post_created_at}
                       handleLike={handleLike}
                       handleDislike={handleDislike}
-                      isLiked={likedPosts.has(postId)}
+                      isLiked={post?.is_liked || likedPosts.has(postId)}
                       isSaved={savedPosts.has(postId)}
                       fetchComments={fetchComments}
                       commentsData={commentsForPost}
