@@ -132,7 +132,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
   }, [showAllComments]);
 
   const handleLikeClick = useCallback(() => {
-    handleLike(post_id, 1);
+    handleLike(post_id);
   }, [handleLike, post_id]);
 
   const handleDislikeClick = useCallback(() => {
@@ -858,12 +858,12 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
 
       {/* Handle video */}
       {video && <video className="w-full h-auto object-cover" controls src={video}></video>}
-      {iframelink !== "" && <iframe src={`https://www.youtube.com/embed/${iframelink}`} className="w-full h-[300px] object-cover" controls></iframe>}
+      {iframelink && iframelink !== "" && <iframe src={`https://www.youtube.com/embed/${iframelink}`} className="w-full h-[300px] object-cover" controls></iframe>}
 
       {/* Handle audio */}
       {audio && <audio src={audio} controls className="w-full h-auto object-cover" />}
 
-      {postfile !== "" && (
+      {postfile && postfile !== "" && (
         <>
           {/* If file is PDF */}
           {postfile.endsWith(".pdf") && (
