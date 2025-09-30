@@ -191,24 +191,18 @@ const Home = () => {
     setLoading(true);
     try {
       const accessToken = localStorage.getItem("access_token");
-      const formData = new URLSearchParams();
-      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
-      formData.append('action', 'like');
-      formData.append('reaction', '1');
-      formData.append('post_id', post_id);
-      const response = await fetch(`https://ouptel.com/api/post-actions?access_token=${accessToken}`, {
-        method: 'POST',
+    
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/v1/posts/${post_id}/reactions`, {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-Requested-With': 'XMLHttpRequest',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
           "Accept": "application/json"
         },
-        body: formData.toString(),
       })
-      const data = await response.json();
-
+      const data = await response.data;
+      console.log(data, "data");
       // Update the liked state and like count
-      if (data?.api_status === 200) {
+      if (data?.ok === true) {
         const wasLiked = likedPosts.has(post_id);
 
         setLikedPosts(prev => {
@@ -308,30 +302,27 @@ const Home = () => {
     try {
       const accessToken = localStorage.getItem("access_token");
       const formData = new URLSearchParams();
-      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
-      formData.append('type', 'fetch_comments');
       formData.append('post_id', post_id);
-      const response = await fetch(`https://ouptel.com/api/comments?access_token=${accessToken}`, {
-        method: 'POST',
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/v1/posts/${post_id}/comments`, {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-Requested-With': 'XMLHttpRequest',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
           "Accept": "application/json"
         },
-        body: formData.toString(),
       })
-      const data = await response.json();
+      const data = await response.data;
+      console.log(data, "comments");
 
       // Store comments for this specific post
-      if (data?.api_status === 200 && data.data) {
+      if (data?.ok === true) {
         setPostComments(prev => {
           const newState = {
             ...prev,
-            [post_id]: data.data
+            [post_id]: data.data.comments
           };
           return newState;
         });
-        return data.data; // Return the comments data
+        return data.data.comments; // Return the comments data
       } else {
         // Set empty array for posts with no comments
         setPostComments(prev => ({
@@ -343,12 +334,9 @@ const Home = () => {
     }
     catch (error) {
       console.error('Error fetching comments for post', post_id, ':', error);
-      // Set empty array on error
-      setPostComments(prev => ({
-        ...prev,
-        [post_id]: []
-      }));
-      return []; // Return empty array on error
+      return [];
+     
+     
     }
   }
 
@@ -356,21 +344,16 @@ const Home = () => {
     setLoading(true);
     try {
       const accessToken = localStorage.getItem("access_token");
-      const formData = new URLSearchParams();
-      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
-      formData.append('action', 'save');
-      formData.append('post_id', post_id);
-      const response = await fetch(`https://ouptel.com/api/post-actions?access_token=${accessToken}`, {
-        method: 'POST',
+ 
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/v1/posts/${post_id}/save`, {}, {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-Requested-With': 'XMLHttpRequest',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
           "Accept": "application/json"
         },
-        body: formData.toString(),
       })
-      const data = await response.json();
-      if (data?.api_status === 200) {
+      const data = await response.data;
+      if (data?.ok === true) {
         // Update the saved state
         const wasSaved = savedPosts.has(post_id);
         setSavedPosts(prev => {
@@ -558,78 +541,67 @@ const Home = () => {
   };
 
   const commentPost = async (post_id, comment = '') => {
-   
     setLoading(true);
     try {
       const accessToken = localStorage.getItem("access_token");
-      const formData = new URLSearchParams();
-      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
-      formData.append('text', comment);
-      formData.append('post_id', post_id);
-      formData.append('type', 'create');
-
-      const response = await fetch(`https://ouptel.com/api/comments?access_token=${accessToken}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-Requested-With': 'XMLHttpRequest',
-          "Accept": "application/json"
-        },
-        body: formData.toString(),
-      })
-      const data = await response.json();
-
-
-      if (data?.api_status === 200) {
-
-
-        // Create a new comment object to add to local state
+  
+      // Use plain object instead of URLSearchParams if backend expects JSON
+      const formData = { text: comment };
+  
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/v1/posts/${post_id}/comments`,
+        formData, // <-- body here
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${accessToken}`,
+            "Accept": "application/json"
+          }
+        }
+      );
+  
+      const data = response.data;
+      console.log(data, "data");
+  
+      if (data?.ok === true) {
         const newComment = {
-          id: Date.now(), // Temporary ID until we get the real one from API
+          id: Date.now(),
           text: comment,
           Orginaltext: comment,
           time: Math.floor(Date.now() / 1000),
           publisher: {
-            first_name: 'You', // This should come from user context
+            first_name: 'You',
             last_name: '',
-            avatar: '/perimg.png' // This should come from user context
+            avatar: '/perimg.png'
           }
         };
-
-        // Update the local comments state immediately
+  
         setPostComments(prev => {
           const currentComments = prev[post_id] || [];
-          return {
-            ...prev,
-            [post_id]: [newComment, ...currentComments]
-          };
+          return { ...prev, [post_id]: [newComment, ...currentComments] };
         });
-
-        // Update the comment count in the feed
+  
         setNewFeeds(prev =>
           prev.map(post =>
             post.id === post_id
-              ? { 
-                  ...post, 
-                  comments_count: Number(post.comments_count || post.post_comments || 0) + 1 
-                }
+              ? { ...post, comments_count: Number(post.comments_count || post.post_comments || 0) + 1 }
               : post
           )
         );
-
-        // Return success so PostCard can clear the input
+  
         return { success: true, comment: newComment };
       } else {
-        console.error('Error posting comment:', data);
+        console.error("Error posting comment:", data);
         return { success: false, error: data };
       }
     } catch (error) {
-      console.error('Error posting comment:', error);
+      console.error("Error posting comment:", error);
       return { success: false, error: error.message };
     } finally {
       setLoading(false);
     }
-  }
+  };
+  
 
 
   const getSession = async () => {
