@@ -399,7 +399,7 @@ const Events = () => {
                 <p className="text-gray-500 text-lg">No events found. Create your first event!</p>
               </div>
             )}
-            <div className="pt-5 pb-6 px-7 border border-[#d3d1d1] rounded-lg grid grid-cols-1 md:grid-cols-2 gap-4 bg-white">
+            <div className="pt-5 pb-6 px-7 border border-[#d3d1d1] rounded-lg grid grid-cols-1 md:grid-cols-2 gap-5 bg-white">
         
             
          
