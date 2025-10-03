@@ -52,10 +52,6 @@ const feedCards = [
   },
 ];
 
-
-
-
-
 const Home = () => {
   const [session, setSession] = useState(localStorage.getItem("session_id"));
   const [loading, setLoading] = useState(false);
@@ -78,14 +74,17 @@ const Home = () => {
   }); // Track which posts are saved
   const [postComments, setPostComments] = useState({}); // Track comments for each post
   const [notification, setNotification] = useState({ show: false, message: '', type: 'success' });
+  
+  // Image popup state
+  const [imagePopup, setImagePopup] = useState({ show: false, images: [], currentIndex: 0 });
+  
+  const [postReactions, setPostReactions] = useState({}); // Track reactions for each post
 
   const getNewFeeds = async (type) => {
     const formData = new URLSearchParams();
     
     if (type) {
       formData.append('post_type', type);
-      // formData.append('f', 'posts');
-      // formData.append('s', 'filter_posts');
     }
 
     
@@ -102,7 +101,7 @@ const Home = () => {
 
       })
       const data = await response.data;
-      console.log("📰 Setting newFeeds:", data?.data);
+
       
       // Handle new API response structure
       if (data?.data) {
@@ -128,12 +127,12 @@ const Home = () => {
           localStorage.setItem("saved_posts", JSON.stringify([...combined]));
           return combined;
         });
+        
+        // Load reactions for all posts after feed is loaded
+        loadAllPostReactions(feedData);
       }
-
-     
     } catch (error) {
-      console.error('Error fetching news:', error);
-      setError(error.message);
+        setError(error.message);
      
     }finally{
       setLoading(false);
@@ -145,13 +144,7 @@ const Home = () => {
     getNewFeeds();
   }, []);
 
-
-
-
-
-  const posts = [
-
-  ];
+  const posts = [];
 
   const followUser = useCallback(async (user_id) => {
     setLoading(true);
@@ -173,7 +166,6 @@ const Home = () => {
       })
       const data = await response.json();
       if (data?.api_status === 200) {
-        console.log("User followed successfully");
         setFollowedUsers(prev => {
           const newSet = new Set(prev);
           newSet.add(user_id);
@@ -181,7 +173,6 @@ const Home = () => {
         });
       }
     } catch (error) {
-      console.error('Error following user:', error);
     } finally {
       setLoading(false);
     }
@@ -200,8 +191,7 @@ const Home = () => {
         },
       })
       const data = await response.data;
-      console.log(data, "data");
-      // Update the liked state and like count
+        // Update the liked state and like count
       if (data?.ok === true) {
         const wasLiked = likedPosts.has(post_id);
 
@@ -233,70 +223,12 @@ const Home = () => {
         );
       }
     } catch (error) {
-      console.error('Error liking post:', error);
     } finally {
       setLoading(false);
     }
   }
 
-  const handleDislike = async (post_id) => {
-    setLoading(true);
-    try {
-      const accessToken = localStorage.getItem("access_token");
-      const formData = new URLSearchParams();
-      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
-      formData.append('action', 'dislike');
-      formData.append('reaction', '0');
-      formData.append('post_id', post_id);
-      const response = await fetch(`https://ouptel.com/api/post-actions?access_token=${accessToken}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-Requested-With': 'XMLHttpRequest',
-          'Accept': 'application/json'
-        },
-        body: formData.toString(),
-      })
-      const data = await response.json();
-
-      // Update the liked state and like count
-      if (data?.api_status === 200) {
-        const wasLiked = likedPosts.has(post_id);
-
-        setLikedPosts(prev => {
-          const newLikedPosts = new Set(prev);
-          if (wasLiked) {
-            newLikedPosts.delete(post_id);
-          } else {
-            newLikedPosts.add(post_id);
-          }
-          // Save to localStorage
-          localStorage.setItem("liked_posts", JSON.stringify([...newLikedPosts]));
-          return newLikedPosts;
-        });
-
-        // Update the like count in newFeeds
-        setNewFeeds(prev =>
-          prev.map(post =>
-            post.id === post_id
-              ? {
-                ...post,
-                reactions_count: wasLiked
-                  ? Math.max(0, parseInt(post.reactions_count || post.post_likes || 0) - 1)
-                  : parseInt(post.reactions_count || post.post_likes || 0) + 1,
-                is_liked: !wasLiked
-              }
-              : post
-          )
-        );
-      }
-    }
-    catch (error) {
-      console.error('Error disliking post:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
+ 
 
   const fetchComments = async (post_id) => {
     try {
@@ -311,7 +243,6 @@ const Home = () => {
         },
       })
       const data = await response.data;
-      console.log(data, "comments");
 
       // Store comments for this specific post
       if (data?.ok === true) {
@@ -333,7 +264,6 @@ const Home = () => {
       }
     }
     catch (error) {
-      console.error('Error fetching comments for post', post_id, ':', error);
       return [];
      
      
@@ -376,11 +306,9 @@ const Home = () => {
               : post
           )
         );
-      } else {
-        console.error('Error saving post:', data);
+      } else {    
       }
-    } catch (error) {
-      console.error('Error saving post:', error);
+    } catch (error) { 
     } finally {
       setLoading(false);
     }
@@ -405,21 +333,204 @@ const Home = () => {
       })
       const data = await response.json();
       if (data?.api_status === 200) {
-        console.log('Post reported successfully');
         // You can add a toast notification here
       } else {
-        console.error('Error reporting post:', data);
       }
     } catch (error) {
-      console.error('Error reporting post:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+  const getPostReaction = async (post_id) => {
+    setLoading(true);
+    try {
+      const accessToken = localStorage.getItem("access_token");
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/v1/posts/${post_id}/reactions`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+      const data = await response.data;
+      return data;
+    } catch (error) {
+      console.error('Error getting post reaction:', error);
+      return null;
     } finally {
       setLoading(false);
     }
   }
 
+  // Load reactions for all posts
+  const loadAllPostReactions = async (posts) => {
+    if (!posts || posts.length === 0) return;
+    
+    try {
+      const reactionPromises = posts.map(async (post) => {
+        if (post.id) {
+          const reactionData = await getPostReaction(post.id);
+          return { postId: post.id, reactionData };
+        }
+        return null;
+      });
+      
+      const results = await Promise.all(reactionPromises);
+      
+      // Update postReactions state with all reaction data
+      const newPostReactions = {};
+      results.forEach(result => {
+        if (result && result.reactionData?.ok === true) {
+          newPostReactions[result.postId] = result.reactionData.data?.reaction_type || null;
+        }
+      });
+      
+      setPostReactions(prev => ({ ...prev, ...newPostReactions }));
+      
+      // Update newFeeds with reaction data
+      setNewFeeds(prev => 
+        prev.map(post => {
+          const result = results.find(r => r?.postId === post.id);
+          if (result && result.reactionData?.ok === true) {
+            return {
+              ...post,
+              reaction_counts: result.reactionData.data?.reaction_counts || {},
+              current_reaction: result.reactionData.data?.user_reaction || null,
+              user_reaction: result.reactionData.data?.user_reaction || null
+            };
+          }
+          return post;
+        })
+      );
+      
+    } catch (error) {
+      console.error('Error loading post reactions:', error);
+    }
+  } 
+
   const showNotification = (message, type = 'success') => {
     setNotification({ show: true, message, type });
     setTimeout(() => setNotification({ show: false, message: '', type: 'success' }), 3000);
+  };
+
+  // Image popup handlers
+  const openImagePopup = (images, currentIndex = 0) => {
+    setImagePopup({ show: true, images, currentIndex });
+  };
+
+  const closeImagePopup = () => {
+    setImagePopup({ show: false, images: [], currentIndex: 0 });
+  };
+
+  const nextImage = () => {
+    setImagePopup(prev => ({
+      ...prev,
+      currentIndex: (prev.currentIndex + 1) % prev.images.length
+    }));
+  };
+
+  const prevImage = () => {
+    setImagePopup(prev => ({
+      ...prev,
+      currentIndex: prev.currentIndex === 0 ? prev.images.length - 1 : prev.currentIndex - 1
+    }));
+  };
+
+  // Keyboard navigation for image popup
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (imagePopup.show) {
+        if (e.key === 'Escape') {
+          closeImagePopup();
+        } else if (e.key === 'ArrowLeft') {
+          prevImage();
+        } else if (e.key === 'ArrowRight') {
+          nextImage();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [imagePopup.show]);
+
+
+  // Reaction popup handlers
+  const showReactionPopup = (postId) => {
+    setReactionPopup({
+      show: true,
+      postId
+    });
+  };
+
+  const hideReactionPopup = () => {
+    setReactionPopup({ show: false, postId: null });
+  };
+
+  const handleReaction = async (postId, reactionType) => {
+    setLoading(true);
+    try {
+      const accessToken = localStorage.getItem("access_token");
+
+
+      
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/v1/posts/${postId}/reactions`,
+        { reaction: reactionType.toString() }, // request body
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`, // correct place
+          },
+        }
+      );
+      const data = await response.data;
+      console.log(data, "data reaction");
+      if (data?.ok === true) {
+        const isRemoved = data.data.action === 'removed';
+        const totalReactions = Object.values(data.data.reaction_counts).reduce((sum, count) => sum + count, 0);
+    
+        
+        // Update the reaction count in newFeeds using the new API response
+        setNewFeeds(prev =>
+          prev.map(post =>
+            post.id === postId
+              ? {
+                  ...post,
+                  reactions_count: totalReactions,
+                  is_liked: !isRemoved,
+                  reaction_counts: data.data.reaction_counts,
+                  current_reaction: isRemoved ? null : data.data.user_reaction,
+                  user_reaction: isRemoved ? null : data.data.user_reaction
+                }
+              : post
+          )
+        );
+        
+        // Store the reaction type for this post
+        setPostReactions(prev => ({
+          ...prev,
+          [postId]: isRemoved ? null : data.data.user_reaction
+        }));
+        
+        console.log('Reaction updated:', {
+          postId,
+          reactionType: data.data.user_reaction,
+          isRemoved,
+          currentReaction: isRemoved ? null : data.data.user_reaction
+        });
+        
+        if (showNotification) {
+          const message = isRemoved 
+            ? `${data.data.reaction_name} reaction removed!` 
+            : `${data.data.reaction_name} reaction added!`;
+          showNotification(message, 'success');
+        }
+      }
+    } catch (error) {
+      console.error('Error adding reaction:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const hidePost = async (post_id) => {
@@ -440,16 +551,13 @@ const Home = () => {
       })
       const data = await response.json();
       if (data?.api_status === 200) {
-        console.log('Post hidden successfully');
         // Remove the hidden post from the feed
         setNewFeeds(prev => prev.filter(post => post.id !== post_id));
         showNotification('Post hidden successfully');
       } else {
-        console.error('Error hiding post:', data);
         showNotification('Failed to hide post', 'error');
       }
     } catch (error) {
-      console.error('Error hiding post:', error);
       showNotification('Error hiding post', 'error');
     } finally {
       setLoading(false);
@@ -545,23 +653,22 @@ const Home = () => {
     try {
       const accessToken = localStorage.getItem("access_token");
   
-      // Use plain object instead of URLSearchParams if backend expects JSON
-      const formData = { text: comment };
+      // API body with text field
+      const requestBody = { text: comment };
   
       const response = await axios.post(
         `${import.meta.env.VITE_API_URL}/api/v1/posts/${post_id}/comments`,
-        formData, // <-- body here
+        requestBody,
         {
           headers: {
-            "Content-Type": "application/json",
+         
             "Authorization": `Bearer ${accessToken}`,
-            "Accept": "application/json"
+       
           }
         }
       );
   
       const data = response.data;
-      console.log(data, "data");
   
       if (data?.ok === true) {
         const newComment = {
@@ -591,11 +698,9 @@ const Home = () => {
   
         return { success: true, comment: newComment };
       } else {
-        console.error("Error posting comment:", data);
         return { success: false, error: data };
       }
     } catch (error) {
-      console.error("Error posting comment:", error);
       return { success: false, error: error.message };
     } finally {
       setLoading(false);
@@ -641,7 +746,6 @@ const Home = () => {
 
 
     } catch (error) {
-      console.error('Error fetching events:', error);
       setError(error.message);
      
     }finally{
@@ -675,7 +779,6 @@ const Home = () => {
         setError(response?.data?.errors?.error_text);
       }
     } catch (error) {
-      console.error('Error fetching friend suggestions:', error);
       setError(error.message);
     } finally {
       setLoading(false);
@@ -707,12 +810,10 @@ const Home = () => {
      
       setUserStories(storiesData);
     } else {
-      console.error('Error fetching stories:', data);
       setError(data?.errors?.error_text || 'Failed to fetch stories');
     }
     setLoading(false);  
    } catch (error) {
-    console.error('Error fetching user stories:', error);
     setError(error.message);
    } finally {
     setLoading(false);
@@ -755,8 +856,7 @@ const Home = () => {
               <ScrollableSection>
                                  {Array.isArray(userStories || []) && (userStories || []).length > 0 ? (
                    (userStories || []).map((user, index) => {
-                     console.log('User data:', user);
-                     console.log('First story thumbnail:', user.stories?.[0]?.thumbnail);
+                      
                      return (
                        <FeedCard
                          key={user.user_id || index}
@@ -777,7 +877,7 @@ const Home = () => {
 
           <div className="px-2 md:px-4 relative">
             <div className='mb-4 md:mb-6'>
-              <CreatePostSection fetchNewFeeds={getNewFeeds} />
+              <CreatePostSection fetchNewFeeds={getNewFeeds} showNotification={showNotification} />
             </div>
 
             {/* Fixed sticky positioning issue */}
@@ -811,6 +911,7 @@ const Home = () => {
                     <PostCard
                       key={postId}
                       post_id={postId}
+                     
                       user={post?.author || post?.publisher}
                       content={post?.post_text || post?.postText}
                       blog={post?.blog}
@@ -824,7 +925,7 @@ const Home = () => {
                       saves={post?.is_post_saved}
                       timeAgo={post?.created_at_human || post?.post_created_at}
                       handleLike={handleLike}
-                      handleDislike={handleDislike}
+                      
                       isLiked={post?.is_liked || likedPosts.has(postId)}
                       isSaved={savedPosts.has(postId)}
                       fetchComments={fetchComments}
@@ -834,6 +935,12 @@ const Home = () => {
                       hidePost={hidePost}
                       commentPost={commentPost}
                       getNewsFeed={getNewFeeds}
+                      openImagePopup={openImagePopup}
+                      handleReaction={handleReaction}
+                      postReaction={postReactions[post?.id]}  
+                      postReactionCounts={post?.reaction_counts}
+                      currentReaction={post?.current_reaction || post?.user_reaction}
+                      userReaction={post?.user_reaction}
                     />
                   );
                 })
@@ -861,6 +968,7 @@ const Home = () => {
                   isLiked={likedPosts.has(post.id)}
                   isSaved={savedPosts.has(post.id)}
                   savePost={savePost}
+                  postReaction={postReactions[post?.id]}
                   reportPost={reportPost}
                   hidePost={hidePost}
                 />
@@ -939,6 +1047,57 @@ const Home = () => {
           </div>
         </div>
       )}
+
+      {/* Image Popup/Modal */}
+      {imagePopup.show && (
+        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
+          <div className="relative max-w-4xl max-h-full w-full h-full flex items-center justify-center">
+            {/* Close button */}
+            <button
+              onClick={closeImagePopup}
+              className="absolute top-4 right-4 z-10 text-white hover:text-gray-300 text-2xl font-bold bg-black/50 rounded-full w-10 h-10 flex items-center justify-center"
+            >
+              ×
+            </button>
+
+            {/* Previous button */}
+            {imagePopup.images.length > 1 && (
+              <button
+                onClick={prevImage}
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-10 text-white hover:text-gray-300 text-2xl font-bold bg-black/50 rounded-full w-10 h-10 flex items-center justify-center"
+              >
+                ‹
+              </button>
+            )}
+
+            {/* Next button */}
+            {imagePopup.images.length > 1 && (
+              <button
+                onClick={nextImage}
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-10 text-white hover:text-gray-300 text-2xl font-bold bg-black/50 rounded-full w-10 h-10 flex items-center justify-center"
+              >
+                ›
+              </button>
+            )}
+
+            {/* Image */}
+            <img
+              src={imagePopup.images[imagePopup.currentIndex]?.image || imagePopup.images[imagePopup.currentIndex]?.image_org}
+              alt={`Image ${imagePopup.currentIndex + 1}`}
+              className="max-w-full max-h-full object-contain"
+              style={{ maxHeight: '90vh' }}
+            />
+
+            {/* Image counter */}
+            {imagePopup.images.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white bg-black/50 px-3 py-1 rounded-full text-sm">
+                {imagePopup.currentIndex + 1} / {imagePopup.images.length}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
     </>
   );
 };

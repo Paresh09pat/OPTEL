@@ -14,8 +14,7 @@ export const ChatProvider = ({ children }) => {
     const [currentChatUser, setCurrentChatUser] = useState(null);
     const [currentChatId, setCurrentChatId] = useState(null);
 
-    console.log('Current chat user:', currentChatUser);
-    console.log('Current chat id:', currentChatId);
+   
 
     const setCurrentChat = (chatId, userData) => {
         setCurrentChatId(chatId);

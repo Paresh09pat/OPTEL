@@ -4,7 +4,7 @@ import { IoBookmark } from "react-icons/io5";
 import { FaFilePdf, FaPaperPlane } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import SharePopup from './SharePopup';
-const PostCard = ({ user, content, image, video, audio, file, likes, comments, shares, saves, timeAgo, post_id, handleLike, handleDislike, isLiked, fetchComments, commentsData, savePost, isSaved, blog, multipleImages, hasMultipleImages, reportPost, hidePost, commentPost, iframelink, postfile, postFileName, getNewsFeed }) => {
+const PostCard = ({ user, content, image, video, audio, file, likes, comments, shares, saves, timeAgo, post_id, handleLike, handleDislike, isLiked, fetchComments, commentsData, savePost, isSaved, blog, multipleImages, hasMultipleImages, reportPost, hidePost, commentPost, iframelink, postfile, postFileName, getNewsFeed, openImagePopup, handleReaction, postReaction, postReactionCounts, currentReaction, userReaction }) => {
   const navigate = useNavigate();
   const [clickedComments, setClickedComments] = useState(false);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
@@ -28,12 +28,31 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
   // Add state for managing reply edit mode
   const [editingReply, setEditingReply] = useState(null);
   const [editReplyText, setEditReplyText] = useState('');
+  const [hoverTimeout, setHoverTimeout] = useState(null);
+  const [showReactionPopup, setShowReactionPopup] = useState(false);
   // Update local comments when prop changes
   useEffect(() => {
     if (commentsData && Array.isArray(commentsData)) {
       setLocalCommentsData(commentsData);
     }
   }, [commentsData]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeout) {
+        clearTimeout(hoverTimeout);
+      }
+    };
+  }, [hoverTimeout]);
+
+  // Add click outside handler
+  useEffect(() => {
+    if (showReactionPopup) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [showReactionPopup]);
 
 
 
@@ -132,12 +151,98 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
   }, [showAllComments]);
 
   const handleLikeClick = useCallback(() => {
-    handleLike(post_id);
-  }, [handleLike, post_id]);
+    // Always show popup on click to allow reaction selection
+    setShowReactionPopup(true);
+  }, []);
 
   const handleDislikeClick = useCallback(() => {
     handleDislike(post_id);
   }, [handleDislike, post_id]);
+
+  // Get reaction emoji based on reaction type
+  const getReactionEmoji = (reactionType) => {
+    const reactions = {
+      1: '👍', // Thumbs up
+      2: '❤️', // Heart
+      3: '😂', // Haha
+      4: '😮', // Wow
+      5: '😢', // Sad
+      6: '😡'  // Angry
+    };
+    return reactions[reactionType] || '👍';
+  };
+
+  // Get reaction label based on reaction type
+  const getReactionLabel = (reactionType) => {
+    const labels = {
+      1: 'Liked',
+      2: 'Loved',
+      3: 'Haha',
+      4: 'Wow',
+      5: 'Sad',
+      6: 'Angry'
+    };
+    return labels[reactionType] || 'Liked';
+  };
+
+  // Get total reaction count
+  const getTotalReactionCount = () => {
+    if (postReactionCounts) {
+      return Object.values(postReactionCounts).reduce((sum, count) => sum + count, 0);
+    }
+    return likes || 0;
+  };
+
+  // Handle hover with delay to prevent glitch
+  const handleLikeButtonMouseEnter = () => {
+    // Clear any existing timeout
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout);
+    }
+    
+    const timeout = setTimeout(() => {
+      setShowReactionPopup(true);
+    }, 300); // Increased delay to prevent accidental showing
+    setHoverTimeout(timeout);
+  };
+
+  const handleLikeButtonMouseLeave = () => {
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout);
+      setHoverTimeout(null);
+    }
+    // Only hide if not hovering over popup
+    setTimeout(() => {
+      if (!showReactionPopup) {
+        setShowReactionPopup(false);
+      }
+    }, 100);
+  };
+
+  const handlePopupMouseEnter = () => {
+    // Keep popup open when hovering over it
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout);
+      setHoverTimeout(null);
+    }
+  };
+
+  const handlePopupMouseLeave = () => {
+    // Hide popup when leaving the popup area
+    setShowReactionPopup(false);
+  };
+
+  const handleReactionClick = (reactionType) => {
+    handleReaction(post_id, reactionType);
+    setShowReactionPopup(false);
+  };
+
+  const handleClickOutside = (e) => {
+    // Hide popup when clicking outside
+    if (showReactionPopup && !e.target.closest('[data-reaction-popup]')) {
+      setShowReactionPopup(false);
+    }
+  };
 
   const toggleOptionsMenu = useCallback(() => {
     setShowOptionsMenu(!showOptionsMenu);
@@ -814,8 +919,9 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                   className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-200"
                   style={{ objectFit: 'cover', minHeight: '150px', maxHeight: '300px', width: '100%', height: '100%', display: 'block', maxWidth: '100%' }}
                   onClick={() => {
-                    // TODO: Add image modal/lightbox functionality
-                    console.log('Open image modal for:', img.image || img.image_org);
+                    if (openImagePopup && multipleImages) {
+                      openImagePopup(multipleImages, index);
+                    }
                   }}
                   onLoad={() => {
                     // console.log('Image loaded successfully:', img.image || img.image_org);
@@ -843,8 +949,13 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
       {image && !multipleImages && <img
         src={image}
         alt="Post content"
-        className="w-full h-auto object-cover"
+        className="w-full h-auto object-cover cursor-pointer hover:opacity-90 transition-opacity duration-200"
         style={{ objectFit: 'cover', minHeight: '200px', maxHeight: '400px', width: '100%', height: 'auto', display: 'block' }}
+        onClick={() => {
+          if (openImagePopup) {
+            openImagePopup([{ image, image_org: image }], 0);
+          }
+        }}
         onLoad={() => {
           // console.log('Single image loaded successfully:', image);
         }}
@@ -920,7 +1031,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
 
       <div className="p-4">
         <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
-          <span>{likes} Likes</span>
+          <span>{getTotalReactionCount()} Reactions</span>
           <div className="flex space-x-4">
             <span>{comments} Comments</span>
             <span>{shares} Shares</span>
@@ -929,19 +1040,68 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
 
                         <div className="flex items-center justify-between pt-3 border-t border-[#d3d1d1] relative">
           <button
-            className={`inline-block items-center space-x-2 transition-all duration-200 hover:scale-105 cursor-pointer ${isLiked ? 'text-red-500' : 'text-gray-600 hover:text-red-500'
+            className={`inline-block items-center space-x-2 transition-all duration-200 hover:scale-105 cursor-pointer ${(userReaction || currentReaction || postReaction) ? 'text-blue-500' : 'text-gray-600 hover:text-blue-500'
               }`}
-            onClick={isLiked ? handleDislikeClick : handleLikeClick}
+            onClick={handleLikeClick}
+            onMouseEnter={handleLikeButtonMouseEnter}
+            onMouseLeave={handleLikeButtonMouseLeave}
           >
-            {isLiked ? (
+            {(userReaction || currentReaction || postReaction) ? (
               <>
-                <Heart className="w-5 h-5 fill-red-500 text-red-500" />
-                <span className="text-sm font-medium">Liked</span>
+                <span className="text-xl">{getReactionEmoji(userReaction || currentReaction || postReaction)}</span>
+                <span className="text-sm font-medium">{getReactionLabel(userReaction || currentReaction || postReaction)}</span>
+              
               </>
             ) : (
-              <Heart className="w-5 h-5" />
+              <>
+                <span className="text-xl">👍</span>
+                <span className="text-sm font-medium">Like</span>
+              </>
             )}
           </button>
+
+          {/* Reaction Popup */}
+          {showReactionPopup && (
+            <div 
+              className="absolute bottom-full left-0 mb-2 z-20"
+              data-reaction-popup
+              onMouseEnter={handlePopupMouseEnter}
+              onMouseLeave={handlePopupMouseLeave}
+            >
+              <div className="bg-white rounded-full shadow-2xl border-2 border-gray-300 p-3 flex items-center space-x-2">
+                {[
+                  { emoji: '👍', type: 1, label: 'Like' },
+                  { emoji: '❤️', type: 2, label: 'Love' },
+                  { emoji: '😂', type: 3, label: 'Haha' },
+                  { emoji: '😮', type: 4, label: 'Wow' },
+                  { emoji: '😢', type: 5, label: 'Sad' },
+                  { emoji: '😡', type: 6, label: 'Angry' }
+                ].map((reaction) => {
+                  const count = postReactionCounts?.[reaction.type] || 0;
+                  const isCurrentReaction = (userReaction || currentReaction || postReaction) === reaction.type;
+                  return (
+                    <button
+                      key={reaction.type}
+                      onClick={() => handleReactionClick(reaction.type)}
+                      className={`w-10 h-10 flex items-center justify-center text-2xl hover:scale-125 transition-all duration-200 rounded-full relative ${
+                        isCurrentReaction 
+                          ? 'bg-blue-100 ring-2 ring-blue-500' 
+                          : 'hover:bg-gray-100'
+                      }`}
+                      title={`${reaction.label}${count > 0 ? ` (${count})` : ''}${isCurrentReaction ? ' - Current' : ''}`}
+                    >
+                      {reaction.emoji}
+                      {count > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                          {count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <div className="relative" data-comments-section>
             <button className="flex items-center space-x-2 text-gray-600 hover:text-blue-500 transition-colors cursor-pointer" onClick={handleClickComments}>

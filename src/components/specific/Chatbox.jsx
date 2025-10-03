@@ -109,17 +109,12 @@ const Chatbox = ({ onClose, isMobile = false }) => {
         body: formData.toString(),
       });
       const data = await response.json();
-      console.log('Chatbox API response:', data);
       if (data?.api_status === 200) {
-        console.log('Setting conversations:', data?.data);
-        setConversations(data?.data);
+            setConversations(data?.data);
       } else {
-        console.log('API response not successful, using sample conversations');
         setConversations(sampleConversations);
       }
     } catch (error) {
-      console.log('Error fetching conversations:', error);
-      console.log('Using sample conversations due to error');
       setConversations(sampleConversations);
     }
     finally {
@@ -144,23 +139,13 @@ const Chatbox = ({ onClose, isMobile = false }) => {
         body: formData.toString(),
       });
       const data = await response.json();
-      console.log('Group Chatbox API response:', data);
       if (data?.api_status === 200) {
-        console.log('Setting group conversations:', data?.data);
         setGroupConversations(data?.data);
-
-
-        console.log('data?.data', groupConversations);
-
       } else {
 
-        console.log('Using sample group data:', sampleGroups);
         setGroupConversations(sampleGroups);
       }
     } catch (error) {
-      console.log(error);
-
-      console.log('Using sample group data due to error:', sampleGroups);
       setGroupConversations(sampleGroups);
     }
     finally {
@@ -173,7 +158,6 @@ const Chatbox = ({ onClose, isMobile = false }) => {
   }, []);
 
   useEffect(() => {
-    console.log('Active section changed to:', activeSection);
   }, [activeSection]);
 
   // Close popups when clicking outside
@@ -200,12 +184,7 @@ const Chatbox = ({ onClose, isMobile = false }) => {
     };
   }, [searchOpen]);
 
-  console.log('Conversations state:', conversations);
-  console.log('Group conversations state:', groupConversations);
-  console.log('Active section:', activeSection);
-  console.log('Conversations length:', conversations?.length || 0);
-  console.log('Group conversations length:', groupConversations?.length || 0);
-
+ 
 
   return (
     <div className={`bg-[#EDF6F9] px-6 py-8 h-full overflow-y-auto scrollbar-hide smooth-scroll pt-0  ${isMobile ? 'w-full' : 'w-full'
@@ -497,7 +476,6 @@ const Chatbox = ({ onClose, isMobile = false }) => {
                     isOnline: group?.isOnline,
                     type: 'group'
                   };
-                  console.log('Setting current group chat:', group?.group_id, groupData);
                   setCurrentChat(group?.group_id, groupData);
 
                   // Store group data in localStorage for persistence

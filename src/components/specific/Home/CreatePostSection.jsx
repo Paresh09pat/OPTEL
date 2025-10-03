@@ -5,12 +5,27 @@ import { CiCirclePlus } from 'react-icons/ci';
 import { Icon } from '@iconify/react';
 import { BarChart3, MapPin, Send, Smile, X } from 'lucide-react';
 import { Palette } from 'lucide-react';
+import axios from 'axios';
 
-const CreatePostSection = ({ fetchNewFeeds }) => {
+const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
     const [postText, setPostText] = useState('');
     const [showPopup, setShowPopup] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [loading, setLoading] = useState(false);
+    
+    // Additional post features
+    const [postLink, setPostLink] = useState('');
+    const [postLinkTitle, setPostLinkTitle] = useState('');
+    const [postLinkContent, setPostLinkContent] = useState('');
+    const [youtubeLink, setYoutubeLink] = useState('');
+    const [location, setLocation] = useState('');
+    const [feeling, setFeeling] = useState('');
+    const [selectedGif, setSelectedGif] = useState(null);
+    const [backgroundColor, setBackgroundColor] = useState('');
+    const [albumName, setAlbumName] = useState('');
+    const [groupId, setGroupId] = useState('');
+    const [postType, setPostType] = useState('text');
+    const [postPrivacy, setPostPrivacy] = useState('0');
 
     // Poll state
     const [showPoll, setShowPoll] = useState(false);
@@ -94,52 +109,38 @@ const CreatePostSection = ({ fetchNewFeeds }) => {
         setSelectedFiles((prev) => prev.filter((_, i) => i !== indexToRemove));
     };
 
-
-
-
     const genetateId = Math.floor(10 + Math.random() * 90);
 
-    // const createNewPost = async (postText, selectedFiles) => {
-    //     try {
-    //         const accessToken = localStorage.getItem("access_token");
-    //         const user_id = localStorage.getItem("user_id");
-    //         const formData = new URLSearchParams();
-    //         formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
-    //         formData.append('type', 'share_post_on_timeline');
+    // Function to detect post type based on content
+    const detectPostType = (text, files, link, youtube, album) => {
+        // If album name is provided, it's definitely an album
+        if (album && album.trim()) return 'album';
+        
+        // If YouTube link is provided, it's a video post
+        if (youtube && youtube.trim()) return 'video';
+        
+        // If link is provided, it's a link post
+        if (link && link.trim()) return 'link';
+        
+        // Check files for type detection
+        if (files && files.length > 0) {
+            const imageFiles = files.filter(f => f.file && f.file.type.startsWith('image/'));
+            const hasVideos = files.some(f => f.file && f.file.type.startsWith('video/'));
+            const hasAudio = files.some(f => f.file && f.file.type.startsWith('audio/'));
+            const hasOtherFiles = files.some(f => f.file && !f.file.type.startsWith('image/') && !f.file.type.startsWith('video/') && !f.file.type.startsWith('audio/'));
+            
+            // Multiple images = album, single image = photo
+            if (imageFiles.length > 1) return 'album';
+            if (imageFiles.length === 1) return 'photo';
+            if (hasVideos) return 'video';
+            if (hasAudio) return 'audio';
+            if (hasOtherFiles) return 'file';
+        }
+        
+        return 'text';
+    };
 
-    //         formData.append('id', '169');
-    //         formData.append('postText', postText);
-    //         formData.append('user_id', user_id);
-
-    //         console.log("🚀 ~ createNewPost ~ selectedFiles:", selectedFiles[0].type)
-
-    //         if (selectedFiles[0].type === 'image') {
-    //             formData.append('postPhotos[]', selectedFiles);
-    //         }
-
-    //         const response = await fetch(`https://ouptel.com/api/new_post?access_token=${accessToken}`, {
-    //             method: 'POST',
-    //             headers: {
-    //                 'Content-Type': 'application/x-www-form-urlencoded',
-    //                 'X-Requested-With': 'XMLHttpRequest',
-    //                 "Accept": "application/json"
-    //             },
-    //             body: formData.toString(),
-    //         })
-    //         const data = await response.json();
-    //         if (data.api_status === 200) {
-    //             fetchNewFeeds();
-    //             setPostText('');
-    //             setSelectedFiles([]);
-    //             setShowPopup(false);
-    //         }
-    //     } catch (error) {
-    //         console.error('Error creating new post:', error);
-    //     }
-    // }
-
-    console.log("poll", showPoll)
-
+  
 
     const createNewPost = async (postText, selectedFiles, pollData = null) => {
         setLoading(true);
@@ -149,11 +150,56 @@ const CreatePostSection = ({ fetchNewFeeds }) => {
 
             // Use FormData instead of URLSearchParams
             const formData = new FormData();
-            formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
-            formData.append('type', 'share_post_on_timeline');
-            formData.append('id', '169');
+            // Detect post type automatically
+            const detectedPostType = detectPostType(postText, selectedFiles, postLink, youtubeLink, albumName);
+            
+           
+          
             formData.append('postText', postText);
             formData.append('user_id', user_id);
+            formData.append('postType', detectedPostType);
+            formData.append('postPrivacy', postPrivacy); // 0=Public, 1=Friends, 2=Only Me, 4=Group
+
+            // Add link if provided
+            if (postLink && postLink.trim()) {
+                formData.append('postLink', postLink.trim());
+                if (postLinkTitle && postLinkTitle.trim()) {
+                    formData.append('postLinkTitle', postLinkTitle.trim());
+                }
+                if (postLinkContent && postLinkContent.trim()) {
+                    formData.append('postLinkContent', postLinkContent.trim());
+                }
+            }
+
+            // Add YouTube link if provided
+            if (youtubeLink && youtubeLink.trim()) {
+                formData.append('postYoutube', youtubeLink.trim());
+            }
+
+            // Add album name if provided
+            if (albumName && albumName.trim()) {
+                formData.append('album_name', albumName.trim());
+            }
+
+            // Add group ID if provided
+            if (groupId && groupId.trim()) {
+                formData.append('group_id', groupId.trim());
+            }
+
+            // Add location if provided
+            if (location && location.trim()) {
+                formData.append('postLocation', location.trim());
+            }
+
+            // Add feeling if provided
+            if (feeling && feeling.trim()) {
+                formData.append('postFeeling', feeling.trim());
+            }
+
+            // Add background color if provided
+            if (backgroundColor && backgroundColor.trim()) {
+                formData.append('postBackground', backgroundColor.trim());
+            }
 
             // Add poll data if available
             if (pollData && pollData.showPoll) {
@@ -164,11 +210,30 @@ const CreatePostSection = ({ fetchNewFeeds }) => {
             }
 
             // Append files correctly
-            selectedFiles.forEach((fileObj) => {
+            console.log("Selected files count:", selectedFiles.length);
+            console.log("Selected files:", selectedFiles);
+            console.log("Detected post type:", detectedPostType);
+            console.log("Album name:", albumName);
+            
+            let imageCount = 0;
+            selectedFiles.forEach((fileObj, index) => {
+                console.log(`File ${index}:`, fileObj);
                 if (fileObj.file && fileObj.file.type.startsWith("image/")) {
-                    formData.append("postPhotos[]", fileObj.file);
+                    imageCount++;
+                    console.log(`Appending image file ${imageCount}:`, fileObj.file.name, fileObj.file.type);
+                    
+                    // For album posts, use album_images[]
+                    if (detectedPostType === 'album') {
+                        console.log("Using album_images[] for file:", fileObj.file.name);
+                        formData.append("album_images[]", fileObj.file);
+                    } else {
+                        console.log("Using postPhoto for file:", fileObj.file.name);
+                        // For single photo posts, use postPhoto
+                        formData.append("postPhoto", fileObj.file);
+                    }
                 }
             });
+            console.log("Total images processed:", imageCount);
             selectedFiles.forEach((fileObj) => {
                 if (fileObj.file && fileObj.file.type.startsWith("video/")) {
                     formData.append("postVideo", fileObj.file);
@@ -185,20 +250,74 @@ const CreatePostSection = ({ fetchNewFeeds }) => {
                 }
             });
 
-            const response = await fetch(`https://ouptel.com/api/new_post?access_token=${accessToken}`, {
-                method: "POST",
-                body: formData, // <-- no need to stringify, no headers needed
+            // Debug FormData contents
+            console.log("FormData contents:");
+            let albumImagesCount = 0;
+            for (let [key, value] of formData.entries()) {
+                if (key === 'album_images[]') {
+                    albumImagesCount++;
+                    console.log(`${key} (${albumImagesCount}):`, value.name || value);
+                } else {
+                    console.log(key, value);
+                }
+            }
+            console.log(`Total album_images[] entries: ${albumImagesCount}`);
+
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/v1/posts`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    'Authorization': `Bearer ${accessToken}`,
+                },
             });
 
-            const data = await response.json();
-            if (data.api_status === 200) {
+
+            const data = await response.data;
+            console.log("Create post response:", data);
+            
+            if (data.ok === true) {
+                // Show success message
+                console.log("Post created successfully:", data.message);
+                if (showNotification) {
+                    showNotification(data.message || "Post created successfully!", 'success');
+                }
+                
+                // Refresh the feed to show the new post
                 fetchNewFeeds();
+                
+                // Reset form state
                 setPostText("");
                 setSelectedFiles([]);
                 setShowPopup(false);
+                
+                // Reset additional features
+                setPostLink("");
+                setPostLinkTitle("");
+                setPostLinkContent("");
+                setYoutubeLink("");
+                setLocation("");
+                setFeeling("");
+                setSelectedGif(null);
+                setBackgroundColor("");
+                setAlbumName("");
+                setGroupId("");
+                setPostType("text");
+                setPostPrivacy("0");
+                
+                // Reset poll state if poll was created
+                if (pollData && pollData.showPoll) {
+                    resetPoll();
+                }
+            } else {
+                console.error("Failed to create post:", data.message || "Unknown error");
+                if (showNotification) {
+                    showNotification(data.message || "Failed to create post", 'error');
+                }
             }
         } catch (error) {
             console.error("Error creating new post:", error);
+            if (showNotification) {
+                showNotification("Error creating post. Please try again.", 'error');
+            }
         } finally {
             setLoading(false);
         }
@@ -359,6 +478,31 @@ const CreatePostSection = ({ fetchNewFeeds }) => {
                 updatePollOption={updatePollOption}
                 resetPoll={resetPoll}
                 setShowPoll={setShowPoll}
+                // Additional features
+                postLink={postLink}
+                setPostLink={setPostLink}
+                postLinkTitle={postLinkTitle}
+                setPostLinkTitle={setPostLinkTitle}
+                postLinkContent={postLinkContent}
+                setPostLinkContent={setPostLinkContent}
+                youtubeLink={youtubeLink}
+                setYoutubeLink={setYoutubeLink}
+                location={location}
+                setLocation={setLocation}
+                feeling={feeling}
+                setFeeling={setFeeling}
+                selectedGif={selectedGif}
+                setSelectedGif={setSelectedGif}
+                backgroundColor={backgroundColor}
+                setBackgroundColor={setBackgroundColor}
+                albumName={albumName}
+                setAlbumName={setAlbumName}
+                groupId={groupId}
+                setGroupId={setGroupId}
+                postType={postType}
+                setPostType={setPostType}
+                postPrivacy={postPrivacy}
+                setPostPrivacy={setPostPrivacy}
             />
         </>
     );
@@ -367,7 +511,17 @@ const CreatePostSection = ({ fetchNewFeeds }) => {
 export default memo(CreatePostSection);
 
 
-const CreatePostPopup = ({ isOpen, onClose, createNewPost, setShowPopup, showPoll, pollQuestion, pollOptions, pollDuration, setPollQuestion, setPollOptions, setPollDuration, addPollOption, removePollOption, updatePollOption, resetPoll, setShowPoll }) => {
+const CreatePostPopup = ({ 
+    isOpen, onClose, createNewPost, setShowPopup, 
+    showPoll, pollQuestion, pollOptions, pollDuration, 
+    setPollQuestion, setPollOptions, setPollDuration, 
+    addPollOption, removePollOption, updatePollOption, resetPoll, setShowPoll,
+    // Additional features
+    postLink, setPostLink, postLinkTitle, setPostLinkTitle, postLinkContent, setPostLinkContent,
+    youtubeLink, setYoutubeLink, location, setLocation, feeling, setFeeling, 
+    selectedGif, setSelectedGif, backgroundColor, setBackgroundColor,
+    albumName, setAlbumName, groupId, setGroupId, postType, setPostType, postPrivacy, setPostPrivacy
+}) => {
     const [postText, setPostText] = useState('');
     const [showSharing, setShowSharing] = useState(false);
     const [commentsEnabled, setCommentsEnabled] = useState(true);
@@ -391,6 +545,7 @@ const CreatePostPopup = ({ isOpen, onClose, createNewPost, setShowPopup, showPol
 
         input.onchange = (e) => {
             const files = Array.from(e.target.files);
+            console.log("Popup file selection - type:", type, "files:", files);
             if (files.length) {
                 if (type === 'image') {
                     // Add all images
@@ -399,10 +554,17 @@ const CreatePostPopup = ({ isOpen, onClose, createNewPost, setShowPopup, showPol
                         type,
                         file,
                     }));
-                    setSelectedFiles((prev) => [...prev, ...newFiles]);
+                    console.log("Popup adding image files:", newFiles);
+                    setSelectedFiles((prev) => {
+                        const updated = [...prev, ...newFiles];
+                        console.log("Popup selectedFiles updated:", updated);
+                        return updated;
+                    });
                 } else {
                     // Replace existing for video/audio/file
-                    setSelectedFiles([{ name: files[0].name, type, file: files[0] }]);
+                    const newFile = { name: files[0].name, type, file: files[0] };
+                    console.log("Popup replacing with file:", newFile);
+                    setSelectedFiles([newFile]);
                 }
             }
         };
@@ -449,6 +611,10 @@ const CreatePostPopup = ({ isOpen, onClose, createNewPost, setShowPopup, showPol
             }
         }
 
+        console.log("Popup selectedFiles before createNewPost:", selectedFiles);
+        console.log("Popup postText:", postText);
+        console.log("Popup albumName:", albumName);
+        
         setPostText('');
         await createNewPost(postText, selectedFiles, { showPoll, pollQuestion, pollOptions, pollDuration });
         setShowPopup(false);
@@ -755,6 +921,170 @@ const CreatePostPopup = ({ isOpen, onClose, createNewPost, setShowPopup, showPol
                                 </div>
                                 <span className="text-gray-700 font-medium">Color</span>
                             </button>
+                        </div>
+                    </div>
+
+                    {/* Additional Features */}
+                    <div className="mt-6 space-y-4">
+                        {/* Link Input */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Add Link
+                            </label>
+                            <input
+                                type="url"
+                                value={postLink}
+                                onChange={(e) => setPostLink(e.target.value)}
+                                placeholder="https://example.com"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                            {postLink && (
+                                <div className="mt-2 space-y-2">
+                                    <input
+                                        type="text"
+                                        value={postLinkTitle}
+                                        onChange={(e) => setPostLinkTitle(e.target.value)}
+                                        placeholder="Link title (optional)"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                    <textarea
+                                        value={postLinkContent}
+                                        onChange={(e) => setPostLinkContent(e.target.value)}
+                                        placeholder="Link description (optional)"
+                                        rows="2"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* YouTube Link Input */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                YouTube Video
+                            </label>
+                            <input
+                                type="url"
+                                value={youtubeLink}
+                                onChange={(e) => setYoutubeLink(e.target.value)}
+                                placeholder="https://youtube.com/watch?v=..."
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+
+                        {/* Location Input */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Location
+                            </label>
+                            <input
+                                type="text"
+                                value={location}
+                                onChange={(e) => setLocation(e.target.value)}
+                                placeholder="Where are you?"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+
+                        {/* Feeling Input */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Feeling/Activity
+                            </label>
+                            <input
+                                type="text"
+                                value={feeling}
+                                onChange={(e) => setFeeling(e.target.value)}
+                                placeholder="How are you feeling?"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+
+                        {/* Background Color */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Background Color
+                            </label>
+                            <div className="flex space-x-2">
+                                <input
+                                    type="color"
+                                    value={backgroundColor}
+                                    onChange={(e) => setBackgroundColor(e.target.value)}
+                                    className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
+                                />
+                                <input
+                                    type="text"
+                                    value={backgroundColor}
+                                    onChange={(e) => setBackgroundColor(e.target.value)}
+                                    placeholder="#ffffff"
+                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Album Name */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Album Name
+                            </label>
+                            <input
+                                type="text"
+                                value={albumName}
+                                onChange={(e) => setAlbumName(e.target.value)}
+                                placeholder="My Album Name"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+
+                        {/* Group ID */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Group ID
+                            </label>
+                            <input
+                                type="number"
+                                value={groupId}
+                                onChange={(e) => setGroupId(e.target.value)}
+                                placeholder="Group ID (for group posts)"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+
+                        {/* Post Type Selection */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Post Type
+                            </label>
+                            <select
+                                value={postType}
+                                onChange={(e) => setPostType(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="text">Text</option>
+                                <option value="photo">Photo</option>
+                                <option value="video">Video</option>
+                                <option value="link">Link</option>
+                                <option value="file">File</option>
+                                <option value="audio">Audio</option>
+                                <option value="album">Album</option>
+                            </select>
+                        </div>
+
+                        {/* Privacy Selection */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Privacy
+                            </label>
+                            <select
+                                value={postPrivacy}
+                                onChange={(e) => setPostPrivacy(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="0">Public</option>
+                                <option value="1">Friends</option>
+                                <option value="2">Only Me</option>
+                                <option value="4">Group</option>
+                            </select>
                         </div>
                     </div>
 
