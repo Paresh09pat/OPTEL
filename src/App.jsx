@@ -23,9 +23,11 @@ import CreateAlbum from "./pages/CreateAlbum";
 import MainPages from "./pages/PagesComp/MainPages";
 import CreatePage from "./pages/PagesComp/CreatePage";
 import MainPageSetting from "./pages/PageSetting/MainPageSetting";
+import MainProfileSetting from "./pages/ProfileSetting/MainProfileSetting";
 import Profile from "./pages/Profile";
 import PageProfile from "./pages/PageSetting/PageProfile";
 import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import Register from "./pages/PageSetting/Register";
 import ProtectedRoute from "./components/ProtectedRoute";
 import BlogDetailed from "./pages/BlogDetailed";
@@ -41,6 +43,7 @@ function App() {
       <Routes>
         {/* Public Routes (no layout) */}
         <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
         <Route path="/register" element={<Register />} />
 
         {/* Protected / Layout Routes */}
@@ -66,6 +69,7 @@ function App() {
             <Route path="/my-albums/create" element={<CreateAlbum />} />
             <Route path="/pagescomp/mainpages/createpage" element={<CreatePage />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/profile-settings" element={<MainProfileSetting />} />
             <Route path="/pagescomp/mainpages/pagesetting/mainpagesetting" element={<MainPageSetting />} />
             <Route path="/PageProfile" element={<PageProfile />} />
           </Route>

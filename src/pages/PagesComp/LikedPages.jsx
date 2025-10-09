@@ -2,11 +2,41 @@ import React, { useEffect, useState } from 'react';
 import { FaHeart } from 'react-icons/fa';
 import axios from 'axios';
 import Loader from '../../components/loading/Loader';
+import { baseUrl } from '../../utils/constant';
 
 const LikedPages = () => {
     const [likedPages, setLikedPages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [categories, setCategories] = useState([]);
+
+    // Function to get category name by ID
+    const getCategoryNameById = (categoryId) => {
+        const category = categories.find(cat => cat.id === categoryId);
+        return category ? category.name : 'Unknown Category';
+    };
+
+    // Function to fetch categories
+    const getCategories = async () => {
+        try {
+            const res = await axios.get(`${baseUrl}/api/v1/pages/meta`);
+            if (res.data.ok === true) {
+                setCategories(res.data?.data?.categories);
+            }
+        } catch (error) {
+            console.log('Error fetching categories:', error);
+        }
+    };
+
+    const handleUnlike = async (pageId) => {
+        try {
+            // Simulated API call - replace with real API call
+            console.log('Unlike page:', pageId);
+            // You can implement the actual unlike API call here
+        } catch (error) {
+            console.error('Error unliking page:', error);
+        }
+    };
   
     const getLikedPages = async () => {
       console.log("Fetching liked pages...");
@@ -49,9 +79,17 @@ const LikedPages = () => {
         }
   
         const data = await response.json();
-        setLikedPages(data?.data );
+        
+        // Transform the data to include category names and keep original ID
+        const transformedData = data?.data?.map(page => ({
+            ...page,
+            category: getCategoryNameById(page.category),
+            categoryId: page.category // Keep the original ID for reference
+        })) || [];
+        
+        setLikedPages(transformedData);
         console.log(data, "full API response");
-        console.log(data?.data, "liked pages list");
+        console.log(transformedData, "liked pages list");
       } catch (err) {
         console.error("Error fetching liked pages:", err);
         setError(err.message);
@@ -61,8 +99,23 @@ const LikedPages = () => {
     };
   
     useEffect(() => {
-      getLikedPages();
+      const fetchData = async () => {
+        await getCategories();
+        await getLikedPages();
+      };
+      fetchData();
     }, []);
+
+    // Re-process pages when categories are loaded
+    useEffect(() => {
+        if (categories.length > 0 && likedPages.length > 0) {
+            const updatedPages = likedPages.map(page => ({
+                ...page,
+                category: getCategoryNameById(page.categoryId || page.category)
+            }));
+            setLikedPages(updatedPages);
+        }
+    }, [categories]);
   
     if (loading) return <Loader />;
     if (error) return <div className="text-red-500">Error: {error}</div>;

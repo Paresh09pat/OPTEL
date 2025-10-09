@@ -10,6 +10,7 @@ const CreatePage = () => {
     const [pageDescription, setPageDescription] = useState('');
     const [pageUrl, setPageUrl] = useState('');
     const [pageCategory, setPageCategory] = useState('');
+    const [selectedCategoryId, setSelectedCategoryId] = useState('');
     const [loading,setLoading] = useState(false);
     const [categories,setCategories] = useState([]);
 
@@ -31,8 +32,9 @@ const CreatePage = () => {
         }
 
         console.log("pageCatt>>",pageCategory);
+        console.log("selectedCategoryId>>",selectedCategoryId);
 
-        if (!pageCategory) {
+        if (!selectedCategoryId) {
             toast.error('Please select page category');
             return;
         }
@@ -42,7 +44,7 @@ const CreatePage = () => {
             page_title:pageTitle,
             page_description:pageDescription,
             page_url:pageUrl,
-            page_category:pageCategory,
+            page_category:selectedCategoryId,
         };
 
         console.log('Submitting form...', formData);
@@ -74,6 +76,7 @@ const CreatePage = () => {
         setPageDescription('');
         setPageUrl('');
         setPageCategory('');
+        setSelectedCategoryId('');
         setLoading(false);
     };
 
@@ -217,13 +220,13 @@ const CreatePage = () => {
                             <select
                                 id="page-category"
                                 className="w-full p-2 px-4 border border-[#212121] rounded-full appearance-none cursor-pointer"
-                                value={pageCategory}
-                                onChange={(e) => setPageCategory(categories.find((category)=>{
-                                    console.log("category>>",category.id);
-                                    console.log("e.target.value>>",e.target.value);
-                                    console.log("category>>",category);
-                                    return category.id === e.target.value
-                                }))}
+                                value={selectedCategoryId}
+                                onChange={(e) => {
+                                    const selectedId = parseInt(e.target.value);
+                                    setSelectedCategoryId(selectedId);
+                                    const selectedCategory = categories.find(cat => cat.id === selectedId);
+                                    setPageCategory(selectedCategory?.name || '');
+                                }}
                             >
                                 <option value="">Select category</option>
                                 {categories?.map((category, index) => (

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { FaEye, FaEyeSlash, FaLock, FaShieldAlt, FaUser } from "react-icons/fa";
 
 const Login = () => {
@@ -211,9 +211,9 @@ const Login = () => {
             <div className="mt-8 text-center">
               <p className="text-gray-600 text-sm">
                 Don't have an account?{' '}
-                <a href="#" className="text-blue-600 hover:text-blue-800 font-medium transition-colors">
+                <Link to="/signup" className="text-blue-600 hover:text-blue-800 font-medium transition-colors">
                   Sign up here
-                </a>
+                </Link>
               </p>
             </div>
           </div>

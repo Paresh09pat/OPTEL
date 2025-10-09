@@ -3,6 +3,7 @@ import { BiSolidEdit } from "react-icons/bi";
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import Loader from '../../components/loading/Loader';
+import { baseUrl } from '../../utils/constant';
 
 const MyPages = () => {
     const [myPages, setMyPages] = useState([]);
@@ -10,6 +11,7 @@ const MyPages = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [noData, setNoData] = useState(false);
+    const [categories, setCategories] = useState([]);
 
     const myPagesData = [
         {
@@ -43,6 +45,30 @@ const MyPages = () => {
     ];
 
     // const [myPages, setMyPages] = useState(myPagesData);
+
+    // Function to get category name by ID
+    const getCategoryNameById = (categoryId) => {
+        console.log('getCategoryNameById called with:', categoryId);
+        console.log('Available categories:', categories);
+        const category = categories.find(cat => cat.id === categoryId);
+        console.log('Found category:', category);
+        return category ? category.name : 'Unknown Category';
+    };
+
+    // Function to fetch categories
+    const getCategories = async () => {
+        try {
+            console.log('Fetching categories from API...');
+            const res = await axios.get(`${baseUrl}/api/v1/pages/meta`);
+            console.log('Categories API response:', res.data);
+            if (res.data.ok === true) {
+                console.log('Setting categories:', res.data?.data?.categories);
+                setCategories(res.data?.data?.categories);
+            }
+        } catch (error) {
+            console.log('Error fetching categories:', error);
+        }
+    };
 
     const getMyPages = async () => {
         try {
@@ -85,20 +111,26 @@ const MyPages = () => {
             setNoData(true);
             // Transform API data to match component structure
             if (data) {
-                const transformedData = data.data.map(page => ({
-                    id: page.page_id,
-                    name: page.page_name || page.name,
-                    category: page.category,
-                    likes: page.likes || "0",
-                    comments: "0", // Not in API response
-                    posts: page.users_post || "0",
-                    avatar: page.avatar,
-                    verified: page.verified === "1",
-                    pageTitle: page.page_title,
-                    description: page.page_description,
-                    url: page.url,
-                    isPageOwner: page.is_page_onwer
-                }));
+                console.log('Raw page data from API:', data.data);
+                const transformedData = data.data.map(page => {
+                    console.log('Processing page:', page.page_name, 'with category ID:', page.category);
+                    return {
+                        id: page.page_id,
+                        name: page.page_name || page.name,
+                        category: getCategoryNameById(page.category),
+                        categoryId: page.category, // Keep the original ID for reference
+                        likes: page.likes || "0",
+                        comments: "0", // Not in API response
+                        posts: page.users_post || "0",
+                        avatar: page.avatar,
+                        verified: page.verified === "1",
+                        pageTitle: page.page_title,
+                        description: page.page_description,
+                        url: page.url,
+                        isPageOwner: page.is_page_onwer
+                    };
+                });
+                console.log('Transformed data:', transformedData);
                 setMyPages(transformedData);
             } else {
                 console.log('Using fallback data - unexpected API response structure');
@@ -138,8 +170,31 @@ const MyPages = () => {
     };
 
     useEffect(() => {
-        getMyPages();
+        const fetchData = async () => {
+            await getCategories();
+            await getMyPages();
+        };
+        fetchData();
     }, []);
+
+    // Re-process pages when categories are loaded
+    useEffect(() => {
+        if (categories.length > 0 && myPages.length > 0) {
+            console.log('Re-processing pages with categories loaded');
+            console.log('Categories available:', categories.length);
+            console.log('Pages to update:', myPages.length);
+            
+            const updatedPages = myPages.map(page => {
+                const categoryName = getCategoryNameById(page.categoryId || page.category);
+                console.log(`Updating page ${page.name}: categoryId ${page.categoryId} -> ${categoryName}`);
+                return {
+                    ...page,
+                    category: categoryName
+                };
+            });
+            setMyPages(updatedPages);
+        }
+    }, [categories]);
 
     // console.log("pagesData", myPages)
     if (loading) {
