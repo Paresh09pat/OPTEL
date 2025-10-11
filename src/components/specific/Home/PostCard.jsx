@@ -4,6 +4,7 @@ import { IoBookmark } from "react-icons/io5";
 import { FaFilePdf, FaPaperPlane } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import SharePopup from './SharePopup';
+import Avatar from '../../Avatar';
 const PostCard = ({ user, content, image, video, audio, file, likes, comments, shares, saves, timeAgo, post_id, handleLike, handleDislike, isLiked, fetchComments, commentsData, savePost, isSaved, blog, multipleImages, hasMultipleImages, reportPost, hidePost, commentPost, iframelink, postfile, postFileName, getNewsFeed, openImagePopup, handleReaction, postReaction, postReactionCounts, currentReaction, userReaction }) => {
   const navigate = useNavigate();
   const [clickedComments, setClickedComments] = useState(false);
@@ -831,10 +832,12 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                     <div className="bg-white rounded-xl overflow-hidden border border-[#d3d1d1] smooth-content-transition max-w-full" key={post_id}>
       <div className="p-4 flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <img
+          <Avatar
             src={user?.avatar}
-            alt={user.name}
-            className="w-10 h-10 rounded-full object-cover"
+            name={user?.fullName || user?.name}
+            email={user?.email}
+            alt={user?.name}
+            size="md"
           />
           <div>
             <h3 className="font-semibold text-gray-900">{user?.name}</h3>
@@ -1145,10 +1148,12 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                   <div key={comment.id} className="space-y-3">
                     {/* Main Comment */}
                     <div className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                      <img
-                        src={comment.publisher?.avatar || '/perimg.png'}
+                      <Avatar
+                        src={comment.publisher?.avatar}
+                        name={`${comment.publisher?.first_name || 'Unknown'} ${comment.publisher?.last_name || ''}`}
+                        email={comment.publisher?.email}
                         alt={comment.publisher?.name || 'User'}
-                        className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                        size="sm"
                       />
                       <div className="flex-1 min-w-0 max-w-full overflow-hidden">
                         <div className="flex items-start justify-between mb-2">
@@ -1179,10 +1184,11 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                         {editingComment === comment.id ? (
                           <div className="mb-3">
                             <div className="flex items-center space-x-3">
-                              <img
-                                src="/perimg.png"
+                              <Avatar
+                                name="Current User"
+                                email="current@user.com"
                                 alt="Your avatar"
-                                className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+                                size="sm"
                               />
                               <div className="flex-1 flex items-center bg-white rounded-lg px-3 py-2 min-w-0 border border-blue-200">
                                 <input
@@ -1363,10 +1369,11 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                           </button>
                         </div>
                         <div className="flex items-center space-x-3">
-                          <img
-                            src="/perimg.png"
+                          <Avatar
+                            name="Current User"
+                            email="current@user.com"
                             alt="Your avatar"
-                            className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+                            size="sm"
                           />
                           <div className="flex-1 flex items-center bg-white rounded-full px-3 py-2 min-w-0 border border-blue-200">
                             <input
@@ -1403,10 +1410,12 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                         {commentReplies[comment.id].map((reply) => (
                           <div key={reply.id} className="p-3 bg-blue-50 rounded-lg border-l-2 border-blue-200">
                             <div className="flex items-start space-x-2">
-                              <img
-                                src={reply.publisher?.avatar || '/perimg.png'}
+                              <Avatar
+                                src={reply.publisher?.avatar}
+                                name={`${reply.publisher?.first_name || 'Unknown'} ${reply.publisher?.last_name || ''}`}
+                                email={reply.publisher?.email}
                                 alt={reply.publisher?.name || 'User'}
-                                className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+                                size="sm"
                               />
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between mb-1">
@@ -1436,10 +1445,11 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                                 {editingReply === reply.id ? (
                                   <div className="mb-2">
                                     <div className="flex items-center space-x-2">
-                                      <img
-                                        src="/perimg.png"
+                                      <Avatar
+                                        name="Current User"
+                                        email="current@user.com"
                                         alt="Your avatar"
-                                        className="w-5 h-5 rounded-full object-cover flex-shrink-0"
+                                        size="sm"
                                       />
                                       <div className="flex-1 flex items-center bg-white rounded-lg px-2 py-1 min-w-0 border border-blue-200">
                                         <input
@@ -1615,10 +1625,11 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
         )}
 
         <div className="flex items-center space-x-3 mt-4">
-          <img
-            src="/perimg.png"
+          <Avatar
+            name="Current User"
+            email="current@user.com"
             alt="Your avatar"
-            className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+            size="md"
           />
           <div className="flex-1 flex items-center bg-gray-50 rounded-full px-4 py-2 min-w-0">
             <input

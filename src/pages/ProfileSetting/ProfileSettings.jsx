@@ -1,20 +1,103 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 const ProfileSettings = () => {
   const [formData, setFormData] = useState({
-    firstName: 'Aman',
-    lastName: 'Shaikh',
-    aboutMe: 'About me....',
-    location: 'Location',
-    school: 'School',
-    schoolCompleted: true,
-    workingAt: 'Apple',
-    companyWebsite: 'Apple',
-    website: 'Apple',
-    relationship: 'Single',
-    college: 'College Name',
-    university: 'University Name'
+    firstName: '',
+    lastName: '',
+    aboutMe: '',
+    location: '',
+    school: '',
+    schoolCompleted: false,
+    workingAt: '',
+    companyWebsite: '',
+    website: '',
+    relationship: '',
+    college: '',
+    university: ''
   });
+  const [userData, setUserData] = useState(null);
+  const [userLoading, setUserLoading] = useState(true);
+  const [userError, setUserError] = useState(null);
+
+  // Get user ID from localStorage
+  const userId = localStorage.getItem('user_id') || '222102'; // Default fallback
+
+  // Fetch user data from API
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        setUserLoading(true);
+        setUserError(null);
+        const response = await axios.get(
+          `${import.meta.env.VITE_API_URL}/api/v1/profile/user-data?user_profile_id=${userId}&fetch=user_data`,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`,
+            }
+          }
+        );
+
+        const data = response.data;
+        
+        if (data.api_status === '200') {
+          setUserData(data.user_data);
+          // Populate form with user data
+          setFormData({
+            firstName: data.user_data.first_name || '',
+            lastName: data.user_data.last_name || '',
+            aboutMe: data.user_data.about || '',
+            location: data.user_data.address || '',
+            school: data.user_data.school || '',
+            schoolCompleted: false, // This field might not be in API, keeping default
+            workingAt: data.user_data.working || '',
+            companyWebsite: data.user_data.working_link || '',
+            website: data.user_data.website || '',
+            relationship: data.user_data.relationship_id ? getRelationshipText(data.user_data.relationship_id) : 'Single',
+            college: '', // This field might not be in API
+            university: '' // This field might not be in API
+          });
+        } else {
+          throw new Error(data.api_text || 'Failed to fetch user data');
+        }
+      } catch (err) {
+        console.error('Error fetching user data:', err);
+        setUserError('Failed to load user data. Please try again.');
+        // Set fallback data to maintain UI
+        setFormData({
+          firstName: 'Aman',
+          lastName: 'Shaikh',
+          aboutMe: 'About me....',
+          location: 'Location',
+          school: 'School',
+          schoolCompleted: true,
+          workingAt: 'Apple',
+          companyWebsite: 'Apple',
+          website: 'Apple',
+          relationship: 'Single',
+          college: 'College Name',
+          university: 'University Name'
+        });
+      } finally {
+        setUserLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [userId]);
+
+  // Helper function to convert relationship_id to text
+  const getRelationshipText = (relationshipId) => {
+    const relationships = {
+      0: 'Single',
+      1: 'In a relationship',
+      2: 'Married',
+      3: 'Divorced',
+      4: 'Widowed'
+    };
+    return relationships[relationshipId] || 'Single';
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -34,7 +117,15 @@ const ProfileSettings = () => {
     <div className="bg-white rounded-xl p-6 border border-[#d3d1d1]">
       <h2 className="text-xl font-semibold text-[#808080] text-center border-b border-[#d3d1d1] pb-2 mb-6">Profile Setting</h2>
       
-      <form onSubmit={handleSubmit}>
+      {userLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading user data...</p>
+          </div>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit}>
         <div className="space-y-6">
           {/* First Name / Last Name */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -45,7 +136,7 @@ const ProfileSettings = () => {
                 name="firstName"
                 value={formData.firstName}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
             </div>
             <div>
@@ -55,7 +146,7 @@ const ProfileSettings = () => {
                 name="lastName"
                 value={formData.lastName}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
             </div>
           </div>
@@ -119,7 +210,7 @@ const ProfileSettings = () => {
                 name="workingAt"
                 value={formData.workingAt}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
             </div>
             <div>
@@ -129,7 +220,7 @@ const ProfileSettings = () => {
                 name="companyWebsite"
                 value={formData.companyWebsite}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
             </div>
           </div>
@@ -143,7 +234,7 @@ const ProfileSettings = () => {
                 name="website"
                 value={formData.website}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
             </div>
             <div>
@@ -152,7 +243,7 @@ const ProfileSettings = () => {
                 name="relationship"
                 value={formData.relationship}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
                 <option value="Single">Single</option>
                 <option value="In a relationship">In a relationship</option>
@@ -190,15 +281,22 @@ const ProfileSettings = () => {
           </div>
         </div>
 
-        <div className="border-t border-[#d3d1d1] pt-4 mt-3.5 grid place-items-center ">
-          <button 
-            type="submit"
-            className="w-32 mx-auto border border-orange-[#F69F58] text-[#F69F58] bg-white py-2 px-4 rounded-lg cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm font-semibold"
-          >
-            Save
-          </button>
-        </div> 
-      </form>
+          <div className="border-t border-[#d3d1d1] pt-4 mt-3.5 grid place-items-center ">
+            <button 
+              type="submit"
+              className="w-32 mx-auto border border-purple-500 text-purple-500 bg-white py-2 px-4 rounded-lg cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-semibold"
+            >
+              Save
+            </button>
+          </div> 
+        </form>
+      )}
+      
+      {userError && (
+        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-600 text-sm">{userError}</p>
+        </div>
+      )}
     </div>
   );
 };

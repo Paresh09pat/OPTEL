@@ -1,18 +1,74 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiSettings, FiUser, FiShield, FiLink, FiUsers, FiBell, FiMapPin, FiCheckCircle, FiInfo, FiTrash2 } from 'react-icons/fi';
 import { MdPalette } from 'react-icons/md';
 import { MenuIcon, XIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
+import Avatar from '../../components/Avatar';
 
 // Import all components
 import GeneralSettings from './GeneralSettings';
 import ProfileSettings from './ProfileSettings';
 import PrivacySettings from './PrivacySettings';
+import ChangePass from './ChangePass';
+import Managesession from './Managesession';
+import SocialLinks from './SocialLinks';
+import DesignSettings from './DesignSettings';
+import ProfileAndCoverSettings from './ProfileAndCoverSettings';
+import BlockedUsers from './BlockedUsers';
+import NotificationsSettings from './NotificationsSettings';
 
 const MainProfileSetting = () => {
   const [activeMenuItem, setActiveMenuItem] = useState('general-setting');
   const [activeSubMenu, setActiveSubMenu] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [userData, setUserData] = useState(null);
+  const [userLoading, setUserLoading] = useState(true);
+  const [userError, setUserError] = useState(null);
+
+  // Get user ID from localStorage
+  const userId = localStorage.getItem('user_id') || '222102'; // Default fallback
+
+  // Fetch user data from API
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        setUserLoading(true);
+        setUserError(null);
+        const response = await axios.get(
+          `${import.meta.env.VITE_API_URL}/api/v1/profile/user-data?user_profile_id=${userId}&fetch=user_data`,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`,
+            }
+          }
+        );
+
+        const data = response.data;
+        
+        if (data.api_status === '200') {
+          setUserData(data.user_data);
+        } else {
+          throw new Error(data.api_text || 'Failed to fetch user data');
+        }
+      } catch (err) {
+        console.error('Error fetching user data:', err);
+        setUserError('Failed to load user data. Please try again.');
+        // Set fallback data to maintain UI
+        setUserData({
+          first_name: 'Aman',
+          last_name: 'Shaikh',
+          username: '_amu_456',
+          avatar_url: '/perimg.png'
+        });
+      } finally {
+        setUserLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [userId]);
 
   const menuItems = [
     { 
@@ -50,9 +106,9 @@ const MainProfileSetting = () => {
       icon: MdPalette,
       hasSubMenu: true,
       subItems: [
-        { id: 'theme', label: 'Theme' },
-        { id: 'colors', label: 'Colors' },
-        { id: 'layout', label: 'Layout' }
+        { id: 'design', label: 'Design' },
+        { id: 'ppfCover', label: 'Profile Picture & Cover' },
+       
       ]
     },
     { 
@@ -102,9 +158,19 @@ const MainProfileSetting = () => {
       case 'privacy-main':
         return <PrivacySettings />;
       case 'password':
-        return <div className="bg-white rounded-xl p-6 border border-[#d3d1d1]"><h2 className="text-xl font-semibold text-[#808080] text-center">Password Settings</h2><p className="text-center mt-4">Password settings component coming soon...</p></div>;
+        return <ChangePass />;
       case 'manage-sessions':
-        return <div className="bg-white rounded-xl p-6 border border-[#d3d1d1]"><h2 className="text-xl font-semibold text-[#808080] text-center">Manage Sessions</h2><p className="text-center mt-4">Session management component coming soon...</p></div>;
+        return <Managesession />;
+      case 'social-links':
+        return <SocialLinks />;
+      case 'design':
+        return <DesignSettings />;
+      case 'ppfCover':
+        return <ProfileAndCoverSettings />;
+      case 'blocked-users':
+        return <BlockedUsers />;
+      case 'notification-setting':
+        return <NotificationsSettings />;
       default:
         return <GeneralSettings />;
     }
@@ -141,13 +207,23 @@ const MainProfileSetting = () => {
         </div>
 
         {/* Header */}
-        <div className="bg-[#F69F58] rounded-xl p-4 h-[200px] py-5 px-8 ">
+        <div className="bg-gradient-to-r from-[rgba(122,61,177,0.6)] to-[rgba(122,61,177,1)] rounded-xl p-4 h-[200px] py-5 px-8 ">
           <div className="flex items-center gap-5">
-            <div className="size-[74px] bg-gray-800 rounded-full flex items-center justify-center" style={{ backgroundImage: "url('/perimg.png')", backgroundSize: "cover", backgroundPosition: "center" }}>
-            </div>
+            <Avatar
+              src={userData?.avatar_url}
+              name={`${userData?.first_name || ''} ${userData?.last_name || ''}`.trim() || 'User Name'}
+              email={userData?.email}
+              alt="profile photo"
+              size="xl"
+              className="w-[74px] h-[74px]"
+            />
             <div>
-              <h1 className="text-white text-xl font-semibold">Aman Shaikh ✓</h1>
-              <p className="text-orange-100 text-sm">@_amu_456</p>
+              <h1 className="text-white text-xl font-semibold">
+                {userLoading ? 'Loading...' : `${userData?.first_name || ''} ${userData?.last_name || ''}`.trim() || 'User Name'} ✓
+              </h1>
+              <p className="text-orange-100 text-sm">
+                @{userLoading ? 'loading...' : userData?.username || 'username'}
+              </p>
             </div>
           </div>
           <div className='absolute top-8 right-6 block md:hidden text-white cursor-pointer font-semibold z-50'>
@@ -167,7 +243,7 @@ const MainProfileSetting = () => {
                       onClick={() => handleMenuClick(item)}
                       className={`w-full flex items-center justify-between px-3 py-2 text-sm transition-colors ${
                         activeMenuItem === item.id || (item.hasSubMenu && activeSubMenu === item.id)
-                          ? 'bg-gradient-to-r from-[rgba(246,159,88,1)] to-[rgba(244,180,0,0.5)] text-white'
+                          ? 'bg-gradient-to-r from-[rgba(122,61,177,0.6)] to-[rgba(122,61,177,1)] text-white'
                           : 'text-gray-700 hover:bg-gray-100'
                       }`}
                     >
@@ -191,7 +267,7 @@ const MainProfileSetting = () => {
                             onClick={() => handleSubMenuClick(subItem)}
                             className={`w-full flex items-center px-3 py-2 text-sm transition-colors ${
                               activeMenuItem === subItem.id
-                                ? 'bg-gradient-to-r from-[rgba(246,159,88,1)] to-[rgba(244,180,0,0.5)] text-white'
+                                ? 'bg-gradient-to-r from-[rgba(122,61,177,0.6)] to-[rgba(122,61,177,1)] text-white'
                                 : 'text-gray-600 hover:bg-gray-100'
                             }`}
                           >
@@ -221,7 +297,7 @@ const MainProfileSetting = () => {
                       onClick={() => handleMenuClick(item)}
                       className={`w-full flex items-center justify-between px-3 py-2 text-sm transition-colors ${
                         activeMenuItem === item.id || (item.hasSubMenu && activeSubMenu === item.id)
-                          ? 'bg-gradient-to-r from-[rgba(246,159,88,1)] to-[rgba(244,180,0,0.5)] text-white'
+                          ? 'bg-gradient-to-r from-[rgba(122,61,177,0.6)] to-[rgba(122,61,177,1)] text-white'
                           : 'text-gray-700 hover:bg-gray-100'
                       }`}
                     >
@@ -245,7 +321,7 @@ const MainProfileSetting = () => {
                             onClick={() => handleSubMenuClick(subItem)}
                             className={`w-full flex items-center px-3 py-2 text-sm transition-colors ${
                               activeMenuItem === subItem.id
-                                ? 'bg-gradient-to-r from-[rgba(246,159,88,1)] to-[rgba(244,180,0,0.5)] text-white'
+                                ? 'bg-gradient-to-r from-[rgba(122,61,177,0.6)] to-[rgba(122,61,177,1)] text-white'
                                 : 'text-gray-600 hover:bg-gray-100'
                             }`}
                           >

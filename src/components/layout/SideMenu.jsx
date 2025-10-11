@@ -1,16 +1,14 @@
 // src/components/layout/SideMenu.js
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { FaEllipsisV, FaTimes } from 'react-icons/fa'
-import { FiSettings, FiUser, FiLogOut } from 'react-icons/fi'
+import { FiLogOut } from 'react-icons/fi'
 import { Icon } from '@iconify/react'
 import { navigationItems } from '../../constants/navigation'
 
 const SideMenu = ({ onClose, isMobile = false }) => {
   const location = useLocation()
   const navigate = useNavigate()
-  const [showProfileMenu, setShowProfileMenu] = useState(false)
-  const dropdownRef = useRef(null)
   
   const isActive = (path) => {
     if (path === '/') {
@@ -25,49 +23,12 @@ const SideMenu = ({ onClose, isMobile = false }) => {
     }
   }
 
-  // Handle click outside to close dropdown
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowProfileMenu(false)
-      }
-    }
-
-    if (showProfileMenu) {
-      document.addEventListener('mousedown', handleClickOutside)
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [showProfileMenu])
-
-  const toggleProfileMenu = () => {
-    setShowProfileMenu(!showProfileMenu)
-  }
-
-  const handleProfileSettings = () => {
-    navigate('/profile-settings')
-    setShowProfileMenu(false)
-    if (isMobile && onClose) {
-      onClose()
-    }
-  }
-
-  const handleViewProfile = () => {
-    navigate('/profile')
-    setShowProfileMenu(false)
-    if (isMobile && onClose) {
-      onClose()
-    }
-  }
 
   const handleLogout = () => {
     // Add logout logic here
     localStorage.removeItem('session_id')
     localStorage.removeItem('user_id')
     navigate('/login')
-    setShowProfileMenu(false)
   }
 
   return (
@@ -151,41 +112,12 @@ const SideMenu = ({ onClose, isMobile = false }) => {
             <p className="font-semibold text-gray-900">John Doe</p>
             <p className="text-sm text-gray-500">@johndoe</p>
           </div>
-          <div className="relative" ref={dropdownRef}>
+          <div className="relative">
             <button 
               className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
-              onClick={toggleProfileMenu}
             >
               <FaEllipsisV className="text-sm" />
             </button>
-            
-            {/* Profile Options Dropdown */}
-            {showProfileMenu && (
-              <div className="absolute bottom-full right-0 mb-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                <button
-                  onClick={handleProfileSettings}
-                  className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                >
-                  <FiSettings className="w-4 h-4" />
-                  <span>Profile Settings</span>
-                </button>
-                <button
-                  onClick={handleViewProfile}
-                  className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                >
-                  <FiUser className="w-4 h-4" />
-                  <span>View Profile</span>
-                </button>
-                <hr className="my-1 border-gray-200" />
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                >
-                  <FiLogOut className="w-4 h-4" />
-                  <span>Logout</span>
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </div>

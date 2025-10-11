@@ -11,7 +11,7 @@ import SavedPosts from "./pages/SavedPosts";
 import Events from "./pages/Events";
 import Forum from "./pages/Forum";
 import MyGroups from "./pages/MyGroups";
-import MyPages from "./pages/MyPages";
+import MyPages from "./pages/PagesComp/MyPages";
 import Blog from "./pages/Blog";
 import Article from "./pages/Article";
 import Jobs from "./pages/Jobs";
