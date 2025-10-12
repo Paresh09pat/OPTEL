@@ -7,6 +7,7 @@ import PostCard from '../components/specific/Home/PostCard';
 import QuickActionsSection from '../components/specific/Home/QuickActionSection';
 import ScrollableSection from '../components/specific/Home/ScrollableSection';
 import Loader from '../components/loading/Loader';
+import { useUser } from '../context/UserContext';
 import axios from 'axios';
 
 const feedCards = [
@@ -53,6 +54,7 @@ const feedCards = [
 ];
 
 const Home = () => {
+  const { userData, loading: userLoading } = useUser();
   const [session, setSession] = useState(localStorage.getItem("session_id"));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -833,6 +835,11 @@ const Home = () => {
     getFriendSuggestions();
     getuserStories();
   }, []);
+
+  // Show loader while user data is loading
+  if (userLoading) {
+    return <Loader />;
+  }
 
   return (
     <>

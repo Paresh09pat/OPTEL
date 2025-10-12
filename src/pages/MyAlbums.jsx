@@ -122,11 +122,11 @@ const ImageGallery = ({
 }) => {
     const navigate = useNavigate();
     
-    // Extract images - using cover_image as primary image for new format
-    const images = album.cover_image ? [album.cover_image] : [];
+    // Extract images from image_urls array
+    const images = album.image_urls || [];
     const albumTitle = album.album_name || "Untitled Album";
     const timeStamp = album.created_at || "Unknown time";
-    const imageCount = images.length;
+    const imageCount = album.images_count || images.length;
 
     const handleMoreClick = () => {
         navigate(`/my-albums/${album.id}`, {

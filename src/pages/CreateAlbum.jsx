@@ -49,7 +49,7 @@ const CreateAlbum = () => {
         {
           method: "POST",
           headers: {
-            // "Authorization": `Bearer ${accessToken}`,
+            "Authorization": `Bearer ${accessToken}`,
             Accept: "application/json",
           },
           body: formData,

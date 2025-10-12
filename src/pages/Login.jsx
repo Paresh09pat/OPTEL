@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { FaEye, FaEyeSlash, FaLock, FaShieldAlt, FaUser } from "react-icons/fa";
+import { useUser } from '../context/UserContext';
 
 const Login = () => {
   const navigate = useNavigate();
+  const { refreshUserData } = useUser();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -37,6 +39,9 @@ const Login = () => {
         localStorage.setItem("membership", response?.data?.data?.membership);
         localStorage.setItem("isVerified", response?.data?.data?.isVerified);
 
+        // Refresh user data immediately after login
+        refreshUserData();
+        
         navigate("/");
       } else {
         setError(response?.data?.message);

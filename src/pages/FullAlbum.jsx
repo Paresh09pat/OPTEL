@@ -90,6 +90,9 @@ const FullAlbumView = () => {
                                 src={image}
                                 alt={`Album image ${index + 1}`}
                                 className="w-full h-full object-cover rounded-lg"
+                                onError={(e) => {
+                                    e.target.src = "/icons/album.png"; // Fallback image
+                                }}
                             />
                         </div>
                     ))}

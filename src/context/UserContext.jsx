@@ -18,7 +18,7 @@ export const UserProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Get user ID from localStorage
+  // Get user ID from localStorage 
   const userId = localStorage.getItem('user_id') // Default fallback
 
   // Fetch user data from API
@@ -56,7 +56,10 @@ export const UserProvider = ({ children }) => {
 
   // Refresh user data
   const refreshUserData = () => {
-    fetchUserData();
+    const currentUserId = localStorage.getItem('user_id');
+    if (currentUserId) {
+      fetchUserData();
+    }
   };
 
   // Update user data
@@ -65,8 +68,24 @@ export const UserProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    fetchUserData();
+    if (userId) {
+      fetchUserData();
+    } else {
+      setLoading(false);
+    }
   }, [userId]);
+
+  // Listen for localStorage changes (e.g., after login)
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'user_id' && e.newValue) {
+        fetchUserData();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   const value = {
     userData,
