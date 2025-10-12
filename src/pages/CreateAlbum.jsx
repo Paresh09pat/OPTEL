@@ -57,7 +57,7 @@ const CreateAlbum = () => {
       );
 
       const data = await response.json();
-
+cr
       if (data.ok === true) {
         setAlbumName("");
         setSelectedFiles([]);
