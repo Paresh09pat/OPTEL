@@ -7,10 +7,12 @@ import { HiUsers } from "react-icons/hi";
 import { FaArrowTrendUp } from "react-icons/fa6";
 import { useNavigate } from 'react-router-dom';
 import { useChatContext } from '../../context/ChatContext';
+import { useUser } from '../../context/UserContext';
 
 
 
 const Chatbox = ({ onClose, isMobile = false }) => {
+  const { userData } = useUser();
 
   const [conversations, setConversations] = useState([]);
   const [groupConversations, setGroupConversations] = useState([]);
@@ -207,6 +209,17 @@ const Chatbox = ({ onClose, isMobile = false }) => {
                  <div className="w-full xl:p-1 lg:p-1 rounded-lg bg-white shadow-[#EDF6F9] shadow-md border border-[#d3d1d1] sticky top-5 z-10 profile-section">
           <div className="flex xl:p-1 lg:p-1 items-center justify-between">
             <div className="relative w-[58px] h-[58px] rounded-full bg-[#EDF6F9] border-[4px] border-inset border-[#ffffff] shadow-md shadow-fuchsia-400">
+              {userData?.avatar_url ? (
+                <img 
+                  src={userData.avatar_url} 
+                  alt="Profile" 
+                  className="w-full h-full object-cover rounded-full"
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-300 flex items-center justify-center">
+                  <FaUser className="text-gray-600 text-xl" />
+                </div>
+              )}
               <div className="grid place-items-center absolute -right-1 -bottom-1 bg-black w-5 h-5 rounded-full border-inset border-[2px] shadow-2xl shadow-fuchsia-400 border-white">
                 <FaPlus className='text-white size-[10px]' />
               </div>

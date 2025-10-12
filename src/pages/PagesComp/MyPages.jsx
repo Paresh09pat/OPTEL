@@ -218,7 +218,8 @@ const MyPages = () => {
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div className="flex items-center gap-4">
                             <img
-                                src={page.avatar}
+                                src={page?.avatar_url || page?.avatar || "/perimg.png"}
+                               
                                 alt={page.name}
                                 className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover"
                             />

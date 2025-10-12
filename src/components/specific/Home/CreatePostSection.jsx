@@ -6,8 +6,11 @@ import { Icon } from '@iconify/react';
 import { BarChart3, MapPin, Send, Smile, X } from 'lucide-react';
 import { Palette } from 'lucide-react';
 import axios from 'axios';
+import { useUser } from '../../../context/UserContext';
+
 
 const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
+    const { userData } = useUser();
     const [postText, setPostText] = useState('');
     const [showPopup, setShowPopup] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState([]);
@@ -334,7 +337,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
                 {/* Input Field */}
                 <div className="relative mb-4">
                     <img
-                        src={localStorage.getItem('user_avatar_url') || "/perimg.png"}
+                        src={userData?.avatar_url || "/perimg.png"}
                         alt="Profile"
                         className="w-10 h-10 rounded-full object-cover absolute left-2 top-1/2 -translate-y-1/2"
                         onError={(e) => {
