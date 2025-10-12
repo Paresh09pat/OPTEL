@@ -19,6 +19,9 @@ const ProfileSettings = () => {
   const [userData, setUserData] = useState(null);
   const [userLoading, setUserLoading] = useState(true);
   const [userError, setUserError] = useState(null);
+  const [updateLoading, setUpdateLoading] = useState(false);
+  const [updateSuccess, setUpdateSuccess] = useState(false);
+  const [updateError, setUpdateError] = useState(null);
 
   // Get user ID from localStorage
   const userId = localStorage.getItem('user_id') || '222102'; // Default fallback
@@ -54,7 +57,7 @@ const ProfileSettings = () => {
             workingAt: data.user_data.working || '',
             companyWebsite: data.user_data.working_link || '',
             website: data.user_data.website || '',
-            relationship: data.user_data.relationship_id ? getRelationshipText(data.user_data.relationship_id) : 'Single',
+            relationship: data.user_data.relationship_id !== undefined ? getRelationshipText(data.user_data.relationship_id) : 'Single',
             college: '', // This field might not be in API
             university: '' // This field might not be in API
           });
@@ -107,10 +110,102 @@ const ProfileSettings = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Profile Settings Data:', formData);
-    // Handle form submission here
+    
+    setUpdateLoading(true);
+    setUpdateError(null);
+    setUpdateSuccess(false);
+    
+    try {
+      // Convert relationship text back to ID
+      const getRelationshipId = (relationshipText) => {
+        const relationships = {
+          'Single': 0,
+          'In a relationship': 1,
+          'Married': 2,
+          'Divorced': 3,
+          'Widowed': 4
+        };
+        return relationships[relationshipText] || 0;
+      };
+
+      // Prepare user data for API - only include changed fields
+      const userDataToUpdate = {};
+      
+      // Compare current form data with original user data to find changes
+      if (formData.firstName !== (userData?.first_name || '')) {
+        userDataToUpdate.first_name = formData.firstName;
+      }
+      if (formData.lastName !== (userData?.last_name || '')) {
+        userDataToUpdate.last_name = formData.lastName;
+      }
+      if (formData.aboutMe !== (userData?.about || '')) {
+        userDataToUpdate.about = formData.aboutMe;
+      }
+      if (formData.location !== (userData?.address || '')) {
+        userDataToUpdate.address = formData.location;
+      }
+      if (formData.school !== (userData?.school || '')) {
+        userDataToUpdate.school = formData.school;
+      }
+      if (formData.workingAt !== (userData?.working || '')) {
+        userDataToUpdate.working = formData.workingAt;
+      }
+      if (formData.companyWebsite !== (userData?.working_link || '')) {
+        userDataToUpdate.working_link = formData.companyWebsite;
+      }
+      if (formData.website !== (userData?.website || '')) {
+        userDataToUpdate.website = formData.website;
+      }
+      const currentRelationshipId = userData?.relationship_id !== undefined ? getRelationshipText(userData.relationship_id) : 'Single';
+      if (formData.relationship !== currentRelationshipId) {
+        userDataToUpdate.relationship_id = getRelationshipId(formData.relationship);
+      }
+
+      // Only send request if there are changes
+      if (Object.keys(userDataToUpdate).length === 0) {
+        setUpdateSuccess(true);
+        setTimeout(() => setUpdateSuccess(false), 3000);
+        return;
+      }
+
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/v1/settings/update-user-data`,
+        {
+          type: "general_settings",
+          user_data: JSON.stringify(userDataToUpdate)
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`,
+          }
+        }
+      );
+
+      const data = response.data;
+      
+      if (data.api_status === '200') {
+        setUpdateSuccess(true);
+        // Hide success message after 3 seconds
+        setTimeout(() => {
+          setUpdateSuccess(false);
+        }, 3000);
+      } else {
+        throw new Error(data.api_text || 'Failed to update profile');
+      }
+      
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      if (err.response?.data?.api_text) {
+        setUpdateError(err.response.data.api_text);
+      } else {
+        setUpdateError('Failed to update profile. Please try again.');
+      }
+    } finally {
+      setUpdateLoading(false);
+    }
   };
 
   return (
@@ -284,12 +379,34 @@ const ProfileSettings = () => {
           <div className="border-t border-[#d3d1d1] pt-4 mt-3.5 grid place-items-center ">
             <button 
               type="submit"
-              className="w-32 mx-auto border border-purple-500 text-purple-500 bg-white py-2 px-4 rounded-lg cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-semibold"
+              disabled={updateLoading}
+              className={`w-32 mx-auto border border-purple-500 text-purple-500 bg-white py-2 px-4 rounded-lg cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-semibold ${
+                updateLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-purple-50'
+              }`}
             >
-              Save
+              {updateLoading ? (
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500 mr-2"></div>
+                  Saving...
+                </div>
+              ) : (
+                'Save'
+              )}
             </button>
           </div> 
         </form>
+      )}
+      
+      {updateSuccess && (
+        <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <p className="text-green-600 text-sm">Profile updated successfully!</p>
+        </div>
+      )}
+      
+      {updateError && (
+        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-600 text-sm">{updateError}</p>
+        </div>
       )}
       
       {userError && (

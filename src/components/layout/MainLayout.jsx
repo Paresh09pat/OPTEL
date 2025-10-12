@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import SideMenu from './SideMenu';
 import Chatbox from '../specific/Chatbox';
 import { FaBars, FaTimes } from 'react-icons/fa';
@@ -25,7 +25,7 @@ const MainLayout = () => {
     setIsRightSidebarOpen(false);
   };
 
-  
+  const navigate = useNavigate();
 
   return (
     <div className="h-auto bg-white overflow-hidden scrollbar-hide stable-layout">
@@ -42,7 +42,7 @@ const MainLayout = () => {
           )}
         </button>
 
-        <div className="flex items-center">
+        <div className="flex items-center" onClick={() => navigate('/')}>
           <img src="/op_logo.png" alt="Optel Logo" className="w-[8rem] aspect-1" />
         </div>
 

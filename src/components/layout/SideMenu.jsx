@@ -99,18 +99,23 @@ const SideMenu = ({ onClose, isMobile = false }) => {
       <div className="px-4 py-1 mt-5">
         <div className="flex items-center space-x-3 p-3 bg-white rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
           <img
-            src="/perimg.png"
+            src={localStorage.getItem('user_avatar_url') || "/perimg.png"}
             alt="User Profile"
             className="w-12 h-12 rounded-full object-cover"
             onClick={() => {
               navigate('/profile')
             }}
+            onError={(e) => {
+              e.target.src = "/perimg.png";
+            }}
           />
           <div className="flex-1" onClick={() => {
             navigate('/profile')
           }}>
-            <p className="font-semibold text-gray-900">John Doe</p>
-            <p className="text-sm text-gray-500">@johndoe</p>
+            <p className="font-semibold text-gray-900">
+              {localStorage.getItem('user_first_name') || 'User'} {localStorage.getItem('user_last_name') || ''}
+            </p>
+            <p className="text-sm text-gray-500">@{localStorage.getItem('user_username') || 'username'}</p>
           </div>
           <div className="relative">
             <button 

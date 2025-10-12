@@ -63,6 +63,7 @@ const ChatDetailed = ({ name }) => {
                 const fallbackUserData = {
                     name: 'Unknown User',
                     avatar: "/perimg.png",
+                    avatar_url: "/perimg.png",
                     isOnline: false,
                     chatId: chatId
                 };
@@ -94,12 +95,13 @@ const ChatDetailed = ({ name }) => {
                 // Find the specific user by chatId
                 const user = data.data.find(u => u.user_id === chatId);
                 if (user && user.name) {
-                    const userData = {
-                        name: user.name || 'Unknown User',
-                        avatar: user.avatar || "/perimg.png",
-                        isOnline: user.isOnline || false,
-                        chatId: chatId
-                    };
+                const userData = {
+                    name: user.name || 'Unknown User',
+                    avatar: user.avatar_url || user.avatar || "/perimg.png",
+                    avatar_url: user.avatar_url || user.avatar || "/perimg.png",
+                    isOnline: user.isOnline || false,
+                    chatId: chatId
+                };
 
                     console.log('Setting user data in context:', userData);
                     setCurrentChat(chatId, userData);
@@ -118,6 +120,7 @@ const ChatDetailed = ({ name }) => {
             const fallbackUserData = {
                 name: 'Unknown User',
                 avatar: "/perimg.png",
+                avatar_url: "/perimg.png",
                 isOnline: false,
                 chatId: chatId
             };
@@ -133,6 +136,7 @@ const ChatDetailed = ({ name }) => {
             const fallbackUserData = {
                 name: 'Unknown User',
                 avatar: "/perimg.png",
+                avatar_url: "/perimg.png",
                 isOnline: false,
                 chatId: chatId
             };
@@ -265,7 +269,7 @@ const ChatDetailed = ({ name }) => {
                 <div className="flex items-center">
                     <div className=" size-14 rounded-full border-inset border-[4px] border-[#fff] shadow-lg relative">
                         <img
-                            src={currentChatUser?.avatar || "/perimg.png"}
+                            src={currentChatUser?.avatar_url || currentChatUser?.avatar || "/perimg.png"}
                             alt="User Profile"
                             className="w-full h-full rounded-full object-cover"
                         />
@@ -344,9 +348,12 @@ const ChatDetailed = ({ name }) => {
                                             {/* Profile Photo at Bottom */}
                                             <div className={`flex ${message?.position === "right" ? 'justify-end' : 'justify-start'} mt-1`}>
                                                 <img
-                                                    src={message?.avatar_full}
+                                                    src={message?.avatar_full || message?.avatar_url || "/perimg.png"}
                                                     alt="Profile"
                                                     className="w-6 h-6 rounded-full"
+                                                    onError={(e) => {
+                                                        e.target.src = "/perimg.png";
+                                                    }}
                                                 />
                                             </div>
                                         </div>

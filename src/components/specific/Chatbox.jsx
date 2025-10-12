@@ -420,7 +420,8 @@ const Chatbox = ({ onClose, isMobile = false }) => {
                   <div key={conversation.id} className="mt-4 w-full flex items-center xl:gap-4 lg:gap-2 cursor-pointer" onClick={() => {
                   const userData = {
                     name: conversation?.name,
-                    avatar: conversation?.avatar,
+                    avatar: conversation?.avatar_url || conversation?.avatar,
+                    avatar_url: conversation?.avatar_url || conversation?.avatar,
                     isOnline: conversation?.isOnline
                   };
                   setCurrentChat(conversation?.user_id, userData);
@@ -433,7 +434,7 @@ const Chatbox = ({ onClose, isMobile = false }) => {
                   {/* Profile photo */}
                   <div className="relative grid size-8 lg:size-10 xl:size-11 rounded-full bg-gray-200 overflow-hidden">
                     <img
-                      src={conversation?.avatar || "/perimg.png"}
+                      src={conversation?.avatar_url || conversation?.avatar || "/perimg.png"}
                       alt={conversation?.name || "User"}
                       className="w-full h-full object-cover"
                       onError={(e) => {
@@ -472,7 +473,8 @@ const Chatbox = ({ onClose, isMobile = false }) => {
                 <div key={group.id} className="mt-6 w-full flex items-center justify-between xl:gap-4 lg:gap-2 cursor-pointer" onClick={() => {
                   const groupData = {
                     name: group?.name,
-                    avatar: group?.avatar,
+                    avatar: group?.avatar_url || group?.avatar,
+                    avatar_url: group?.avatar_url || group?.avatar,
                     isOnline: group?.isOnline,
                     type: 'group'
                   };
@@ -486,7 +488,7 @@ const Chatbox = ({ onClose, isMobile = false }) => {
                   {/* Group photo */}
                   <div className="grid size-8 lg:size-10 xl:size-11 rounded-full bg-blue-500 relative overflow-hidden">
                     <img
-                      src={group?.avatar || "/icons/group.png"}
+                      src={group?.avatar_url || group?.avatar || "/icons/group.png"}
                       alt={group?.name || "Group"}
                       className="w-full h-full object-cover"
                       onError={(e) => {

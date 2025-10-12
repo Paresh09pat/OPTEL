@@ -334,9 +334,12 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
                 {/* Input Field */}
                 <div className="relative mb-4">
                     <img
-                        src="/perimg.png"
+                        src={localStorage.getItem('user_avatar_url') || "/perimg.png"}
                         alt="Profile"
                         className="w-10 h-10 rounded-full object-cover absolute left-2 top-1/2 -translate-y-1/2"
+                        onError={(e) => {
+                            e.target.src = "/perimg.png";
+                        }}
                     />
 
                     <input
@@ -639,9 +642,12 @@ const CreatePostPopup = ({
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 md:p-6 border-b border-gray-200 gap-3">
                     <div className="flex items-center space-x-3">
                         <img
-                            src="/perimg.png"
+                            src={localStorage.getItem('user_avatar_url') || "/perimg.png"}
                             alt="Profile"
                             className="w-12 h-12 rounded-full object-cover"
+                            onError={(e) => {
+                                e.target.src = "/perimg.png";
+                            }}
                         />
                         <div className="flex items-center space-x-2">
                             <h2 className="text-xl font-semibold text-gray-800">Create a Post</h2>

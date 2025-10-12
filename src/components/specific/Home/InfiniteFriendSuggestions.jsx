@@ -143,9 +143,12 @@ const FriendSuggestionCard = ({ user, onAddFriend, followedUsers }) => {
                         <div className="bg-white rounded-xl shadow-sm border border-[#d3d1d1] overflow-hidden min-w-[150px] max-w-[150px] md:min-w-[160px] md:max-w-[160px] flex-shrink-0 hover:shadow-md transition-shadow duration-200">
             <div className="relative">
                 <img
-                    src={user?.avatar}
+                    src={user?.avatar_url || user?.avatar || '/perimg.png'}
                     alt={user.name}
                     className="w-full h-28 md:h-32 object-cover"
+                    onError={(e) => {
+                        e.target.src = '/perimg.png';
+                    }}
                 />
             </div>
             <div className="p-3 text-center">

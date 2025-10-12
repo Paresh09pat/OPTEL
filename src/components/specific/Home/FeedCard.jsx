@@ -19,9 +19,12 @@ const FeedCard = ({ image, username, isVideo = false, avatar, onClick }) => {
         )}
         <div className="absolute bottom-3 left-3 flex items-center space-x-2">
             <img
-                src={avatar}
+                src={avatar || '/perimg.png'}
                 alt={username}
                 className="w-8 h-8 rounded-full border-2 border-white object-cover"
+                onError={(e) => {
+                    e.target.src = '/perimg.png';
+                }}
             />
             <span className="text-white text-sm font-medium">{username}</span>
         </div>

@@ -17,6 +17,9 @@ import DesignSettings from './DesignSettings';
 import ProfileAndCoverSettings from './ProfileAndCoverSettings';
 import BlockedUsers from './BlockedUsers';
 import NotificationsSettings from './NotificationsSettings';
+import LocationSettings from './LocationSettings';
+import DownloadMyInformation from './DownloadMyInformation';
+import DeleteAccount from './DeleteAccount';
 
 const MainProfileSetting = () => {
   const [activeMenuItem, setActiveMenuItem] = useState('general-setting');
@@ -129,12 +132,7 @@ const MainProfileSetting = () => {
       icon: FiMapPin,
       hasSubMenu: false
     },
-    { 
-      id: 'verification', 
-      label: 'Verification', 
-      icon: FiCheckCircle,
-      hasSubMenu: false
-    },
+
     { 
       id: 'my-information', 
       label: 'My Information', 
@@ -171,6 +169,12 @@ const MainProfileSetting = () => {
         return <BlockedUsers />;
       case 'notification-setting':
         return <NotificationsSettings />;
+      case 'location':
+        return <LocationSettings />;
+      case 'my-information':
+        return <DownloadMyInformation />;
+      case 'delete-account':
+        return <DeleteAccount />;
       default:
         return <GeneralSettings />;
     }
@@ -226,7 +230,7 @@ const MainProfileSetting = () => {
               </p>
             </div>
           </div>
-          <div className='absolute top-8 right-6 block md:hidden text-white cursor-pointer font-semibold z-50'>
+          <div className='absolute top-28 right-6 block md:hidden text-white cursor-pointer font-semibold z-50'>
             <button className=' ' onClick={() => setIsMenuOpen(!isMenuOpen)} >
               {isMenuOpen ? <XIcon className='size-7' /> : <MenuIcon className='size-7' />}
             </button>

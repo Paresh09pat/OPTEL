@@ -16,10 +16,15 @@ const GeneralSettings = () => {
   });
   const [selectedDate, setSelectedDate] = useState(null);
   const [countries, setCountries] = useState([]);
+  const [countryIdToName, setCountryIdToName] = useState({});
+  const [nameToCountryId, setNameToCountryId] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [userData, setUserData] = useState(null);
   const [userLoading, setUserLoading] = useState(true);
+  const [updateLoading, setUpdateLoading] = useState(false);
+  const [updateSuccess, setUpdateSuccess] = useState(false);
+  const [updateError, setUpdateError] = useState(null);
 
   // Get user ID from localStorage
   const userId = localStorage.getItem('user_id') || '222102'; // Default fallback
@@ -87,12 +92,37 @@ const GeneralSettings = () => {
         const sortedCountries = data
           .map(country => country.name.common)
           .sort((a, b) => a.localeCompare(b));
+        
+        // Create mapping objects for country ID to name and name to ID
+        const idToName = {};
+        const nameToId = {};
+        
+        sortedCountries.forEach((countryName, index) => {
+          const countryId = index + 1; // Start from 1
+          idToName[countryId] = countryName;
+          nameToId[countryName] = countryId;
+        });
+        
         setCountries(sortedCountries);
+        setCountryIdToName(idToName);
+        setNameToCountryId(nameToId);
       } catch (err) {
         setError('Failed to load countries. Please try again.');
         console.error('Error fetching countries:', err);
         // Fallback to a basic list if API fails
-        setCountries(['India', 'United States', 'United Kingdom', 'Canada', 'Australia']);
+        const fallbackCountries = ['India', 'United States', 'United Kingdom', 'Canada', 'Australia'];
+        const idToName = {};
+        const nameToId = {};
+        
+        fallbackCountries.forEach((countryName, index) => {
+          const countryId = index + 1;
+          idToName[countryId] = countryName;
+          nameToId[countryName] = countryId;
+        });
+        
+        setCountries(fallbackCountries);
+        setCountryIdToName(idToName);
+        setNameToCountryId(nameToId);
       } finally {
         setLoading(false);
       }
@@ -105,10 +135,97 @@ const GeneralSettings = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("General Settings Data:", formData);
-    // Handle form submission here
+    
+    setUpdateLoading(true);
+    setUpdateError(null);
+    setUpdateSuccess(false);
+    
+    try {
+      // Prepare user data for API - only include changed fields
+      const userDataToUpdate = {};
+      
+      // Compare current form data with original user data to find changes
+      if (formData.username !== (userData?.username || '')) {
+        userDataToUpdate.username = formData.username;
+      }
+      if (formData.email !== (userData?.email || '')) {
+        userDataToUpdate.email = formData.email;
+      }
+      if (formData.mobile !== (userData?.phone_number || '')) {
+        userDataToUpdate.phone_number = formData.mobile;
+      }
+      if (formData.birthdate !== (userData?.birthday || '')) {
+        userDataToUpdate.birthday = formData.birthdate;
+      }
+      if (formData.gender !== (userData?.gender || '')) {
+        userDataToUpdate.gender = formData.gender;
+      }
+      // Convert both values to numbers for proper comparison
+      const currentCountryId = parseInt(userData?.country_id) || 0;
+      const formCountryId = parseInt(formData.country) || 0;
+      
+      // Debug: Log country comparison
+      console.log('Country Debug:', {
+        userDataCountryId: userData?.country_id,
+        formDataCountry: formData.country,
+        currentCountryId,
+        formCountryId,
+        isDifferent: formCountryId !== currentCountryId
+      });
+      
+      if (formCountryId !== currentCountryId && formCountryId > 0) {
+        userDataToUpdate.country_id = formCountryId;
+      }
+
+      // Debug: Log what we're sending
+      console.log('User Data to Update:', userDataToUpdate);
+      console.log('JSON String:', JSON.stringify(userDataToUpdate));
+
+      // Only send request if there are changes
+      if (Object.keys(userDataToUpdate).length === 0) {
+        setUpdateSuccess(true);
+        setTimeout(() => setUpdateSuccess(false), 3000);
+        return;
+      }
+
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/v1/settings/update-user-data`,
+        {
+          type: "general_settings",
+          user_data: JSON.stringify(userDataToUpdate)
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`,
+          }
+        }
+      );
+
+      const data = response.data;
+      
+      if (data.api_status === '200') {
+        setUpdateSuccess(true);
+        // Hide success message after 3 seconds
+        setTimeout(() => {
+          setUpdateSuccess(false);
+        }, 3000);
+      } else {
+        throw new Error(data.api_text || 'Failed to update general settings');
+      }
+      
+    } catch (err) {
+      console.error('Error updating general settings:', err);
+      if (err.response?.data?.api_text) {
+        setUpdateError(err.response.data.api_text);
+      } else {
+        setUpdateError('Failed to update general settings. Please try again.');
+      }
+    } finally {
+      setUpdateLoading(false);
+    }
   };
 
   const handleDateChange = (date) => {
@@ -270,7 +387,7 @@ const GeneralSettings = () => {
                   {loading ? 'Loading countries...' : 'Select your Country'}
                 </option>
                 {countries.map((country, index) => (
-                  <option key={index} value={country}>
+                  <option key={index} value={nameToCountryId[country]}>
                     {country}
                   </option>
                 ))}
@@ -284,12 +401,40 @@ const GeneralSettings = () => {
           <div className="border-t border-[#d3d1d1] pt-4 mt-3.5 grid place-items-center ">
             <button
               type="submit"
-              className="w-32 mx-auto border border-purple-500 text-purple-500 bg-white py-2 px-4 rounded-lg cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-semibold"
+              disabled={updateLoading}
+              className={`w-32 mx-auto border border-purple-500 text-purple-500 bg-white py-2 px-4 rounded-lg cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-semibold ${
+                updateLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-purple-50'
+              }`}
             >
-              Save
+              {updateLoading ? (
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500 mr-2"></div>
+                  Saving...
+                </div>
+              ) : (
+                'Save'
+              )}
             </button>
           </div>
         </form>
+      )}
+      
+      {updateSuccess && (
+        <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <p className="text-green-600 text-sm">General settings updated successfully!</p>
+        </div>
+      )}
+      
+      {updateError && (
+        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-600 text-sm">{updateError}</p>
+        </div>
+      )}
+      
+      {error && (
+        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-600 text-sm">{error}</p>
+        </div>
       )}
     </div>
   );

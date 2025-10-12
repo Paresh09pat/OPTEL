@@ -833,7 +833,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
       <div className="p-4 flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <Avatar
-            src={user?.avatar}
+            src={user?.avatar_url || user?.avatar}
             name={user?.fullName || user?.name}
             email={user?.email}
             alt={user?.name}
@@ -1149,7 +1149,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                     {/* Main Comment */}
                     <div className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                       <Avatar
-                        src={comment.publisher?.avatar}
+                        src={comment.publisher?.avatar_url || comment.publisher?.avatar}
                         name={`${comment.publisher?.first_name || 'Unknown'} ${comment.publisher?.last_name || ''}`}
                         email={comment.publisher?.email}
                         alt={comment.publisher?.name || 'User'}
@@ -1185,6 +1185,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                           <div className="mb-3">
                             <div className="flex items-center space-x-3">
                               <Avatar
+                                src={localStorage.getItem('user_avatar_url')}
                                 name="Current User"
                                 email="current@user.com"
                                 alt="Your avatar"
@@ -1370,6 +1371,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                         </div>
                         <div className="flex items-center space-x-3">
                           <Avatar
+                            src={localStorage.getItem('user_avatar_url')}
                             name="Current User"
                             email="current@user.com"
                             alt="Your avatar"
@@ -1411,7 +1413,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                           <div key={reply.id} className="p-3 bg-blue-50 rounded-lg border-l-2 border-blue-200">
                             <div className="flex items-start space-x-2">
                               <Avatar
-                                src={reply.publisher?.avatar}
+                                src={reply.publisher?.avatar_url || reply.publisher?.avatar}
                                 name={`${reply.publisher?.first_name || 'Unknown'} ${reply.publisher?.last_name || ''}`}
                                 email={reply.publisher?.email}
                                 alt={reply.publisher?.name || 'User'}
@@ -1446,6 +1448,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                                   <div className="mb-2">
                                     <div className="flex items-center space-x-2">
                                       <Avatar
+                                        src={localStorage.getItem('user_avatar_url')}
                                         name="Current User"
                                         email="current@user.com"
                                         alt="Your avatar"
@@ -1626,6 +1629,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
 
         <div className="flex items-center space-x-3 mt-4">
           <Avatar
+            src={localStorage.getItem('user_avatar_url')}
             name="Current User"
             email="current@user.com"
             alt="Your avatar"

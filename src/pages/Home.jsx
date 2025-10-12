@@ -860,10 +860,10 @@ const Home = () => {
                      return (
                        <FeedCard
                          key={user.user_id || index}
-                         image={user.stories && user.stories.length > 0 ? user.stories[0].thumbnail : user.avatar}
+                         image={user.stories && user.stories.length > 0 ? user.stories[0].thumbnail : (user.avatar_url || user.avatar)}
                          username={user.username || user.first_name}
                          isVideo={false}
-                         avatar={user.avatar}
+                         avatar={user.avatar_url || user.avatar}
                          onClick={() => handleStoryClick(user)}
                        />
                      );
@@ -985,9 +985,12 @@ const Home = () => {
                             <div className="p-4 border-b border-[#d3d1d1] flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <img
-                  src={selectedUserForStories.avatar || "/perimg.png"}
+                  src={selectedUserForStories.avatar_url || selectedUserForStories.avatar || "/perimg.png"}
                   alt={selectedUserForStories.username || selectedUserForStories.first_name}
                   className="w-10 h-10 rounded-full object-cover"
+                  onError={(e) => {
+                    e.target.src = "/perimg.png";
+                  }}
                 />
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">

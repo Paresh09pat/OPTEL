@@ -50,7 +50,7 @@ const BlogCard = ({ blog, onClick }) => {
         {blog?.user?.username && (
           <div className="flex items-center gap-3 mt-3">
             <img
-              src={blog?.user?.avatar_url || '/perimg.png'}
+              src={blog?.user?.avatar_url || blog?.user?.avatar || '/perimg.png'}
               alt={blog?.user?.username}
               className="w-10 h-10 rounded-full object-cover"
               onError={(e) => {

@@ -77,13 +77,13 @@ const Signup = () => {
 
       const data = await response.json();
 
-      if (response.ok && data.api_status === '200') {
+      if (response.ok && data.ok) {
         setSuccess('Account created successfully! Redirecting to login...');
         setTimeout(() => {
           navigate('/login');
         }, 2000);
       } else {
-        setError(data.api_text || 'Signup failed. Please try again.');
+        setError(data.message || 'Signup failed. Please try again.');
       }
     } catch (err) {
       console.error('Signup error:', err);

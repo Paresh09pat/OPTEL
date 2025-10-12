@@ -38,6 +38,19 @@ const Profile = () => {
                 
                 if (data.api_status === '200') {
                     setUserData(data);
+                    // Store user data in localStorage for reuse
+                    if (data.user_data?.avatar_url) {
+                        localStorage.setItem('user_avatar_url', data.user_data.avatar_url);
+                    }
+                    if (data.user_data?.first_name) {
+                        localStorage.setItem('user_first_name', data.user_data.first_name);
+                    }
+                    if (data.user_data?.last_name) {
+                        localStorage.setItem('user_last_name', data.user_data.last_name);
+                    }
+                    if (data.user_data?.username) {
+                        localStorage.setItem('user_username', data.user_data.username);
+                    }
                 } else {
                     throw new Error(data.api_text || 'Failed to fetch user data');
                 }
@@ -182,8 +195,57 @@ const Profile = () => {
                     Edit
                 </button>
             </div>
-            <div className=" relative w-full bg-[#FFFFFF] px-10 py-5 flex items-center justify-between">
-                    <div className="flex items-center gap-6">
+            <div className="relative w-full bg-[#FFFFFF] px-4 sm:px-6 lg:px-10 py-5">
+                {/* Mobile Layout */}
+                <div className="flex flex-col sm:hidden">
+                    {/* Avatar and Name */}
+                    <div className="flex flex-col items-center text-center mb-6">
+                        <Avatar 
+                            src={userData?.user_data?.avatar_url} 
+                            name={`${userData?.user_data?.first_name || 'Aman'} ${userData?.user_data?.last_name || 'Shaikh'}`}
+                            email={userData?.user_data?.email || "45amanshaikh@gmail.com"}
+                            alt="profile photo" 
+                            size="2xl"
+                            className='mt-[-5rem] z-10 border border-[#d3d1d1] shadow-lg' 
+                        />
+                        <div className="flex flex-col gap-1 text-[#212121] mt-4">
+                            <h3 className='text-lg font-medium'>
+                                {loading ? 'Loading...' : `${userData?.user_data?.first_name || 'Aman'} ${userData?.user_data?.last_name || 'Shaikh'}`}
+                            </h3>
+                            <p className='text-sm font-medium'>
+                                @{userData?.user_data?.username || 'aman.shaikh'}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    {/* Stats Row */}
+                    <div className="flex items-center justify-around">
+                        <div className="flex flex-col gap-1 text-center">
+                            <p className='text-lg font-medium text-[#212121]'>
+                                {loading ? '...' : userData?.user_data?.post_count || 100}
+                            </p>
+                            <p className='text-xs font-medium text-[#808080]'>Posts</p>
+                        </div>
+                        <div className="w-[1px] h-[40px] bg-[#808080]"></div>
+                        <div className="flex flex-col gap-1 text-center">
+                            <p className='text-lg font-medium text-[#212121]'>
+                                {loading ? '...' : userData?.user_data?.followers_number || 433}
+                            </p>
+                            <p className='text-xs font-medium text-[#808080]'>Followers</p>
+                        </div>
+                        <div className="w-[1px] h-[40px] bg-[#808080]"></div>
+                        <div className="flex flex-col gap-1 text-center">
+                            <p className='text-lg font-medium text-[#212121]'>
+                                {loading ? '...' : userData?.user_data?.following_number || 403}
+                            </p>
+                            <p className='text-xs font-medium text-[#808080]'>Following</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Desktop Layout */}
+                <div className="hidden sm:flex items-center justify-between">
+                    <div className="flex items-center gap-4 lg:gap-6">
                         <Avatar 
                             src={userData?.user_data?.avatar_url} 
                             name={`${userData?.user_data?.first_name || 'Aman'} ${userData?.user_data?.last_name || 'Shaikh'}`}
@@ -193,7 +255,7 @@ const Profile = () => {
                             className='mt-[-5rem] z-10 border border-[#d3d1d1] shadow-lg' 
                         />
                         <div className="flex flex-col gap-2 text-[#212121]">
-                            <h3 className='text-xl font-medium'>
+                            <h3 className='text-lg lg:text-xl font-medium'>
                                 {loading ? 'Loading...' : `${userData?.user_data?.first_name || 'Aman'} ${userData?.user_data?.last_name || 'Shaikh'}`}
                             </h3>
                             <p className='text-sm font-medium'>
@@ -201,29 +263,29 @@ const Profile = () => {
                             </p>
                         </div>
                     </div>
-                    <div className="flex items-center justify-between gap-5">
+                    <div className="flex items-center justify-between gap-3 lg:gap-5">
                         <div className="flex flex-col gap-2 text-center items-center justify-between">
-                        <p className='text-xl font-medium text-[#212121]'>
-                            {loading ? '...' : userData?.user_data?.post_count || 100}
-                        </p>
-                        <p className='text-sm font-medium text-[#808080]'>Posts</p>
+                            <p className='text-lg lg:text-xl font-medium text-[#212121]'>
+                                {loading ? '...' : userData?.user_data?.post_count || 100}
+                            </p>
+                            <p className='text-xs lg:text-sm font-medium text-[#808080]'>Posts</p>
                         </div>
-                        <div className="w-[1px] h-[55px] bg-[#808080] "></div>
+                        <div className="w-[1px] h-[45px] lg:h-[55px] bg-[#808080]"></div>
                         <div className="flex flex-col gap-2 text-center items-center justify-between">
-                        <p className='text-xl font-medium text-[#212121]'>
-                            {loading ? '...' : userData?.user_data?.followers_number || 433}
-                        </p>
-                        <p className='text-sm font-medium text-[#808080]'>Followers</p>
+                            <p className='text-lg lg:text-xl font-medium text-[#212121]'>
+                                {loading ? '...' : userData?.user_data?.followers_number || 433}
+                            </p>
+                            <p className='text-xs lg:text-sm font-medium text-[#808080]'>Followers</p>
                         </div>
-                        <div className="w-[1px] h-[55px] bg-[#808080] "></div>
+                        <div className="w-[1px] h-[45px] lg:h-[55px] bg-[#808080]"></div>
                         <div className="flex flex-col gap-2 text-center items-center justify-between">
-                        <p className='text-xl font-medium text-[#212121]'>
-                            {loading ? '...' : userData?.user_data?.following_number || 403}
-                        </p>
-                        <p className='text-sm font-medium text-[#808080]'>Following</p>
+                            <p className='text-lg lg:text-xl font-medium text-[#212121]'>
+                                {loading ? '...' : userData?.user_data?.following_number || 403}
+                            </p>
+                            <p className='text-xs lg:text-sm font-medium text-[#808080]'>Following</p>
                         </div>
                     </div>
-                    
+                </div>
             </div>
         </div>
         <div className="w-full mt-4 px-5">
