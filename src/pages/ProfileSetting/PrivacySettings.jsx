@@ -36,21 +36,27 @@ const PrivacySettings = () => {
         );
 
         const data = response.data;
+        console.log('Privacy settings API response:', data);
         
         if (data.api_status === '200') {
           setPrivacyData(data.privacy_settings);
-          // Map API response to form fields (handle both text and numeric values)
-          setPrivacySettings({
-            whoCanMessage: data.privacy_settings.message_privacy_text || getMessagePrivacyText(data.privacy_settings.message_privacy),
-            whoCanSeeFriends: data.privacy_settings.follow_privacy_text || getFollowPrivacyText(data.privacy_settings.follow_privacy),
-            whoCanPostTimeline: data.privacy_settings.post_privacy || 'ifollow',
-            whoCanSeeBirthday: data.privacy_settings.birth_privacy_text || getBirthPrivacyText(data.privacy_settings.birth_privacy),
-            sendNotificationOnVisit: data.privacy_settings.visit_privacy_text === 'Visible' ? 'Yes' : (data.privacy_settings.visit_privacy === '1' ? 'Yes' : 'No'),
+          console.log('Privacy settings data:', data.privacy_settings);
+          
+          // Map API response to form fields using numeric values
+          const mappedSettings = {
+            whoCanMessage: getMessagePrivacyText(data.privacy_settings.message_privacy),
+            whoCanSeeFriends: getFollowPrivacyText(data.privacy_settings.follow_privacy),
+            // whoCanPostTimeline: data.privacy_settings.post_privacy || 'ifollow',
+            whoCanSeeBirthday: getBirthPrivacyText(data.privacy_settings.birth_privacy),
+            sendNotificationOnVisit: data.privacy_settings.visit_privacy === '1' ? 'Yes' : 'No',
             showActivities: data.privacy_settings.show_activities_privacy === '1' ? 'Yes' : 'No',
-            status: data.privacy_settings.status_text || getStatusText(data.privacy_settings.status),
+            status: getStatusText(data.privacy_settings.status),
             shareLocationWithPublic: data.privacy_settings.share_my_location === '1' ? 'Yes' : 'No',
             allowSearchEngines: data.privacy_settings.share_my_data === '1' ? 'Yes' : 'No'
-          });
+          };
+          
+          console.log('Mapped privacy settings:', mappedSettings);
+          setPrivacySettings(mappedSettings);
         } else {
           throw new Error(data.api_text || 'Failed to fetch privacy settings');
         }
@@ -61,11 +67,11 @@ const PrivacySettings = () => {
         setPrivacySettings({
           whoCanMessage: 'Everyone',
           whoCanSeeFriends: 'Everyone',
-          whoCanPostTimeline: 'Everyone',
+          // whoCanPostTimeline: 'ifollow',
           whoCanSeeBirthday: 'Everyone',
           sendNotificationOnVisit: 'Yes',
           showActivities: 'Yes',
-          status: 'Online',
+          status: 'Offline',
           shareLocationWithPublic: 'Yes',
           allowSearchEngines: 'Yes'
         });
@@ -87,7 +93,7 @@ const PrivacySettings = () => {
 
   // Helper function to convert form values to API format
   const convertToApiFormat = (formData) => {
-    return {
+    const apiData = {
       message_privacy: getMessagePrivacyValue(formData.whoCanMessage),
       follow_privacy: getFollowPrivacyValue(formData.whoCanSeeFriends),
       birth_privacy: getBirthPrivacyValue(formData.whoCanSeeBirthday),
@@ -99,25 +105,36 @@ const PrivacySettings = () => {
       share_my_location: formData.shareLocationWithPublic === 'Yes' ? "1" : "0",
       share_my_data: formData.allowSearchEngines === 'Yes' ? "1" : "0"
     };
+    
+    console.log('Form data to API conversion:', {
+      whoCanMessage: formData.whoCanMessage,
+      message_privacy: apiData.message_privacy,
+      whoCanSeeFriends: formData.whoCanSeeFriends,
+      follow_privacy: apiData.follow_privacy,
+      whoCanSeeBirthday: formData.whoCanSeeBirthday,
+      birth_privacy: apiData.birth_privacy
+    });
+    
+    return apiData;
   };
 
   // Helper functions to convert form values to API numeric values
   const getMessagePrivacyValue = (value) => {
     const mapping = {
       'Everyone': '0',
-      'Friends': '1',
-      'Friends of Friends': '2',
-      'No one': '3'
+      'People I Follow': '1',
+      'People Follow Me': '2',
+      'No body': '3'
     };
     return mapping[value] || '0';
   };
 
   const getFollowPrivacyValue = (value) => {
     const mapping = {
-      'Everyone can follow': '0',
-      'Friends': '1',
-      'Friends of Friends': '2',
-      'No one': '3'
+      'Everyone': '0',
+      'People I Follow': '1',
+      'People Follow Me': '2',
+      'No body': '3'
     };
     return mapping[value] || '0';
   };
@@ -125,9 +142,8 @@ const PrivacySettings = () => {
   const getBirthPrivacyValue = (value) => {
     const mapping = {
       'Everyone': '0',
-      'Friends': '1',
-      'Friends of Friends': '2',
-      'No one': '3'
+      'My Friends': '1',
+      'No body': '2'
     };
     return mapping[value] || '0';
   };
@@ -150,29 +166,28 @@ const PrivacySettings = () => {
   const getMessagePrivacyText = (value) => {
     const mapping = {
       '0': 'Everyone',
-      '1': 'Friends',
-      '2': 'Friends of Friends',
-      '3': 'No one'
+      '1': 'People I Follow',
+      '2': 'People Follow Me',
+      '3': 'No body'
     };
     return mapping[value] || 'Everyone';
   };
 
   const getFollowPrivacyText = (value) => {
     const mapping = {
-      '0': 'Everyone can follow',
-      '1': 'Friends',
-      '2': 'Friends of Friends',
-      '3': 'No one'
+      '0': 'Everyone',
+      '1': 'People I Follow',
+      '2': 'People Follow Me',
+      '3': 'No body'
     };
-    return mapping[value] || 'Everyone can follow';
+    return mapping[value] || 'Everyone';
   };
 
   const getBirthPrivacyText = (value) => {
     const mapping = {
       '0': 'Everyone',
-      '1': 'Friends',
-      '2': 'Friends of Friends',
-      '3': 'No one'
+      '1': 'My Friends',
+      '2': 'No body'
     };
     return mapping[value] || 'Everyone';
   };
@@ -196,6 +211,7 @@ const PrivacySettings = () => {
       setUpdateSuccess(false);
 
       const apiData = convertToApiFormat(privacySettings);
+      console.log('Sending privacy settings to API:', apiData);
       
       const response = await axios.post(
         `${import.meta.env.VITE_API_URL}/api/v1/privacy/settings`,
@@ -218,7 +234,7 @@ const PrivacySettings = () => {
         setPrivacySettings({
           whoCanMessage: getMessagePrivacyText(data.privacy_settings.message_privacy),
           whoCanSeeFriends: getFollowPrivacyText(data.privacy_settings.follow_privacy),
-          whoCanPostTimeline: data.privacy_settings.post_privacy || 'ifollow',
+          // whoCanPostTimeline: data.privacy_settings.post_privacy || 'ifollow',
           whoCanSeeBirthday: getBirthPrivacyText(data.privacy_settings.birth_privacy),
           sendNotificationOnVisit: data.privacy_settings.visit_privacy === '1' ? 'Yes' : 'No',
           showActivities: data.privacy_settings.show_activities_privacy === '1' ? 'Yes' : 'No',
@@ -246,22 +262,22 @@ const PrivacySettings = () => {
     {
       key: 'whoCanMessage',
       label: 'Who can message me?',
-      options: ['Everyone', 'Friends', 'Friends of Friends', 'No one']
+      options: ['Everyone', 'People I Follow', 'People Follow Me', 'No body']
     },
     {
       key: 'whoCanSeeFriends',
-      label: 'Who can see my friends?',
-      options: ['Everyone can follow', 'Friends', 'Friends of Friends', 'No one']
+      label: 'Who can follow me?',
+      options: ['Everyone', 'People I Follow', 'People Follow Me', 'No body']
     },
     {
       key: 'whoCanPostTimeline',
       label: 'Who can post on my timeline?',
-      options: ['ifollow', 'Everyone', 'Friends', 'Friends of Friends', 'No one']
+      options: [ 'Everyone', 'People I Follow', 'People Follow Me', 'No body']
     },
     {
       key: 'whoCanSeeBirthday',
       label: 'Who can see my birthday?',
-      options: ['Everyone', 'Friends', 'Friends of Friends', 'No one']
+      options: ['Everyone', 'My Friends', 'No body']
     },
     {
       key: 'sendNotificationOnVisit',
@@ -293,7 +309,7 @@ const PrivacySettings = () => {
 
   return (
     <div className="bg-white rounded-xl p-6 border border-[#d3d1d1]">
-      <h2 className="text-xl font-semibold text-[#808080] text-center border-b border-[#d3d1d1] pb-2 mb-6">Privacy Setting</h2>
+        <h2 className="text-xl font-semibold text-white text-center border-b border-white/20 pb-2 mb-6 bg-gradient-to-l from-[rgba(96,161,249,1)] to-[rgba(17,83,231,1)] -m-6 px-6 py-4 rounded-t-xl">Privacy Setting</h2>
       
       {privacyLoading ? (
         <div className="flex items-center justify-center py-8">

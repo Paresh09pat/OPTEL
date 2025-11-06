@@ -97,7 +97,8 @@ const MainPageSetting = () => {
 
 
         {/* Header */}
-        <div className="bg-[#F69F58] rounded-xl p-4 h-[200px] py-5 px-8 ">
+        <div className="bg-gradient-to-l from-[rgba(96,161,249,1)] to-[rgba(17,83,231,1)] rounded-xl p-4 h-[200px] py-5 px-8 relative">
+        <img src="/profilebg.svg" alt="profile bg" className='absolute bottom-0 right-0  w-1/4' />
           <div className="flex items-center gap-5">
             <div className="size-[74px] bg-gray-800 rounded-full flex items-center justify-center" style={{ backgroundImage: "url('/perimg.png')", backgroundSize: "cover", backgroundPosition: "center" }}>
 
@@ -123,7 +124,7 @@ const MainPageSetting = () => {
                     key={item.id}
                     onClick={() => setActiveMenuItem(item.id)}
                     className={`w-full flex items-center space-x-3 px-3 py-2 text-sm  transition-colors ${activeMenuItem === item.id
-                      ? 'bg-gradient-to-r from-[rgba(246,159,88,1)] to-[rgba(244,180,0,0.5)] text-white'
+                      ? 'bg-gradient-to-r from-[rgba(96,161,249,1)] to-[rgba(17,83,231,1)] text-white'
                       : 'text-gray-700 hover:bg-gray-100'
                       }`}
                   >
@@ -139,10 +140,10 @@ const MainPageSetting = () => {
         </div>
 
         {/* Main Content */}
-        <div className=" rounded-b-lg flex min-h-[600px] -mt-20">
+        <div className="rounded-b-lg flex min-h-[600px] -mt-20">
           {/* Sidebar Menu */}
-          <div className="w-64 hidden md:block overflow-hidden h-full bg-white rounded-xl pt-1.5  mx-2 border border-[#808080]">
-            <h3 className="text-[#808080] font-medium  text-xl text-center">Menu</h3>
+          <div className="w-64 flex-shrink-0 hidden md:block overflow-hidden h-full bg-white rounded-xl pt-1.5 mx-2 border border-[#808080] relative">
+            <h3 className="text-[#808080] font-medium text-xl text-center">Menu</h3>
             <nav className="space-y-1">
               {menuItems.map((item) => {
                 const Icon = item.icon;
@@ -150,8 +151,8 @@ const MainPageSetting = () => {
                   <button
                     key={item.id}
                     onClick={() => setActiveMenuItem(item.id)}
-                    className={`w-full flex items-center space-x-3 px-3 py-2 text-sm  transition-colors ${activeMenuItem === item.id
-                      ? 'bg-gradient-to-r from-[rgba(246,159,88,1)] to-[rgba(244,180,0,0.5)] text-white'
+                    className={`w-full flex items-center space-x-3 px-3 py-2 text-sm transition-colors ${activeMenuItem === item.id
+                      ? 'bg-gradient-to-r from-[rgba(96,161,249,1)] to-[rgba(17,83,231,1)] text-white'
                       : 'text-gray-700 hover:bg-gray-100'
                       }`}
                   >
@@ -164,7 +165,7 @@ const MainPageSetting = () => {
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 pl-1 pr-2 ">
+          <div className="flex-1 min-w-0 pl-1 pr-2 relative">
             {renderActiveComponent()}
           </div>
         </div>

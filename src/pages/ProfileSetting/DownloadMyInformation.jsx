@@ -48,7 +48,7 @@ const DownloadMyInformation = () => {
 
   const downloadOptions = [
     {
-      id: 'my-information',
+      id: 'my_information',
       title: 'My Information',
       icon: FiInfo,
       description: 'Personal profile data'
@@ -72,6 +72,18 @@ const DownloadMyInformation = () => {
       description: 'Groups you belong to'
     },
     {
+      id: 'followers',
+      title: 'Followers',
+      icon: FiUsers,
+      description: 'People who follow you'
+    },
+    {
+      id: 'following',
+      title: 'Following',
+      icon: FiUser,
+      description: 'People you follow'
+    },
+    {
       id: 'friends',
       title: 'Friends',
       icon: FiUser,
@@ -87,36 +99,123 @@ const DownloadMyInformation = () => {
     );
   };
 
-  const handleGenerateFile = async () => {
+  const generateDownloadLink = async () => {
     if (selectedCards.length === 0) {
       setError('Please select at least one option to download.');
-      return;
+      return null;
     }
 
+    try {
+      const accessToken = localStorage.getItem('access_token');
+      
+      // Convert selected cards to API format
+      const dataString = selectedCards.join(',');
+      
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/v1/my-information/download`,
+        {
+          data: dataString
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          }
+        }
+      );
+
+      const result = response.data;
+      
+      if (result.api_status === '200' && result.link) {
+        return result.link;
+      } else {
+        throw new Error(result.message || 'Failed to generate file');
+      }
+    } catch (err) {
+      console.error('Error generating file:', err);
+      setError(err.response?.data?.message || err.message || 'Failed to generate file. Please try again.');
+      return null;
+    }
+  };
+
+  const handleDownloadHtml = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      // Simulate API call for generating download file
-      console.log('Generating file for:', selectedCards);
-      
-      // Simulate processing time
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Here you would typically make an API call to generate the file
-      // and then trigger a download
-      
-      alert(`File generated successfully for: ${selectedCards.join(', ')}`);
-    } catch (err) {
-      setError('Failed to generate file. Please try again.');
+      const downloadLink = await generateDownloadLink();
+      if (downloadLink) {
+        await downloadFile(downloadLink, 'my-information.html');
+        alert('HTML file downloaded successfully!');
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  const handleDownloadPdf = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const downloadLink = await generateDownloadLink();
+      if (downloadLink) {
+        await convertHtmlToPdf(downloadLink);
+        alert('PDF download initiated! Check your browser\'s print dialog.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const downloadFile = async (url, filename) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error('Error downloading file:', error);
+    }
+  };
+
+  const convertHtmlToPdf = async (htmlUrl) => {
+    try {
+      // Fetch the HTML content
+      const response = await fetch(htmlUrl);
+      const htmlContent = await response.text();
+      
+      // Create a new window with the HTML content
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      
+      // Wait for content to load, then trigger print dialog
+      printWindow.onload = () => {
+        setTimeout(() => {
+          printWindow.print();
+          // Close the window after printing
+          setTimeout(() => {
+            printWindow.close();
+          }, 1000);
+        }, 500);
+      };
+    } catch (error) {
+      console.error('Error converting to PDF:', error);
+      // Fallback: just download the HTML file
+      await downloadFile(htmlUrl, 'my-information.html');
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl p-6 border border-[#d3d1d1]">
-      <h2 className="text-xl font-semibold text-[#808080] text-center border-b border-[#d3d1d1] pb-2 mb-6">
+      <h2 className="text-xl font-semibold text-white text-center border-b border-white/20 pb-2 mb-6 bg-gradient-to-l from-[rgba(96,161,249,1)] to-[rgba(17,83,231,1)] -m-6 px-6 py-4 rounded-t-xl">
         Download My Information
       </h2>
 
@@ -189,10 +288,10 @@ const DownloadMyInformation = () => {
         <div className="text-red-500 text-sm text-center mb-4">{error}</div>
       )}
 
-      {/* Generate File Button */}
-      <div className="flex justify-center sm:justify-end">
+      {/* Generate File Buttons */}
+      <div className="flex flex-col sm:flex-row gap-3 justify-center sm:justify-end">
         <button
-          onClick={handleGenerateFile}
+          onClick={handleDownloadHtml}
           disabled={loading || selectedCards.length === 0}
           className={`
             w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2
@@ -210,7 +309,31 @@ const DownloadMyInformation = () => {
           ) : (
             <>
               <FiDownload className="text-base sm:text-lg" />
-              <span className="text-sm sm:text-base">Generate file</span>
+              <span className="text-sm sm:text-base">Download HTML</span>
+            </>
+          )}
+        </button>
+        
+        <button
+          onClick={handleDownloadPdf}
+          disabled={loading || selectedCards.length === 0}
+          className={`
+            w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2
+            ${loading || selectedCards.length === 0
+              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              : 'bg-red-500 text-white hover:bg-red-600 shadow-md hover:shadow-lg'
+            }
+          `}
+        >
+          {loading ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              <span className="text-sm sm:text-base">Generating...</span>
+            </>
+          ) : (
+            <>
+              <FiDownload className="text-base sm:text-lg" />
+              <span className="text-sm sm:text-base">Download PDF</span>
             </>
           )}
         </button>

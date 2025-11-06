@@ -18,12 +18,12 @@ const PageAnalytics = () => {
         </h2>
         
         <div className="flex flex-col md:flex-row gap-4 md:gap-0 justify-between items-center mb-8">
-          <div className="relative">
+          <div className="relative w-full md:w-80">
             <Search className="w-5 h-5 text-[#808080] absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search"
-              className="px-4 py-3 pl-10 border border-[#d3d1d1] rounded-3xl w-80 focus:outline-none focus:ring-2 focus:ring-blue-300 text-[#212121] placeholder-[#808080]"
+              className="w-full px-4 py-3 pl-10 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-blue-300 text-[#212121] placeholder-[#808080]"
             />
           </div>
           

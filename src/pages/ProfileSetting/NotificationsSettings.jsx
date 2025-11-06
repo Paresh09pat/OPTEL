@@ -14,8 +14,7 @@ const NotificationsSettings = () => {
     e_joined_group: false,
     e_liked_page: false,
     e_visited: false,
-    e_profile_wall_post: false,
-    e_memory: false
+    e_profile_wall_post: false
   });
   const [notificationData, setNotificationData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -44,7 +43,7 @@ const NotificationsSettings = () => {
         
         if (data.api_status === '200') {
           setNotificationData(data);
-          // Map API response to form fields
+          // Map API response to form fields (0 = unchecked, 1 = checked)
           setNotificationSettings({
             e_liked: data.notification_settings.e_liked === 1,
             e_shared: data.notification_settings.e_shared === 1,
@@ -56,8 +55,7 @@ const NotificationsSettings = () => {
             e_joined_group: data.notification_settings.e_joined_group === 1,
             e_liked_page: data.notification_settings.e_liked_page === 1,
             e_visited: data.notification_settings.e_visited === 1,
-            e_profile_wall_post: data.notification_settings.e_profile_wall_post === 1,
-            e_memory: data.notification_settings.e_memory === 1
+            e_profile_wall_post: data.notification_settings.e_profile_wall_post === 1
           });
         } else {
           throw new Error(data.api_text || 'Failed to fetch notification settings');
@@ -77,8 +75,7 @@ const NotificationsSettings = () => {
           e_joined_group: true,
           e_liked_page: true,
           e_visited: true,
-          e_profile_wall_post: true,
-          e_memory: true
+          e_profile_wall_post: true
         });
       } finally {
         setLoading(false);
@@ -104,14 +101,10 @@ const NotificationsSettings = () => {
       setError(null);
       setUpdateSuccess(false);
 
-      // Prepare API request body (only include changed values)
+      // Prepare API request body with all current values
       const apiData = {};
       Object.keys(notificationSettings).forEach(key => {
-        const value = notificationSettings[key] ? 1 : 0;
-        // Only include if different from original value
-        if (notificationData && notificationData.notification_settings[key] !== value) {
-          apiData[key] = value;
-        }
+        apiData[key] = notificationSettings[key] ? 1 : 0;
       });
       
       const response = await axios.post(
@@ -143,8 +136,7 @@ const NotificationsSettings = () => {
           e_joined_group: data.notification_settings.e_joined_group === 1,
           e_liked_page: data.notification_settings.e_liked_page === 1,
           e_visited: data.notification_settings.e_visited === 1,
-          e_profile_wall_post: data.notification_settings.e_profile_wall_post === 1,
-          e_memory: data.notification_settings.e_memory === 1
+          e_profile_wall_post: data.notification_settings.e_profile_wall_post === 1
         });
         
         // Show success message for 3 seconds
@@ -162,23 +154,39 @@ const NotificationsSettings = () => {
     }
   };
 
-  const notificationOptions = [
-    { key: 'e_liked', label: 'Someone liked my posts' },
-    { key: 'e_commented', label: 'Someone commented on my posts' },
-    { key: 'e_shared', label: 'Someone shared on my posts' },
-    { key: 'e_followed', label: 'Someone followed me' },
-    { key: 'e_liked_page', label: 'Someone liked my pages' },
-    { key: 'e_visited', label: 'Someone visited my profile' },
-    { key: 'e_mentioned', label: 'Someone mentioned me' },
-    { key: 'e_joined_group', label: 'Someone joined my groups' },
-    { key: 'e_accepted', label: 'Someone accepted my friend/follow request' },
-    { key: 'e_profile_wall_post', label: 'Someone posted on my timeline' },
-    { key: 'e_memory', label: 'You have remembrance on this day' }
-  ];
+  // Get notification options from API response or use fallback
+  const getNotificationOptions = () => {
+    if (notificationData?.notification_settings_detailed) {
+      // Filter out unsupported fields (like e_memory)
+      const supportedFields = Object.keys(notificationData.notification_settings_detailed).filter(key => 
+        notificationSettings.hasOwnProperty(key)
+      );
+      
+      return supportedFields.map(key => ({
+        key,
+        label: notificationData.notification_settings_detailed[key].label
+      }));
+    }
+    
+    // Fallback labels
+    return [
+      { key: 'e_liked', label: 'Someone liked your post' },
+      { key: 'e_shared', label: 'Someone shared your post' },
+      { key: 'e_wondered', label: 'Someone reacted to your post' },
+      { key: 'e_commented', label: 'Someone commented on your post' },
+      { key: 'e_followed', label: 'Someone followed you' },
+      { key: 'e_accepted', label: 'Someone accepted your follow request' },
+      { key: 'e_mentioned', label: 'Someone mentioned you' },
+      { key: 'e_joined_group', label: 'Someone joined your group' },
+      { key: 'e_liked_page', label: 'Someone liked your page' },
+      { key: 'e_visited', label: 'Someone visited your profile' },
+      { key: 'e_profile_wall_post', label: 'Someone posted on your wall' }
+    ];
+  };
 
   return (
     <div className="bg-white rounded-xl p-6 border border-[#d3d1d1]">
-      <h2 className="text-xl font-semibold text-[#808080] text-center border-b border-[#d3d1d1] pb-2 mb-6">
+      <h2 className="text-xl font-semibold text-white text-center border-b border-white/20 pb-2 mb-6 bg-gradient-to-l from-[rgba(96,161,249,1)] to-[rgba(17,83,231,1)] -m-6 px-6 py-4 rounded-t-xl">
         Notification Settings
       </h2>
       
@@ -195,17 +203,7 @@ const NotificationsSettings = () => {
           <FiBell className="w-4 h-4" />
           Notification Settings
         </button>
-        <button
-          onClick={() => setActiveTab('email')}
-          className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'email'
-              ? 'border-purple-500 text-purple-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          <FiMail className="w-4 h-4" />
-          Password will send on registered email id.
-        </button>
+       
       </div>
       
       {loading ? (
@@ -220,7 +218,7 @@ const NotificationsSettings = () => {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Notify me when</h3>
             
-            {notificationOptions.map((option) => (
+            {getNotificationOptions().map((option) => (
               <div key={option.key} className="flex items-center">
                 <input
                   type="checkbox"

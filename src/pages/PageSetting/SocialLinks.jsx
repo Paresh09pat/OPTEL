@@ -137,7 +137,7 @@ const SocialLinks = () => {
         <div className="border-t border-[#808080] pt-4 mt-3.5 grid place-items-center ">
           <button 
             type="submit"
-            className="w-32 mx-auto border border-orange-[#F69F58] text-[#F69F58] bg-white py-2 px-4 rounded-lg cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm font-semibold"
+            className="w-32 mx-auto border bg-gradient-to-l from-[rgba(96,161,249,1)] to-[rgba(17,83,231,1)] text-white py-2 px-4 rounded-lg cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm font-semibold"
           >
             Save
           </button>

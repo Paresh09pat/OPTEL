@@ -97,10 +97,10 @@ const ProfilePictureAndCover = () => {
           </div>
         </div>
 
-        <div className="mt-8">
+        <div className="mt-8 grid place-items-center">
           <button 
             type="submit"
-            className="w-32 bg-orange-500 text-white py-2 px-4 rounded-lg hover:bg-orange-600 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="w-32 bg-gradient-to-l from-[rgba(96,161,249,1)] to-[rgba(17,83,231,1)] text-white py-2 px-4 rounded-lg hover:bg-orange-600 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500"
           >
             Save
           </button>

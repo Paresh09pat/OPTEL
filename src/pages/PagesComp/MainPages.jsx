@@ -50,7 +50,7 @@ const MainPages = () => {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-2 sm:px-6 sm:py-3 rounded-full font-medium transition-colors duration-200 cursor-pointer text-sm sm:text-base ${activeTab === tab.id
-                ? 'text-white shadow-md bg-gradient-to-b from-[#1154e8] to-[#1154e8]'
+                ? 'text-white shadow-md bg-gradient-to-l from-[rgba(96,161,249,1)] to-[rgba(17,83,231,1)]'
                 : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
                 }`}
             >

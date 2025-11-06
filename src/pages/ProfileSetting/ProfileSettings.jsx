@@ -210,7 +210,7 @@ const ProfileSettings = () => {
 
   return (
     <div className="bg-white rounded-xl p-6 border border-[#d3d1d1]">
-      <h2 className="text-xl font-semibold text-[#808080] text-center border-b border-[#d3d1d1] pb-2 mb-6">Profile Setting</h2>
+      <h2 className="text-xl font-semibold text-white text-center border-b border-white/20 pb-2 mb-6 bg-gradient-to-b from-[rgba(96,161,249,1)] to-[rgba(17,83,231,1)] -m-6 px-6 py-4 rounded-t-xl">Profile Setting</h2>
       
       {userLoading ? (
         <div className="flex items-center justify-center py-8">

@@ -211,7 +211,8 @@ const MainProfileSetting = () => {
         </div>
 
         {/* Header */}
-        <div className="bg-gradient-to-r from-[rgba(122,61,177,0.6)] to-[rgba(122,61,177,1)] rounded-xl p-4 h-[200px] py-5 px-8 ">
+        <div className="relative z-10 bg-gradient-to-l from-[rgba(96,161,249,1)] to-[rgba(17,83,231,1)] rounded-xl p-4 h-[200px] py-5 px-8 overflow-clip ">
+          <img src="/profilebg.svg" alt="profile bg" className='absolute bottom-0 right-0  w-1/4' />
           <div className="flex items-center gap-5">
             <Avatar
               src={userData?.avatar_url}
@@ -236,7 +237,7 @@ const MainProfileSetting = () => {
             </button>
           </div>
           <div className={`overlay ${isMenuOpen ? 'block' : 'hidden'} bg-black/50 absolute top-0 left-0 w-full min-h-screen z-40`} onClick={() => setIsMenuOpen(false)}></div>
-          <div className={`w-64 z-50 overflow-hidden block md:hidden bg-white rounded-xl pt-1.5  mx-2 border border-[#808080] absolute top-16 -right-10 ${isMenuOpen ? '-translate-x-9' : 'translate-x-full'} transition-transform duration-300`}>
+          <div className={`w-64 z-50 overflow-hidden block md:hidden  bg-white rounded-xl pt-1.5  mx-2 border border-[#808080] absolute top-16 -right-10 ${isMenuOpen ? '-translate-x-9' : 'translate-x-full'} transition-transform duration-300`}>
             <h3 className="text-[#808080] font-medium  text-xl text-center">Menu</h3>
             <nav className="space-y-1">
               {menuItems.map((item) => {
@@ -247,7 +248,7 @@ const MainProfileSetting = () => {
                       onClick={() => handleMenuClick(item)}
                       className={`w-full flex items-center justify-between px-3 py-2 text-sm transition-colors ${
                         activeMenuItem === item.id || (item.hasSubMenu && activeSubMenu === item.id)
-                          ? 'bg-gradient-to-r from-[rgba(122,61,177,0.6)] to-[rgba(122,61,177,1)] text-white'
+                          ? 'bg-gradient-to-l from-[rgba(96,161,249,1)] to-[rgba(17,83,231,1)] text-white'
                           : 'text-gray-700 hover:bg-gray-100'
                       }`}
                     >
@@ -271,7 +272,7 @@ const MainProfileSetting = () => {
                             onClick={() => handleSubMenuClick(subItem)}
                             className={`w-full flex items-center px-3 py-2 text-sm transition-colors ${
                               activeMenuItem === subItem.id
-                                ? 'bg-gradient-to-r from-[rgba(122,61,177,0.6)] to-[rgba(122,61,177,1)] text-white'
+                                ? 'bg-gradient-to-l from-[rgba(96,161,249,1)] to-[rgba(17,83,231,1)] text-white'
                                 : 'text-gray-600 hover:bg-gray-100'
                             }`}
                           >
@@ -290,7 +291,7 @@ const MainProfileSetting = () => {
         {/* Main Content */}
         <div className=" rounded-b-lg flex min-h-[600px] -mt-20">
           {/* Sidebar Menu */}
-          <div className="w-64 hidden md:block overflow-hidden h-full bg-white rounded-xl pt-1.5  mx-2 border border-[#808080]">
+          <div className="w-64 z-20 hidden md:block overflow-hidden h-full bg-white rounded-xl pt-1.5  mx-2 border border-[#808080]">
             <h3 className="text-[#808080] font-medium  text-xl text-center">Menu</h3>
             <nav className="space-y-1">
               {menuItems.map((item) => {
@@ -301,7 +302,7 @@ const MainProfileSetting = () => {
                       onClick={() => handleMenuClick(item)}
                       className={`w-full flex items-center justify-between px-3 py-2 text-sm transition-colors ${
                         activeMenuItem === item.id || (item.hasSubMenu && activeSubMenu === item.id)
-                          ? 'bg-gradient-to-r from-[rgba(122,61,177,0.6)] to-[rgba(122,61,177,1)] text-white'
+                          ? 'bg-gradient-to-r from-[rgba(96,161,249,1)] to-[rgba(17,83,231,1)] text-white'
                           : 'text-gray-700 hover:bg-gray-100'
                       }`}
                     >
@@ -318,14 +319,14 @@ const MainProfileSetting = () => {
                     
                     {/* Sub Menu */}
                     {item.hasSubMenu && activeSubMenu === item.id && (
-                      <div className="ml-6 space-y-1">
+                      <div className="border border-gray-100 space-y-1">
                         {item.subItems.map((subItem) => (
                           <button
                             key={subItem.id}
                             onClick={() => handleSubMenuClick(subItem)}
                             className={`w-full flex items-center px-3 py-2 text-sm transition-colors ${
                               activeMenuItem === subItem.id
-                                ? 'bg-gradient-to-r from-[rgba(122,61,177,0.6)] to-[rgba(122,61,177,1)] text-white'
+                                ? 'bg-gradient-to-r from-[rgba(96,161,249,1)] to-[rgba(17,83,231,1)] text-white'
                                 : 'text-gray-600 hover:bg-gray-100'
                             }`}
                           >
@@ -341,7 +342,7 @@ const MainProfileSetting = () => {
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 pl-1 pr-2 ">
+          <div className="flex-1 pl-1 pr-2 z-20 ">
             {renderActiveComponent()}
           </div>
         </div>
