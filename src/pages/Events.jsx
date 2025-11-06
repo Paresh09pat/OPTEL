@@ -20,8 +20,11 @@ const Events = () => {
   const [eventDescription, setEventDescription] = useState('');
   const [eventLocation, setEventLocation] = useState('');
   const [startDate, setStartDate] = useState('');
+  const [startTime, setStartTime] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [endTime, setEndTime] = useState('');
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [formLoading, setFormLoading] = useState(false);
 
   const dropdownOptions = ['Events', 'Going', 'Invited', 'Interested', 'Past'];
 
@@ -101,33 +104,87 @@ const Events = () => {
 
   // Event form handlers
   const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    setSelectedFiles(prev => [...prev, ...files]);
+    const file = e.target.files[0];
+    setSelectedFile(file);
   };
 
-  const removeFile = (index) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  const removeFile = () => {
+    setSelectedFile(null);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle form submission here
-    console.log({
-      eventName,
-      eventDescription,
-      eventLocation,
-      startDate,
-      endDate,
-      selectedFiles
-    });
-    // Reset form
-    setEventName('');
-    setEventDescription('');
-    setEventLocation('');
-    setStartDate('');
-    setEndDate('');
-    setSelectedFiles([]);
-    setShowCreateForm(false);
+    
+    if (!eventName.trim()) {
+      alert("Please enter event name");
+      return;
+    }
+    
+    if (!eventLocation.trim()) {
+      alert("Please enter event location");
+      return;
+    }
+    
+    if (!startDate || !endDate) {
+      alert("Please select start and end dates");
+      return;
+    }
+    
+    if (!startTime || !endTime) {
+      alert("Please select start and end times");
+      return;
+    }
+    
+    if (!selectedFile) {
+      alert("Please select an image");
+      return;
+    }
+
+    try {
+      setFormLoading(true);
+      const accessToken = localStorage.getItem("access_token");
+      
+      const formData = new FormData();
+      formData.append("name", eventName);
+      formData.append("location", eventLocation);
+      formData.append("start_date", startDate);
+      formData.append("start_time", startTime);
+      formData.append("end_date", endDate);
+      formData.append("end_time", endTime);
+      formData.append("image", selectedFile);
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/events`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Accept": "application/json",
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (data.ok === true) {
+        alert("Event created successfully!");
+        // Reset form
+        setEventName('');
+        setEventDescription('');
+        setEventLocation('');
+        setStartDate('');
+        setStartTime('');
+        setEndDate('');
+        setEndTime('');
+        setSelectedFile(null);
+        setShowCreateForm(false);
+        // Refresh events list
+        getEvents();
+      }
+    } catch (error) {
+      console.error("Error creating event:", error);
+      alert("Error creating event. Please try again.");
+    } finally {
+      setFormLoading(false);
+    }
   };
 
   if (loading) return <Loader />;
@@ -270,7 +327,7 @@ const Events = () => {
                   />
                 </div>
 
-                {/* Start Date and End Date */}
+                {/* Start Date and Time */}
                 <div className="w-full flex flex-col md:flex-row gap-4">
                   <div className="w-full flex flex-col gap-2">
                     <label
@@ -290,6 +347,26 @@ const Events = () => {
                   </div>
                   <div className="w-full flex flex-col gap-2">
                     <label
+                      htmlFor="start-time"
+                      className="text-lg text-black flex items-center gap-2"
+                    >
+                      Start Time : <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="time"
+                      id="start-time"
+                      className="w-full p-2 px-4 border border-[#d3d1d1] rounded-full"
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* End Date and Time */}
+                <div className="w-full flex flex-col md:flex-row gap-4">
+                  <div className="w-full flex flex-col gap-2">
+                    <label
                       htmlFor="end-date"
                       className="text-lg text-black flex items-center gap-2"
                     >
@@ -301,6 +378,22 @@ const Events = () => {
                       className="w-full p-2 px-4 border border-[#d3d1d1] rounded-full"
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="w-full flex flex-col gap-2">
+                    <label
+                      htmlFor="end-time"
+                      className="text-lg text-black flex items-center gap-2"
+                    >
+                      End Time : <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="time"
+                      id="end-time"
+                      className="w-full p-2 px-4 border border-[#d3d1d1] rounded-full"
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
                       required
                     />
                   </div>
@@ -318,8 +411,7 @@ const Events = () => {
                   <input
                     type="file"
                     id="event-media"
-                    accept="image/*, video/*"
-                    multiple
+                    accept="image/*"
                     className="hidden"
                     onChange={handleFileChange}
                   />
@@ -328,7 +420,7 @@ const Events = () => {
                     htmlFor="event-media"
                     className="w-full min-h-[200px] border border-[#d3d1d1] rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer text-[#555] p-4"
                   >
-                    {selectedFiles.length === 0 ? (
+                    {!selectedFile ? (
                       <>
                         <img
                           src="/icons/selectAlbum.png"
@@ -336,45 +428,29 @@ const Events = () => {
                           className="w-14 h-14 opacity-70"
                         />
                         <span className="font-medium text-sm">
-                          Select photos & video
+                          Select event image
                         </span>
                       </>
                     ) : (
-                      <div className="flex flex-wrap justify-center gap-4 w-full">
-                        {selectedFiles.map((file, index) => {
-                          const fileURL = URL.createObjectURL(file);
-                          return (
-                            <div
-                              key={index}
-                              className="relative group w-[100px] h-[100px] rounded overflow-hidden border"
-                            >
-                              {file.type.startsWith("image") ? (
-                                <img
-                                  src={fileURL}
-                                  alt="preview"
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <video
-                                  src={fileURL}
-                                  className="w-full h-full object-cover"
-                                  controls
-                                />
-                              )}
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  removeFile(index);
-                                }}
-                                className="absolute top-1 right-1 bg-black bg-opacity-60 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center cursor-pointer"
-                                title="Remove"
-                              >
-                                ×
-                              </button>
-                            </div>
-                          );
-                        })}
+                      <div className="flex justify-center w-full">
+                        <div className="relative group w-[200px] h-[200px] rounded overflow-hidden border">
+                          <img
+                            src={URL.createObjectURL(selectedFile)}
+                            alt="preview"
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeFile();
+                            }}
+                            className="absolute top-1 right-1 bg-black bg-opacity-60 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center cursor-pointer"
+                            title="Remove"
+                          >
+                            ×
+                          </button>
+                        </div>
                       </div>
                     )}
                   </label>
@@ -384,9 +460,10 @@ const Events = () => {
                 <div className="w-full text-center">
                   <button
                     type="submit"
-                    className="w-[20rem] cursor-pointer h-[50px] border border-[#F25E4E] text-[#F25E4E] font-semibold text-[20px] py-2 px-8 rounded-lg hover:bg-[#F25E4E] transition hover:text-[#fff]"
+                    disabled={formLoading}
+                    className="w-[20rem] cursor-pointer h-[50px] border border-[#F25E4E] text-[#F25E4E] font-semibold text-[20px] py-2 px-8 rounded-lg hover:bg-[#F25E4E] transition hover:text-[#fff] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Publish Event
+                    {formLoading ? "Creating Event..." : "Publish Event"}
                   </button>
                 </div>
               </form>
@@ -405,7 +482,7 @@ const Events = () => {
          
           {myEvents?.map((event) => 
           <div className="flex flex-col gap-2 min-w-full bg-[#FFFFFF] shadow-2xl  pb-3 px-0.5 shadow-[#21212140] rounded-lg border border-[#d3d1d1]" key={event?.id}>
-            <img src={event?.cover || "/pagesCardImg.png"} alt="cardImg" className=' w-full h-[160px] object-cover rounded-lg' />
+            <img src={event?.image_url || event?.cover_url || "/pagesCardImg.png"} alt="cardImg" className=' w-full h-[160px] object-cover rounded-lg' />
             <div className="flex flex-col gap-2.5 w-full px-2.5">
               <h5 className='text-sm font-medium text-[#212121] w-full text-left'>{event?.name}</h5>
               <div className="flex items-center justify-between">
