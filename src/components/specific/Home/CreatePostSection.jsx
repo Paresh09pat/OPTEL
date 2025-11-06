@@ -109,10 +109,28 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
 
     // ❌ Remove file handler
     const handleRemoveFile = (indexToRemove) => {
-        setSelectedFiles((prev) => prev.filter((_, i) => i !== indexToRemove));
+        setSelectedFiles((prev) => {
+            const fileToRemove = prev[indexToRemove];
+            // Revoke the object URL to prevent memory leaks
+            if (fileToRemove && fileToRemove.file) {
+                URL.revokeObjectURL(URL.createObjectURL(fileToRemove.file));
+            }
+            return prev.filter((_, i) => i !== indexToRemove);
+        });
     };
 
     const genetateId = Math.floor(10 + Math.random() * 90);
+
+    // Cleanup object URLs when component unmounts
+    useEffect(() => {
+        return () => {
+            selectedFiles.forEach((fileObj) => {
+                if (fileObj && fileObj.file) {
+                    URL.revokeObjectURL(URL.createObjectURL(fileObj.file));
+                }
+            });
+        };
+    }, [selectedFiles]);
 
     // Function to detect post type based on content
     const detectPostType = (text, files, link, youtube, album) => {
@@ -442,25 +460,65 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
 
                 {/* File Preview Section with ❌ Remove */}
                 {selectedFiles.length > 0 && (
-                    <div className="mt-4 space-y-2 text-sm text-gray-700">
+                    <div className="mt-4 space-y-3 text-sm text-gray-700">
                         <strong>Selected Files:</strong>
-                        {selectedFiles.map((fileObj, index) => (
-                            <div
-                                key={index}
-                                className="flex items-center justify-around bg-[#EDF6F9] rounded px-2 py-1 w-[50%] "
-                            >
-                                <div className="truncate">
-                                    {fileObj.type.toUpperCase()}: {fileObj.name}
-                                </div>
-                                <button
-                                    onClick={() => handleRemoveFile(index)}
-                                    className="text-red-500 hover:text-red-700 ml-4 text-lg font-bold"
-                                    title="Remove"
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {selectedFiles.map((fileObj, index) => (
+                                <div
+                                    key={index}
+                                    className="bg-[#EDF6F9] rounded-lg p-3 border border-gray-200"
                                 >
-                                    &times;
-                                </button>
-                            </div>
-                        ))}
+                                    {/* Image Preview */}
+                                    {fileObj.type === 'image' && fileObj.file && (
+                                        <div className="mb-2">
+                                            <img
+                                                src={URL.createObjectURL(fileObj.file)}
+                                                alt={fileObj.name}
+                                                className="w-full h-32 object-cover rounded-md border border-gray-300"
+                                            />
+                                        </div>
+                                    )}
+                                    
+                                    {/* Video Preview */}
+                                    {fileObj.type === 'video' && fileObj.file && (
+                                        <div className="mb-2">
+                                            <video
+                                                src={URL.createObjectURL(fileObj.file)}
+                                                className="w-full h-32 object-cover rounded-md border border-gray-300"
+                                                controls={false}
+                                                muted
+                                            />
+                                        </div>
+                                    )}
+                                    
+                                    {/* File Info */}
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="text-xs font-medium text-gray-500 bg-gray-200 px-2 py-1 rounded">
+                                                    {fileObj.type.toUpperCase()}
+                                                </span>
+                                            </div>
+                                            <div className="truncate text-sm font-medium text-gray-800">
+                                                {fileObj.name}
+                                            </div>
+                                            <div className="text-xs text-gray-500">
+                                                {(fileObj.file.size / 1024 / 1024).toFixed(2)} MB
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Remove Button */}
+                                        <button
+                                            onClick={() => handleRemoveFile(index)}
+                                            className="ml-3 p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
+                                            title="Remove"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 )}
             </div>
@@ -579,7 +637,14 @@ const CreatePostPopup = ({
     };
 
     const removeFile = (index) => {
-        setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+        setSelectedFiles((prev) => {
+            const fileToRemove = prev[index];
+            // Revoke the object URL to prevent memory leaks
+            if (fileToRemove && fileToRemove.file) {
+                URL.revokeObjectURL(URL.createObjectURL(fileToRemove.file));
+            }
+            return prev.filter((_, i) => i !== index);
+        });
     };
     // Handle Escape key to close popup
     useEffect(() => {
@@ -799,7 +864,7 @@ const CreatePostPopup = ({
                                         Duration: {pollDuration} {pollDuration === '1' ? 'day' : pollDuration === '7' ? 'days' : pollDuration === '30' ? 'days' : 'days'}
                                     </p>
                                 </div>
-                            )}
+                                )}
 
                             {/* Reset Poll Button */}
                             {/* <div className="mt-4 text-center">
@@ -817,21 +882,65 @@ const CreatePostPopup = ({
                     <div className="mt-6">
                         {/* Display selected files */}
                         {selectedFiles.length > 0 && (
-                            <div className="mb-4 flex flex-wrap gap-2">
-                                {selectedFiles.map((file, index) => (
-                                    <div
-                                        key={index}
-                                        className="flex w-full sm:w-[48%] md:w-[32%] items-center bg-gray-100 border border-gray-300 rounded-lg px-3 py-2"
-                                    >
-                                        <span className="text-gray-800 text-sm truncate w-full">{file.name}</span>
-                                        <button
-                                            onClick={() => removeFile(index)}
-                                            className="ml-2 text-gray-600 hover:text-red-600 text-lg font-bold"
+                            <div className="mb-4">
+                                <h4 className="text-sm font-medium text-gray-700 mb-3">Selected Files:</h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    {selectedFiles.map((file, index) => (
+                                        <div
+                                            key={index}
+                                            className="bg-gray-50 border border-gray-200 rounded-lg p-3"
                                         >
-                                            &times;
-                                        </button>
-                                    </div>
-                                ))}
+                                            {/* Image Preview */}
+                                            {file.type === 'image' && file.file && (
+                                                <div className="mb-2">
+                                                    <img
+                                                        src={URL.createObjectURL(file.file)}
+                                                        alt={file.name}
+                                                        className="w-full h-24 object-cover rounded-md border border-gray-300"
+                                                    />
+                                                </div>
+                                            )}
+                                            
+                                            {/* Video Preview */}
+                                            {file.type === 'video' && file.file && (
+                                                <div className="mb-2">
+                                                    <video
+                                                        src={URL.createObjectURL(file.file)}
+                                                        className="w-full h-24 object-cover rounded-md border border-gray-300"
+                                                        controls={false}
+                                                        muted
+                                                    />
+                                                </div>
+                                            )}
+                                            
+                                            {/* File Info */}
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span className="text-xs font-medium text-gray-500 bg-gray-200 px-2 py-1 rounded">
+                                                            {file.type.toUpperCase()}
+                                                        </span>
+                                                    </div>
+                                                    <div className="truncate text-sm font-medium text-gray-800">
+                                                        {file.name}
+                                                    </div>
+                                                    <div className="text-xs text-gray-500">
+                                                        {(file.file.size / 1024 / 1024).toFixed(2)} MB
+                                                    </div>
+                                                </div>
+                                                
+                                                {/* Remove Button */}
+                                                <button
+                                                    onClick={() => removeFile(index)}
+                                                    className="ml-2 p-1 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                                                    title="Remove"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         )}
 

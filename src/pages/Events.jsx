@@ -188,7 +188,7 @@ const Events = () => {
   };
 
   if (loading) return <Loader />;
-  console.log(myEvents , "my events list");
+
 
     return (
       <div className="bg-[#EDF6F9] w-full min-h-screen  py-8 flex flex-col gap-4">

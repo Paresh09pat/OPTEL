@@ -5,8 +5,10 @@ import { FaFilePdf, FaPaperPlane } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import SharePopup from './SharePopup';
 import Avatar from '../../Avatar';
+import { useUser } from '../../../context/UserContext';
 const PostCard = ({ user, content, image, video, audio, file, likes, comments, shares, saves, timeAgo, post_id, handleLike, handleDislike, isLiked, fetchComments, commentsData, savePost, isSaved, blog, multipleImages, hasMultipleImages, reportPost, hidePost, commentPost, iframelink, postfile, postFileName, getNewsFeed, openImagePopup, handleReaction, postReaction, postReactionCounts, currentReaction, userReaction }) => {
   const navigate = useNavigate();
+  const { userData } = useUser();
   const [clickedComments, setClickedComments] = useState(false);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [localCommentsData, setLocalCommentsData] = useState(commentsData || []);
@@ -1629,9 +1631,9 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
 
         <div className="flex items-center space-x-3 mt-4">
           <Avatar
-            src={localStorage.getItem('user_avatar_url')}
-            name="Current User"
-            email="current@user.com"
+            src={userData?.avatar_url || localStorage.getItem('user_avatar_url')}
+            name={userData?.username || "Current User"}
+            email={userData?.email || "current@user.com"}
             alt="Your avatar"
             size="md"
           />
