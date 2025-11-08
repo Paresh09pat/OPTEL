@@ -1,8 +1,10 @@
 import React, { useState, useRef } from 'react';
 import axios from 'axios';
 import { FiCamera, FiImage, FiX } from 'react-icons/fi';
+import { useUser } from '../../context/UserContext';
 
-const ProfileAndCoverSettings = () => {
+const ProfileAndCoverSettings = ({ onAvatarUpdate }) => {
+  const { refreshUserData } = useUser();
   const [avatar, setAvatar] = useState(null);
   const [cover, setCover] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
@@ -85,10 +87,26 @@ const ProfileAndCoverSettings = () => {
           setAvatar(null);
           setAvatarPreview(null);
           if (avatarInputRef.current) avatarInputRef.current.value = '';
+          
+          // Refresh user data in UserContext (for all components using it)
+          refreshUserData();
+          
+          // Refresh user data in parent component to update avatar
+          if (onAvatarUpdate) {
+            onAvatarUpdate();
+          }
         } else {
           setCover(null);
           setCoverPreview(null);
           if (coverInputRef.current) coverInputRef.current.value = '';
+          
+          // Refresh user data in UserContext (for all components using it)
+          refreshUserData();
+          
+          // Refresh user data in parent component to update cover
+          if (onAvatarUpdate) {
+            onAvatarUpdate();
+          }
         }
       } else {
         throw new Error(data.api_text || `Failed to upload ${type}`);
@@ -128,10 +146,26 @@ const ProfileAndCoverSettings = () => {
           setAvatar(null);
           setAvatarPreview(null);
           if (avatarInputRef.current) avatarInputRef.current.value = '';
+          
+          // Refresh user data in UserContext (for all components using it)
+          refreshUserData();
+          
+          // Refresh user data in parent component to update avatar
+          if (onAvatarUpdate) {
+            onAvatarUpdate();
+          }
         } else {
           setCover(null);
           setCoverPreview(null);
           if (coverInputRef.current) coverInputRef.current.value = '';
+          
+          // Refresh user data in UserContext (for all components using it)
+          refreshUserData();
+          
+          // Refresh user data in parent component to update cover
+          if (onAvatarUpdate) {
+            onAvatarUpdate();
+          }
         }
       } else {
         throw new Error(data.api_text || `Failed to reset ${type}`);

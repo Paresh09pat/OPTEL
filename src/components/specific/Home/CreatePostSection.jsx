@@ -586,6 +586,7 @@ const CreatePostPopup = ({
     selectedGif, setSelectedGif, backgroundColor, setBackgroundColor,
     albumName, setAlbumName, groupId, setGroupId, postType, setPostType, postPrivacy, setPostPrivacy
 }) => {
+    const { userData } = useUser();
     const [postText, setPostText] = useState('');
     const [showSharing, setShowSharing] = useState(false);
     const [commentsEnabled, setCommentsEnabled] = useState(true);
@@ -710,11 +711,11 @@ const CreatePostPopup = ({
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 md:p-6 border-b border-gray-200 gap-3">
                     <div className="flex items-center space-x-3">
                         <img
-                            src={localStorage.getItem('user_avatar_url') || "/perimg.png"}
+                            src={userData?.avatar_url || "https://img.freepik.com/premium-vector/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4866.jpg?semt=ais_hybrid&w=740&q=80"}
                             alt="Profile"
                             className="w-12 h-12 rounded-full object-cover"
                             onError={(e) => {
-                                e.target.src = "/perimg.png";
+                                e.target.src = "https://img.freepik.com/premium-vector/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4866.jpg?semt=ais_hybrid&w=740&q=80";
                             }}
                         />
                         <div className="flex items-center space-x-2">
