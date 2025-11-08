@@ -33,43 +33,43 @@ const MainProfileSetting = () => {
   const userId = localStorage.getItem('user_id') || '222102'; // Default fallback
 
   // Fetch user data from API
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        setUserLoading(true);
-        setUserError(null);
-        const response = await axios.get(
-          `${import.meta.env.VITE_API_URL}/api/v1/profile/user-data?user_profile_id=${userId}&fetch=user_data`,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`,
-            }
+  const fetchUserData = async () => {
+    try {
+      setUserLoading(true);
+      setUserError(null);
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_URL}/api/v1/profile/user-data?user_profile_id=${userId}&fetch=user_data`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`,
           }
-        );
-
-        const data = response.data;
-        
-        if (data.api_status === '200') {
-          setUserData(data.user_data);
-        } else {
-          throw new Error(data.api_text || 'Failed to fetch user data');
         }
-      } catch (err) {
-        console.error('Error fetching user data:', err);
-        setUserError('Failed to load user data. Please try again.');
-        // Set fallback data to maintain UI
-        setUserData({
-          first_name: 'Aman',
-          last_name: 'Shaikh',
-          username: '_amu_456',
-          avatar_url: '/perimg.png'
-        });
-      } finally {
-        setUserLoading(false);
-      }
-    };
+      );
 
+      const data = response.data;
+      
+      if (data.api_status === '200') {
+        setUserData(data.user_data);
+      } else {
+        throw new Error(data.api_text || 'Failed to fetch user data');
+      }
+    } catch (err) {
+      console.error('Error fetching user data:', err);
+      setUserError('Failed to load user data. Please try again.');
+      // Set fallback data to maintain UI
+      setUserData({
+        first_name: 'Aman',
+        last_name: 'Shaikh',
+        username: '_amu_456',
+        avatar_url: '/perimg.png'
+      });
+    } finally {
+      setUserLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchUserData();
   }, [userId]);
 
@@ -164,7 +164,7 @@ const MainProfileSetting = () => {
       case 'design':
         return <DesignSettings />;
       case 'ppfCover':
-        return <ProfileAndCoverSettings />;
+        return <ProfileAndCoverSettings onAvatarUpdate={fetchUserData} />;
       case 'blocked-users':
         return <BlockedUsers />;
       case 'notification-setting':
