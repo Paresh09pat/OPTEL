@@ -355,11 +355,11 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
                 {/* Input Field */}
                 <div className="relative mb-4">
                     <img
-                        src={userData?.avatar_url || "/perimg.png"}
+                        src={userData?.avatar_url || "https://img.freepik.com/premium-vector/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4866.jpg?semt=ais_hybrid&w=740&q=80"}
                         alt="Profile"
                         className="w-10 h-10 rounded-full object-cover absolute left-2 top-1/2 -translate-y-1/2"
                         onError={(e) => {
-                            e.target.src = "/perimg.png";
+                            e.target.src = "https://img.freepik.com/premium-vector/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4866.jpg?semt=ais_hybrid&w=740&q=80";
                         }}
                     />
 

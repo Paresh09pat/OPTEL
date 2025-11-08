@@ -101,14 +101,14 @@ const SideMenu = ({ onClose, isMobile = false }) => {
       <div className="px-4 py-1 mt-5">
         <div className="flex items-center space-x-3 p-3 bg-white rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
           <img
-            src={userData?.avatar_url || "/perimg.png"}
+            src={userData?.avatar_url || "https://img.freepik.com/premium-vector/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4866.jpg?semt=ais_hybrid&w=740&q=80"}
             alt="User Profile"
             className="w-12 h-12 rounded-full object-cover"
             onClick={() => {
               navigate('/profile')
             }}
             onError={(e) => {
-              e.target.src = "/perimg.png";
+              e.target.src = "https://img.freepik.com/premium-vector/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4866.jpg?semt=ais_hybrid&w=740&q=80";
             }}
           />
           <div className="flex-1" onClick={() => {

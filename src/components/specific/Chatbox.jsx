@@ -211,9 +211,12 @@ const Chatbox = ({ onClose, isMobile = false }) => {
             <div className="relative w-[58px] h-[58px] rounded-full bg-[#EDF6F9] border-[4px] border-inset border-[#ffffff] shadow-md shadow-fuchsia-400">
               {userData?.avatar_url ? (
                 <img 
-                  src={userData.avatar_url} 
+                  src={userData.avatar_url || "https://img.freepik.com/premium-vector/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4866.jpg?semt=ais_hybrid&w=740&q=80"} 
                   alt="Profile" 
                   className="w-full h-full object-cover rounded-full"
+                  onError={(e) => {
+                    e.target.src = "https://img.freepik.com/premium-vector/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4866.jpg?semt=ais_hybrid&w=740&q=80";
+                  }}
                 />
               ) : (
                 <div className="w-full h-full bg-gray-300 flex items-center justify-center">
