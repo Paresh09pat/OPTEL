@@ -1,21 +1,17 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiEye, FiEyeOff, FiUser, FiMail, FiLock, FiCalendar, FiGlobe, FiClock } from 'react-icons/fi';
+import { FiEye, FiEyeOff, FiUser, FiMail, FiLock } from 'react-icons/fi';
 
 const Signup = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    username: '',
     email: '',
     password: '',
     confirm_password: '',
     first_name: '',
     last_name: '',
     gender: '',
-    birthday: '',
-    country_id: 1,
-    timezone: 'Asia/Kolkata',
-    language: 'english'
+    username: '',
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -32,7 +28,7 @@ const Signup = () => {
 
   const validateForm = () => {
     if (!formData.username || !formData.email || !formData.password || !formData.confirm_password || 
-        !formData.first_name || !formData.last_name || !formData.gender || !formData.birthday) {
+        !formData.first_name || !formData.last_name || !formData.gender) {
       setError('All fields are required');
       return false;
     }
@@ -78,10 +74,16 @@ const Signup = () => {
       const data = await response.json();
 
       if (response.ok && data.ok) {
-        setSuccess('Account created successfully! Redirecting to login...');
-        setTimeout(() => {
-          navigate('/login');
-        }, 2000);
+        // Store token and user data
+        localStorage.setItem("user_id", data.data.user_id);
+        localStorage.setItem("access_token", data.data.token);
+        localStorage.setItem("isVerified", data.data.verified);
+        
+        // Store user data for the next pages
+        localStorage.setItem("signup_user_data", JSON.stringify(data.data));
+        
+        // Navigate to profile photo upload page
+        navigate('/profile-photo-upload');
       } else {
         setError(data.message || 'Signup failed. Please try again.');
       }
@@ -102,7 +104,7 @@ const Signup = () => {
           <h2 className="mt-6 text-3xl font-bold text-gray-900">Create your account</h2>
           <p className="mt-2 text-sm text-gray-600">
             Already have an account?{' '}
-            <Link to="/login" className="font-medium text-[#F69F58] hover:text-orange-600">
+            <Link to="/login" className="font-medium text-[#1d60eb] hover:text-[#1a4fc7]">
               Sign in here
             </Link>
           </p>
@@ -137,7 +139,7 @@ const Signup = () => {
                   required
                   value={formData.first_name}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-3 py-2 border border-[#d3d1d1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F69F58] focus:border-transparent"
+                  className="w-full pl-10 pr-3 py-2 border border-[#d3d1d1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1d60eb] focus:border-transparent"
                   placeholder="Enter first name"
                 />
               </div>
@@ -155,7 +157,7 @@ const Signup = () => {
                   required
                   value={formData.last_name}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-3 py-2 border border-[#d3d1d1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F69F58] focus:border-transparent"
+                  className="w-full pl-10 pr-3 py-2 border border-[#d3d1d1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1d60eb] focus:border-transparent"
                   placeholder="Enter last name"
                 />
               </div>
@@ -176,7 +178,7 @@ const Signup = () => {
                 required
                 value={formData.username}
                 onChange={handleChange}
-                className="w-full pl-10 pr-3 py-2 border border-[#d3d1d1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F69F58] focus:border-transparent"
+                className="w-full pl-10 pr-3 py-2 border border-[#d3d1d1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1d60eb] focus:border-transparent"
                 placeholder="Choose a username"
               />
             </div>
@@ -196,7 +198,7 @@ const Signup = () => {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full pl-10 pr-3 py-2 border border-[#d3d1d1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F69F58] focus:border-transparent"
+                className="w-full pl-10 pr-3 py-2 border border-[#d3d1d1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1d60eb] focus:border-transparent"
                 placeholder="Enter your email"
               />
             </div>
@@ -217,7 +219,7 @@ const Signup = () => {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-10 py-2 border border-[#d3d1d1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F69F58] focus:border-transparent"
+                  className="w-full pl-10 pr-10 py-2 border border-[#d3d1d1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1d60eb] focus:border-transparent"
                   placeholder="Create password"
                 />
                 <button
@@ -242,7 +244,7 @@ const Signup = () => {
                   required
                   value={formData.confirm_password}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-10 py-2 border border-[#d3d1d1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F69F58] focus:border-transparent"
+                  className="w-full pl-10 pr-10 py-2 border border-[#d3d1d1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1d60eb] focus:border-transparent"
                   placeholder="Confirm password"
                 />
                 <button
@@ -256,118 +258,23 @@ const Signup = () => {
             </div>
           </div>
 
-          {/* Gender and Birthday */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-2">
-                Gender <span className="text-red-500">*</span>
-              </label>
-              <select
-                id="gender"
-                name="gender"
-                required
-                value={formData.gender}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-[#d3d1d1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F69F58] focus:border-transparent"
-              >
-                <option value="">Select Gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="birthday" className="block text-sm font-medium text-gray-700 mb-2">
-                Birthday <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  id="birthday"
-                  name="birthday"
-                  type="date"
-                  required
-                  value={formData.birthday}
-                  onChange={handleChange}
-                  className="w-full pl-10 pr-3 py-2 border border-[#d3d1d1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F69F58] focus:border-transparent"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Country */}
+          {/* Gender */}
           <div>
-            <label htmlFor="country_id" className="block text-sm font-medium text-gray-700 mb-2">
-              Country <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <FiGlobe className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <select
-                id="country_id"
-                name="country_id"
-                required
-                value={formData.country_id}
-                onChange={handleChange}
-                className="w-full pl-10 pr-3 py-2 border border-[#d3d1d1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F69F58] focus:border-transparent"
-              >
-                <option value={1}>India</option>
-                <option value={2}>United States</option>
-                <option value={3}>United Kingdom</option>
-                <option value={4}>Canada</option>
-                <option value={5}>Australia</option>
-                <option value={6}>Germany</option>
-                <option value={7}>France</option>
-                <option value={8}>Japan</option>
-                <option value={9}>China</option>
-                <option value={10}>Brazil</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Timezone */}
-          <div>
-            <label htmlFor="timezone" className="block text-sm font-medium text-gray-700 mb-2">
-              Timezone
-            </label>
-            <div className="relative">
-              <FiClock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <select
-                id="timezone"
-                name="timezone"
-                value={formData.timezone}
-                onChange={handleChange}
-                className="w-full pl-10 pr-3 py-2 border border-[#d3d1d1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F69F58] focus:border-transparent"
-              >
-                <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
-                <option value="America/New_York">America/New_York (EST)</option>
-                <option value="Europe/London">Europe/London (GMT)</option>
-                <option value="America/Los_Angeles">America/Los_Angeles (PST)</option>
-                <option value="Europe/Berlin">Europe/Berlin (CET)</option>
-                <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
-                <option value="Australia/Sydney">Australia/Sydney (AEST)</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Language */}
-          <div>
-            <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-2">
-              Language
+            <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-2">
+              Gender <span className="text-red-500">*</span>
             </label>
             <select
-              id="language"
-              name="language"
-              value={formData.language}
+              id="gender"
+              name="gender"
+              required
+              value={formData.gender}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-[#d3d1d1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F69F58] focus:border-transparent"
+              className="w-full px-3 py-2 border border-[#d3d1d1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1d60eb] focus:border-transparent"
             >
-              <option value="english">English</option>
-              <option value="hindi">Hindi</option>
-              <option value="spanish">Spanish</option>
-              <option value="french">French</option>
-              <option value="german">German</option>
-              <option value="chinese">Chinese</option>
-              <option value="japanese">Japanese</option>
+              <option value="">Select Gender</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
             </select>
           </div>
 
@@ -376,7 +283,7 @@ const Signup = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-[#F69F58] hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F69F58] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-[#1d60eb] hover:bg-[#1a4fc7] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1d60eb] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? 'Creating Account...' : 'Create Account'}
             </button>
@@ -385,9 +292,9 @@ const Signup = () => {
           {/* Terms and Privacy */}
           <div className="text-center text-sm text-gray-600">
             By creating an account, you agree to our{' '}
-            <a href="#" className="text-[#F69F58] hover:text-orange-600">Terms of Service</a>
+            <a href="#" className="text-[#1d60eb] hover:text-[#1a4fc7]">Terms of Service</a>
             {' '}and{' '}
-            <a href="#" className="text-[#F69F58] hover:text-orange-600">Privacy Policy</a>
+            <a href="#" className="text-[#1d60eb] hover:text-[#1a4fc7]">Privacy Policy</a>
           </div>
         </form>
       </div>

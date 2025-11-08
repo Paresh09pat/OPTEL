@@ -27,7 +27,7 @@ const GeneralSettings = () => {
   const [updateError, setUpdateError] = useState(null);
 
   // Get user ID from localStorage
-  const userId = localStorage.getItem('user_id') || '222102'; // Default fallback
+  const userId = localStorage.getItem('user_id') 
 
   // Fetch user data from API
   useEffect(() => {
@@ -260,9 +260,7 @@ const GeneralSettings = () => {
             @{userLoading ? 'loading...' : userData?.username || 'username'}
           </p>
         </div>
-        <button className="p-2 text-gray-600 hover:text-purple-500 transition-colors">
-          <FiEdit3 className="size-5" />
-        </button>
+        
       </div>
 
       {userLoading ? (
@@ -324,7 +322,7 @@ const GeneralSettings = () => {
               </label>
               <div className="relative">
                 <DatePicker
-                  selected={selectedDate}
+                  selected={selectedDate && !isNaN(selectedDate.getTime()) ? selectedDate : null}
                   onChange={handleDateChange}
                   dateFormat="dd/MM/yyyy"
                   placeholderText="Select your Birthdate"
@@ -337,7 +335,7 @@ const GeneralSettings = () => {
                     <div className="relative">
                       <input
                         type="text"
-                        value={formData.birthdate}
+                        value={formData.birthdate || ""}
                         placeholder="Select your Birthdate"
                         readOnly
                         className="w-full px-3 py-2 pr-10 border border-[#d3d1d1] rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer"

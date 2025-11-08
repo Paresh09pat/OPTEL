@@ -29,6 +29,8 @@ import PageProfile from "./pages/PageSetting/PageProfile";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Register from "./pages/PageSetting/Register";
+import ProfilePhotoUpload from "./pages/ProfilePhotoUpload";
+import TellUsAboutYou from "./pages/TellUsAboutYou";
 import ProtectedRoute from "./components/ProtectedRoute";
 import BlogDetailed from "./pages/BlogDetailed";
 import { ToastContainer } from "react-toastify";
@@ -45,6 +47,8 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/profile-photo-upload" element={<ProfilePhotoUpload />} />
+        <Route path="/tell-us-about-you" element={<TellUsAboutYou />} />
 
         {/* Protected / Layout Routes */}
         <Route path="/" element={<ProtectedRoute />}>
