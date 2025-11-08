@@ -108,7 +108,7 @@ const Login = () => {
             )}
 
             {/* Login form */}
-            <div className="space-y-6">
+            <form onSubmit={handleLogin} className="space-y-6">
               {/* Username field */}
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -119,6 +119,7 @@ const Login = () => {
                   placeholder="Username or email"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
+                  required
                   className="w-full pl-12 pr-4 py-4 bg-gray-50/80 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-800 placeholder-gray-400"
                 />
               </div>
@@ -133,6 +134,7 @@ const Login = () => {
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  required
                   className="w-full pl-12 pr-12 py-4 bg-gray-50/80 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-800 placeholder-gray-400"
                 />
                 <button
@@ -161,7 +163,6 @@ const Login = () => {
               {/* Login button */}
               <button
                 type="submit"
-                onClick={handleLogin}
                 disabled={loading}
                 className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
               >
@@ -210,7 +211,7 @@ const Login = () => {
                   <span className="ml-2 text-sm font-medium text-gray-700">Facebook</span>
                 </button>
               </div> */}
-            </div>
+            </form>
 
             {/* Sign up link */}
             <div className="mt-8 text-center">
