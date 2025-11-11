@@ -79,10 +79,10 @@ export const navigationItems = [
     path: '/jobs',
     icon: jobsIcon,
   },
-  {
-    id: 'more',
-    name: 'More',
-    path: '/more',
-    icon: moreIcon,
-  },
+  // {
+  //   id: 'more',
+  //   name: 'More',
+  //   path: '/more',
+  //   icon: moreIcon,
+  // },
 ]
