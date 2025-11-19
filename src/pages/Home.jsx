@@ -858,7 +858,7 @@ const Home = () => {
       <div className="min-h-screen bg-[#EDF6F9] relative pb-15 smooth-scroll">
         <div className="max-w-6xl mx-auto px-3 md:px-4 py-4 md:py-6">
           <div className="mb-6 md:mb-8">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 md:mb-6 px-2 md:px-4">Feed</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 md:mb-6 px-2 md:px-4">Vibe</h2>
             <div className="px-2 md:px-4">
               <ScrollableSection>
                                  {Array.isArray(userStories || []) && (userStories || []).length > 0 ? (

@@ -48,21 +48,33 @@ const GeneralSettings = () => {
         
         if (data.api_status === '200') {
           setUserData(data.user_data);
+          
+          // Handle birthday - convert from YYYY-MM-DD to DD/MM/YYYY for display
+          let birthdate = "";
+          let selectedDateValue = null;
+          if (data.user_data.birthday && data.user_data.birthday !== "0000-00-00") {
+            const birthDate = new Date(data.user_data.birthday);
+            if (!isNaN(birthDate.getTime())) {
+              selectedDateValue = birthDate;
+              birthdate = birthDate.toLocaleDateString("en-GB"); // DD/MM/YYYY format
+            }
+          }
+          
+          // Handle country_id - only set if it's a valid number > 0
+          const countryId = parseInt(data.user_data.country_id) || 0;
+          const countryValue = countryId > 0 ? countryId.toString() : "";
+          
           // Populate form with user data
           setFormData({
             username: data.user_data.username || "",
             email: data.user_data.email || "",
             mobile: data.user_data.phone_number || "",
-            birthdate: data.user_data.birthday || "",
+            birthdate: birthdate,
             gender: data.user_data.gender || "",
-            country: data.user_data.country_id || "",
+            country: countryValue,
           });
           
-          // Set selected date if birthday exists
-          if (data.user_data.birthday) {
-            const birthDate = new Date(data.user_data.birthday);
-            setSelectedDate(birthDate);
-          }
+          setSelectedDate(selectedDateValue);
         } else {
           throw new Error(data.api_text || 'Failed to fetch user data');
         }
@@ -156,32 +168,35 @@ const GeneralSettings = () => {
       if (formData.mobile !== (userData?.phone_number || '')) {
         userDataToUpdate.phone_number = formData.mobile;
       }
-      if (formData.birthdate !== (userData?.birthday || '')) {
-        userDataToUpdate.birthday = formData.birthdate;
+      
+      // Handle birthday - convert from DD/MM/YYYY to YYYY-MM-DD format for API
+      if (formData.birthdate && selectedDate) {
+        const year = selectedDate.getFullYear();
+        const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+        const day = String(selectedDate.getDate()).padStart(2, '0');
+        const formattedBirthday = `${year}-${month}-${day}`;
+        const currentBirthday = userData?.birthday || "";
+        if (formattedBirthday !== currentBirthday && currentBirthday !== "0000-00-00") {
+          userDataToUpdate.birthday = formattedBirthday;
+        } else if (currentBirthday === "0000-00-00" || !currentBirthday) {
+          userDataToUpdate.birthday = formattedBirthday;
+        }
       }
+      
       if (formData.gender !== (userData?.gender || '')) {
-        userDataToUpdate.gender = formData.gender;
+        // Convert gender to gender_text format (capitalize first letter)
+        const genderText = formData.gender 
+          ? formData.gender.charAt(0).toUpperCase() + formData.gender.slice(1)
+          : '';
+        userDataToUpdate.gender_text = genderText;
       }
       // Convert both values to numbers for proper comparison
       const currentCountryId = parseInt(userData?.country_id) || 0;
       const formCountryId = parseInt(formData.country) || 0;
       
-      // Debug: Log country comparison
-      console.log('Country Debug:', {
-        userDataCountryId: userData?.country_id,
-        formDataCountry: formData.country,
-        currentCountryId,
-        formCountryId,
-        isDifferent: formCountryId !== currentCountryId
-      });
-      
       if (formCountryId !== currentCountryId && formCountryId > 0) {
         userDataToUpdate.country_id = formCountryId;
       }
-
-      // Debug: Log what we're sending
-      console.log('User Data to Update:', userDataToUpdate);
-      console.log('JSON String:', JSON.stringify(userDataToUpdate));
 
       // Only send request if there are changes
       if (Object.keys(userDataToUpdate).length === 0) {
@@ -207,6 +222,51 @@ const GeneralSettings = () => {
       const data = response.data;
       
       if (data.api_status === '200') {
+        // Fetch updated user data from API
+        try {
+          const refreshResponse = await axios.get(
+            `${import.meta.env.VITE_API_URL}/api/v1/profile/user-data?user_profile_id=${userId}&fetch=user_data`,
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`,
+              }
+            }
+          );
+          
+          if (refreshResponse.data.api_status === '200') {
+            const refreshedData = refreshResponse.data.user_data;
+            setUserData(refreshedData);
+            
+            // Update form with refreshed data
+            let birthdate = "";
+            let selectedDateValue = null;
+            if (refreshedData.birthday && refreshedData.birthday !== "0000-00-00") {
+              const birthDate = new Date(refreshedData.birthday);
+              if (!isNaN(birthDate.getTime())) {
+                selectedDateValue = birthDate;
+                birthdate = birthDate.toLocaleDateString("en-GB");
+              }
+            }
+            
+            const countryId = parseInt(refreshedData.country_id) || 0;
+            const countryValue = countryId > 0 ? countryId.toString() : "";
+            
+            setFormData({
+              username: refreshedData.username || "",
+              email: refreshedData.email || "",
+              mobile: refreshedData.phone_number || "",
+              birthdate: birthdate,
+              gender: refreshedData.gender || "",
+              country: countryValue,
+            });
+            
+            setSelectedDate(selectedDateValue);
+          }
+        } catch (refreshErr) {
+          console.error('Error refreshing user data:', refreshErr);
+        }
+        
         setUpdateSuccess(true);
         // Hide success message after 3 seconds
         setTimeout(() => {
@@ -320,7 +380,7 @@ const GeneralSettings = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Birthdate :
               </label>
-              <div className="relative">
+              <div className="relative w-full border border-[#d3d1d1] rounded-3xl focus-within:ring-2 focus-within:ring-purple-500">
                 <DatePicker
                   selected={selectedDate && !isNaN(selectedDate.getTime()) ? selectedDate : null}
                   onChange={handleDateChange}
@@ -330,20 +390,18 @@ const GeneralSettings = () => {
                   showYearDropdown
                   showMonthDropdown
                   dropdownMode="select"
-                  className="w-full px-3 py-2 pr-10 border border-[#d3d1d1] rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2 pr-10 border-0 focus:outline-none"
                   customInput={
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={formData.birthdate || ""}
-                        placeholder="Select your Birthdate"
-                        readOnly
-                        className="w-full px-3 py-2 pr-10 border border-[#d3d1d1] rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer"
-                      />
-                      <FiCalendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 size-5 pointer-events-none" />
-                    </div>
+                    <input
+                      type="text"
+                      value={formData.birthdate || ""}
+                      placeholder="Select your Birthdate"
+                      readOnly
+                      className="w-full px-3 py-2 pr-10 border-0 focus:outline-none cursor-pointer bg-transparent"
+                    />
                   }
                 />
+                <FiCalendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 size-5 pointer-events-none" />
               </div>
             </div>
 
@@ -369,7 +427,7 @@ const GeneralSettings = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-black mb-2">
                 Country :
               </label>
               <select
@@ -379,7 +437,7 @@ const GeneralSettings = () => {
                 disabled={loading}
                 className={`w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl ${
                   loading ? 'bg-gray-100 cursor-not-allowed' : ''
-                } ${formData.country === "" ? "text-gray-400" : "text-black"}`}
+                } ${formData.country === "" ? "text-black" : "text-black"}`}
               >
                 <option value="" disabled>
                   {loading ? 'Loading countries...' : 'Select your Country'}
