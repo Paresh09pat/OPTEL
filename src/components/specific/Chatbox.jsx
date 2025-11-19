@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { FaPlus, FaUser, FaUsers } from 'react-icons/fa'
 import { CiCircleMore } from 'react-icons/ci'
 import { BiBell } from 'react-icons/bi'
@@ -22,6 +22,8 @@ const Chatbox = ({ onClose, isMobile = false }) => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const containerRef = useRef(null);
+  const [containerRect, setContainerRect] = useState(null);
   const navigate = useNavigate();
   const { setCurrentChat } = useChatContext();
 
@@ -179,6 +181,31 @@ const Chatbox = ({ onClose, isMobile = false }) => {
   useEffect(() => {
   }, [activeSection]);
 
+  // Track container bounds for notification overlay alignment
+  useEffect(() => {
+    const updateContainerRect = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setContainerRect({
+          top: rect.top,
+          left: rect.left,
+          width: rect.width,
+        });
+      }
+    };
+
+    if (notificationsOpen) {
+      updateContainerRect();
+      window.addEventListener('resize', updateContainerRect);
+      window.addEventListener('scroll', updateContainerRect, true);
+    }
+
+    return () => {
+      window.removeEventListener('resize', updateContainerRect);
+      window.removeEventListener('scroll', updateContainerRect, true);
+    };
+  }, [notificationsOpen]);
+
   // Close popups when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -206,7 +233,7 @@ const Chatbox = ({ onClose, isMobile = false }) => {
  
 
   return (
-    <div className={`bg-[#EDF6F9] px-6 py-8 h-full overflow-y-auto scrollbar-hide smooth-scroll pt-0  ${isMobile ? 'w-full' : 'w-full'
+    <div ref={containerRef} className={`relative bg-[#EDF6F9] px-6 py-8 h-full overflow-y-auto scrollbar-hide smooth-scroll pt-0  ${isMobile ? 'w-full' : 'w-full'
       }`}>
       {/* Mobile Close Button */}
       {isMobile && (
@@ -223,7 +250,7 @@ const Chatbox = ({ onClose, isMobile = false }) => {
 
       {/* Profile Section */}
       <div className="pt-8 sticky top-0 z-10 bg-[#EDF6F9] ">
-                 <div className="w-full xl:p-1 lg:p-1 rounded-lg bg-white shadow-[#EDF6F9] shadow-md border border-[#d3d1d1] sticky top-5 z-10 profile-section">
+        <div className={`w-full xl:p-1 lg:p-1 rounded-lg bg-white shadow-[#EDF6F9] shadow-md border border-[#d3d1d1] sticky top-5 z-10 profile-section relative ${notificationsOpen ? 'min-h-[70vh]' : ''}`}>
           <div className="flex xl:p-1 lg:p-1 items-center justify-between">
             <div className="relative w-[58px] h-[58px] rounded-full bg-[#EDF6F9] border-[4px] border-inset border-[#ffffff] shadow-md shadow-fuchsia-400">
               {userData?.avatar_url ? (
@@ -302,39 +329,6 @@ const Chatbox = ({ onClose, isMobile = false }) => {
                   className={`text-gray-500 size-[25px] cursor-pointer transition-colors hover:text-blue-500 ${notificationsOpen ? 'text-blue-500' : ''}`}
                   onClick={toggleNotifications}
                 />
-
-                {/* Simplified Notifications Popup */}
-                {notificationsOpen && (
-                                       <div className="absolute top-12 right-0 w-60 bg-white border border-[#d3d1d1] rounded-lg shadow-lg p-3 z-50">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-medium text-gray-800 text-sm">Notifications</h3>
-                      <button className="text-xs text-blue-500 hover:text-blue-700">Mark read</button>
-                    </div>
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                      <div className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded-lg">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-800 truncate">New message from John</p>
-                          <p className="text-xs text-gray-500">2 min ago</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded-lg">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-800 truncate">Group invitation</p>
-                          <p className="text-xs text-gray-500">5 min ago</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded-lg">
-                        <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-800 truncate">System update</p>
-                          <p className="text-xs text-gray-500">1 hour ago</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* More Options Icon */}
@@ -400,6 +394,46 @@ const Chatbox = ({ onClose, isMobile = false }) => {
               </div>
             </div>
           </div>
+          {/* Full width notifications drawer */}
+          {notificationsOpen && (
+            <div className="absolute inset-0 bg-white z-20 flex flex-col p-6 overflow-y-auto rounded-lg border border-[#d3d1d1] shadow-2xl">
+              <div className="flex items-center justify-between border-b border-[#e6e6e6] pb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
+                <div className="flex items-center gap-3">
+                  <button className="text-sm text-blue-500 hover:text-blue-700">Mark read</button>
+                  <button
+                    onClick={toggleNotifications}
+                    className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                    aria-label="Close notifications"
+                  >
+                    <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div className="mt-6 flex-1 overflow-y-auto space-y-3 pr-1">
+                {[
+                  { title: 'New message from John', time: '2 min ago', indicator: 'bg-blue-500' },
+                  { title: 'Group invitation', time: '5 min ago', indicator: 'bg-green-500' },
+                  { title: 'System update', time: '1 hour ago', indicator: 'bg-gray-400' },
+                  { title: 'New follower request', time: '2 hours ago', indicator: 'bg-purple-500' },
+                  { title: 'Weekly digest is ready', time: 'Yesterday', indicator: 'bg-yellow-500' },
+                  { title: 'Comment on your post', time: '2 days ago', indicator: 'bg-red-500' },
+                  { title: 'Reminder: Complete your profile', time: '3 days ago', indicator: 'bg-indigo-500' },
+                ].map((notification, index) => (
+                  <div key={index} className="flex items-start gap-3 p-3 rounded-xl border border-[#EEF2F7] hover:border-blue-100 hover:bg-blue-50/40 transition-colors">
+                    <div className={`w-2 h-2 rounded-full mt-2 ${notification.indicator}`}></div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800">{notification.title}</p>
+                      <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
+                    </div>
+                    <button className="text-xs text-blue-500 hover:text-blue-700">View</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -616,6 +650,46 @@ const Chatbox = ({ onClose, isMobile = false }) => {
           </div>
         </div>
       </div>
+
+      {notificationsOpen && (
+        <div className="absolute inset-0 bg-white z-50 flex flex-col p-6 overflow-y-auto rounded-lg border border-[#d3d1d1] shadow-2xl">
+          <div className="flex items-center justify-between border-b border-[#e6e6e6] pb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
+            <div className="flex items-center gap-3">
+              <button className="text-sm text-blue-500 hover:text-blue-700">Mark read</button>
+              <button
+                onClick={toggleNotifications}
+                className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                aria-label="Close notifications"
+              >
+                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div className="mt-6 flex-1 overflow-y-auto space-y-3 pr-1">
+            {[
+              { title: 'New message from John', time: '2 min ago', indicator: 'bg-blue-500' },
+              { title: 'Group invitation', time: '5 min ago', indicator: 'bg-green-500' },
+              { title: 'System update', time: '1 hour ago', indicator: 'bg-gray-400' },
+              { title: 'New follower request', time: '2 hours ago', indicator: 'bg-purple-500' },
+              { title: 'Weekly digest is ready', time: 'Yesterday', indicator: 'bg-yellow-500' },
+              { title: 'Comment on your post', time: '2 days ago', indicator: 'bg-red-500' },
+              { title: 'Reminder: Complete your profile', time: '3 days ago', indicator: 'bg-indigo-500' },
+            ].map((notification, index) => (
+              <div key={index} className="flex items-start gap-3 p-3 rounded-xl border border-[#EEF2F7] hover:border-blue-100 hover:bg-blue-50/40 transition-colors">
+                <div className={`w-2 h-2 rounded-full mt-2 ${notification.indicator}`}></div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-800">{notification.title}</p>
+                  <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
+                </div>
+                <button className="text-xs text-blue-500 hover:text-blue-700">View</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
