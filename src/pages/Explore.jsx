@@ -170,8 +170,8 @@ const Explore = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-[#EDF6F9] p-3 sm:p-4 md:p-6">
+      <div className="w-full">
         {/* Header */}
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Explore</h1>
 
@@ -182,7 +182,13 @@ const Explore = () => {
             <select
               value={filters.verified}
               onChange={(e) => handleFilterChange('verified', e.target.value)}
-              className="w-full px-3 py-2 bg-white border-none rounded text-xs sm:text-sm focus:outline-none"
+              className="w-full px-3 py-2 bg-white border border-gray-300 rounded-3xl text-xs sm:text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-400 transition-colors cursor-pointer appearance-none"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 0.75rem center',
+                paddingRight: '2.5rem'
+              }}
             >
               <option value="all">Verified : All</option>
               <option value="yes">Verified : Yes</option>
@@ -192,7 +198,13 @@ const Explore = () => {
             <select
               value={filters.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="w-full px-3 py-2 bg-white border-none rounded text-xs sm:text-sm focus:outline-none"
+              className="w-full px-3 py-2 bg-white border border-gray-300 rounded-3xl text-xs sm:text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-400 transition-colors cursor-pointer appearance-none"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 0.75rem center',
+                paddingRight: '2.5rem'
+              }}
             >
               <option value="all">Status : All</option>
               <option value="online">Status : Online</option>
@@ -202,7 +214,13 @@ const Explore = () => {
             <select
               value={filters.gender}
               onChange={(e) => handleFilterChange('gender', e.target.value)}
-              className="w-full px-3 py-2 bg-white border-none rounded text-xs sm:text-sm focus:outline-none"
+              className="w-full px-3 py-2 bg-white border border-gray-300 rounded-3xl text-xs sm:text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-400 transition-colors cursor-pointer appearance-none"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 0.75rem center',
+                paddingRight: '2.5rem'
+              }}
             >
               <option value="all">Gender : All</option>
               <option value="male">Gender : Male</option>
@@ -213,7 +231,13 @@ const Explore = () => {
             <select
               value={filters.profile}
               onChange={(e) => handleFilterChange('profile', e.target.value)}
-              className="w-full px-3 py-2 bg-white border-none rounded text-xs sm:text-sm focus:outline-none"
+              className="w-full px-3 py-2 bg-white border border-gray-300 rounded-3xl text-xs sm:text-sm text-gray-700  hover:border-gray-400 transition-colors cursor-pointer appearance-none"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 0.75rem center',
+                paddingRight: '2.5rem'
+              }}
             >
               <option value="all">Profile : All</option>
               <option value="public">Profile : Public</option>
@@ -223,7 +247,13 @@ const Explore = () => {
             <select
               value={filters.age}
               onChange={(e) => handleFilterChange('age', e.target.value)}
-              className="w-full px-3 py-2 bg-white border-none rounded text-xs sm:text-sm focus:outline-none"
+              className="w-full px-3 py-2 bg-white border border-gray-300 rounded-3xl text-xs sm:text-sm text-gray-700  hover:border-gray-400 transition-colors cursor-pointer appearance-none"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 0.75rem center',
+                paddingRight: '2.5rem'
+              }}
             >
               <option value="yes">Age : Yes</option>
               <option value="no">Age : No</option>
@@ -243,7 +273,13 @@ const Explore = () => {
             <select
               value={filters.country}
               onChange={(e) => handleFilterChange('country', e.target.value)}
-              className="w-full px-3 py-2 bg-white border border-gray-300 rounded-4xl text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-4xl text-xs sm:text-sm text-gray-700  hover:border-gray-400 transition-colors cursor-pointer appearance-none"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 0.75rem center',
+                paddingRight: '2.5rem'
+              }}
             >
               <option value="all">Country : All</option>
               <option value="India">India</option>
@@ -259,7 +295,7 @@ const Explore = () => {
               placeholder="College"
               value={filters.college}
               onChange={(e) => handleFilterChange('college', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-4xl text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-4xl text-xs sm:text-sm  hover:border-gray-400 transition-colors cursor-pointer appearance-none"
             />
 
             <input
@@ -267,7 +303,7 @@ const Explore = () => {
               placeholder="University"
               value={filters.university}
               onChange={(e) => handleFilterChange('university', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-4xl text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-4xl text-xs sm:text-sm  hover:border-gray-400 transition-colors cursor-pointer appearance-none"
             />
           </div>
 
@@ -280,7 +316,7 @@ const Explore = () => {
               onChange={(e) => handleFilterChange('age_from', parseInt(e.target.value) || 18)}
               min="18"
               max="100"
-              className="w-full px-3 py-2 border border-gray-300 rounded-4xl text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-4xl text-xs sm:text-sm  hover:border-gray-400 transition-colors cursor-pointer appearance-none"
             />
 
             <input
@@ -290,7 +326,7 @@ const Explore = () => {
               onChange={(e) => handleFilterChange('age_to', parseInt(e.target.value) || 50)}
               min="18"
               max="100"
-              className="w-full px-3 py-2 border border-gray-300 rounded-4xl text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-4xl text-xs sm:text-sm  hover:border-gray-400 transition-colors cursor-pointer appearance-none"
             />
           </div>
 
@@ -299,7 +335,7 @@ const Explore = () => {
             <button
               onClick={handleSearch}
               disabled={loading}
-              className="flex items-center gap-2 px-6 sm:px-8 py-2 bg-blue-600 text-white rounded-full text-xs sm:text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center cursor-pointer gap-2 px-6 sm:px-8 py-2 bg-blue-600 text-white rounded-full text-xs sm:text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Search className="w-4 h-4" />
               <span>{loading ? 'SEARCHING...' : 'SEARCH'}</span>
@@ -410,14 +446,14 @@ const Explore = () => {
                   <div className="flex items-center gap-2 sm:gap-3 justify-end sm:justify-start">
                     <button
                       onClick={() => window.open(user.profile_url, '_blank')}
-                      className="px-3 sm:px-4 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-full text-xs sm:text-sm flex items-center gap-2 hover:bg-gray-50 transition-colors whitespace-nowrap"
+                      className="px-3 cursor-pointer sm:px-4 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-full text-xs sm:text-sm flex items-center gap-2 hover:bg-gray-50 transition-colors whitespace-nowrap"
                     >
                       <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span>View Profile</span>
                     </button>
                     <button
                       onClick={() => handleFriendRequest(user.user_id)}
-                      className="px-3 sm:px-4 py-1.5 bg-blue-600 text-white rounded-full text-xs sm:text-sm flex items-center gap-2 hover:bg-blue-700 transition-colors whitespace-nowrap"
+                      className="px-3 cursor-pointer sm:px-4 py-1.5 bg-blue-600 text-white rounded-full text-xs sm:text-sm flex items-center gap-2 hover:bg-blue-700 transition-colors whitespace-nowrap"
                     >
                       <UserPlus className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span>Add Friend</span>
@@ -539,7 +575,7 @@ const Explore = () => {
                   <div className="flex items-center gap-2 sm:gap-3 justify-end sm:justify-start">
                     <button
                       onClick={() => navigate(`/page/${encodeURIComponent(page.slug)}`)}
-                      className="px-3 sm:px-4 py-1.5 bg-blue-600 text-white rounded-full text-xs sm:text-sm flex items-center gap-2 hover:bg-blue-700 transition-colors whitespace-nowrap"
+                      className="px-3 cursor-pointer sm:px-4 py-1.5 bg-blue-600 text-white rounded-full text-xs sm:text-sm flex items-center gap-2 hover:bg-blue-700 transition-colors whitespace-nowrap"
                     >
                       <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span>View Page</span>
@@ -615,7 +651,7 @@ const Explore = () => {
                   <div className="flex items-center gap-2 sm:gap-3 justify-end sm:justify-start">
                     <button
                       onClick={() => navigate(`/group/${group.group_id}`)}
-                      className="px-3 sm:px-4 py-1.5 bg-blue-600 text-white rounded-full text-xs sm:text-sm flex items-center gap-2 hover:bg-blue-700 transition-colors whitespace-nowrap"
+                      className="px-3 cursor-pointer sm:px-4 py-1.5 bg-blue-600 text-white rounded-full text-xs sm:text-sm flex items-center gap-2 hover:bg-blue-700 transition-colors whitespace-nowrap"
                     >
                       <Users className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span>View Group</span>
