@@ -62,7 +62,7 @@ const Home = () => {
   const [followedUsers, setFollowedUsers] = useState(new Set());
   const [userStories, setUserStories] = useState([]);
   const [selectedUserForStories, setSelectedUserForStories] = useState(null);
-  const [showStoriesPreview, setShowStoriesPreview] = useState(false); 
+  const [showStoriesPreview, setShowStoriesPreview] = useState(false);
   const [friendSuggestions, setFriendSuggestions] = useState([
   ]);
 
@@ -77,25 +77,25 @@ const Home = () => {
   }); // Track which posts are saved
   const [postComments, setPostComments] = useState({}); // Track comments for each post
   const [notification, setNotification] = useState({ show: false, message: '', type: 'success' });
-  
+
   // Image popup state
   const [imagePopup, setImagePopup] = useState({ show: false, images: [], currentIndex: 0 });
-  
+
   const [postReactions, setPostReactions] = useState({}); // Track reactions for each post
 
   const getNewFeeds = async (type) => {
     const formData = new URLSearchParams();
-    
+
     if (type) {
       formData.append('post_type', type);
     }
 
-    
+
     try {
       setError(null);
       const accessToken = localStorage.getItem("access_token");
       setLoading(true);
-     
+
       const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/v1/new-feed`, {
         headers: {
           'Content-Type': 'application/json',
@@ -105,7 +105,7 @@ const Home = () => {
       })
       const data = await response.data;
 
-      
+
       // Handle new API response structure
       if (data?.data) {
         setNewFeeds(data.data);
@@ -130,14 +130,14 @@ const Home = () => {
           localStorage.setItem("saved_posts", JSON.stringify([...combined]));
           return combined;
         });
-        
+
         // Load reactions for all posts after feed is loaded
         loadAllPostReactions(feedData);
       }
     } catch (error) {
-        setError(error.message);
-     
-    }finally{
+      setError(error.message);
+
+    } finally {
       setLoading(false);
     }
   }
@@ -185,7 +185,7 @@ const Home = () => {
     setLoading(true);
     try {
       const accessToken = localStorage.getItem("access_token");
-    
+
       const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/v1/posts/${post_id}/reactions`, {
         headers: {
           'Content-Type': 'application/json',
@@ -194,7 +194,7 @@ const Home = () => {
         },
       })
       const data = await response.data;
-        // Update the liked state and like count
+      // Update the liked state and like count
       if (data?.ok === true) {
         const wasLiked = likedPosts.has(post_id);
 
@@ -231,7 +231,7 @@ const Home = () => {
     }
   }
 
- 
+
 
   const fetchComments = async (post_id) => {
     try {
@@ -268,8 +268,8 @@ const Home = () => {
     }
     catch (error) {
       return [];
-     
-     
+
+
     }
   }
 
@@ -277,7 +277,7 @@ const Home = () => {
     setLoading(true);
     try {
       const accessToken = localStorage.getItem("access_token");
- 
+
       const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/v1/posts/${post_id}/save`, {}, {
         headers: {
           'Content-Type': 'application/json',
@@ -309,9 +309,9 @@ const Home = () => {
               : post
           )
         );
-      } else {    
+      } else {
       }
-    } catch (error) { 
+    } catch (error) {
     } finally {
       setLoading(false);
     }
@@ -367,7 +367,7 @@ const Home = () => {
   // Load reactions for all posts
   const loadAllPostReactions = async (posts) => {
     if (!posts || posts.length === 0) return;
-    
+
     try {
       const reactionPromises = posts.map(async (post) => {
         if (post.id) {
@@ -376,9 +376,9 @@ const Home = () => {
         }
         return null;
       });
-      
+
       const results = await Promise.all(reactionPromises);
-      
+
       // Update postReactions state with all reaction data
       const newPostReactions = {};
       results.forEach(result => {
@@ -386,11 +386,11 @@ const Home = () => {
           newPostReactions[result.postId] = result.reactionData.data?.reaction_type || null;
         }
       });
-      
+
       setPostReactions(prev => ({ ...prev, ...newPostReactions }));
-      
+
       // Update newFeeds with reaction data
-      setNewFeeds(prev => 
+      setNewFeeds(prev =>
         prev.map(post => {
           const result = results.find(r => r?.postId === post.id);
           if (result && result.reactionData?.ok === true) {
@@ -404,11 +404,11 @@ const Home = () => {
           return post;
         })
       );
-      
+
     } catch (error) {
       console.error('Error loading post reactions:', error);
     }
-  } 
+  }
 
   const showNotification = (message, type = 'success') => {
     setNotification({ show: true, message, type });
@@ -475,7 +475,7 @@ const Home = () => {
       const accessToken = localStorage.getItem("access_token");
 
 
-      
+
       const response = await axios.post(
         `${import.meta.env.VITE_API_URL}/api/v1/posts/${postId}/reactions`,
         { reaction: reactionType.toString() }, // request body
@@ -491,40 +491,40 @@ const Home = () => {
       if (data?.ok === true) {
         const isRemoved = data.data.action === 'removed';
         const totalReactions = Object.values(data.data.reaction_counts).reduce((sum, count) => sum + count, 0);
-    
-        
+
+
         // Update the reaction count in newFeeds using the new API response
         setNewFeeds(prev =>
           prev.map(post =>
             post.id === postId
               ? {
-                  ...post,
-                  reactions_count: totalReactions,
-                  is_liked: !isRemoved,
-                  reaction_counts: data.data.reaction_counts,
-                  current_reaction: isRemoved ? null : data.data.user_reaction,
-                  user_reaction: isRemoved ? null : data.data.user_reaction
-                }
+                ...post,
+                reactions_count: totalReactions,
+                is_liked: !isRemoved,
+                reaction_counts: data.data.reaction_counts,
+                current_reaction: isRemoved ? null : data.data.user_reaction,
+                user_reaction: isRemoved ? null : data.data.user_reaction
+              }
               : post
           )
         );
-        
+
         // Store the reaction type for this post
         setPostReactions(prev => ({
           ...prev,
           [postId]: isRemoved ? null : data.data.user_reaction
         }));
-        
+
         console.log('Reaction updated:', {
           postId,
           reactionType: data.data.user_reaction,
           isRemoved,
           currentReaction: isRemoved ? null : data.data.user_reaction
         });
-        
+
         if (showNotification) {
-          const message = isRemoved 
-            ? `${data.data.reaction_name} reaction removed!` 
+          const message = isRemoved
+            ? `${data.data.reaction_name} reaction removed!`
             : `${data.data.reaction_name} reaction added!`;
           showNotification(message, 'success');
         }
@@ -655,25 +655,25 @@ const Home = () => {
     setLoading(true);
     try {
       const accessToken = localStorage.getItem("access_token");
-  
+
       // API body with text field
       const requestBody = { text: comment };
-  
+
       const response = await axios.post(
         `${import.meta.env.VITE_API_URL}/api/v1/posts/${post_id}/comments`,
         requestBody,
         {
           headers: {
-         
+
             "Authorization": `Bearer ${accessToken}`,
-       
+
           }
         }
       );
-      console.log("response>>",response)
-  
+      console.log("response>>", response)
+
       const data = response.data;
-  
+
       if (data?.ok === true) {
         const newComment = {
           id: Date.now(),
@@ -686,12 +686,12 @@ const Home = () => {
             avatar: '/perimg.png'
           }
         };
-  
+
         setPostComments(prev => {
           const currentComments = prev[post_id] || [];
           return { ...prev, [post_id]: [newComment, ...currentComments] };
         });
-  
+
         setNewFeeds(prev =>
           prev.map(post =>
             post.id === post_id
@@ -699,8 +699,8 @@ const Home = () => {
               : post
           )
         );
-  
-        console.log("data>>",data)
+
+        console.log("data>>", data)
         return { success: true, comment: newComment };
       } else {
         return { success: false, error: data };
@@ -713,14 +713,14 @@ const Home = () => {
       setLoading(false);
     }
   };
-  
+
 
 
   const getSession = async () => {
     setLoading(true);
     try {
 
-     
+
       setError(null);
 
       // Get access token from localStorage
@@ -754,8 +754,8 @@ const Home = () => {
 
     } catch (error) {
       setError(error.message);
-     
-    }finally{
+
+    } finally {
       setLoading(false);
     }
 
@@ -794,43 +794,43 @@ const Home = () => {
 
   const getuserStories = async () => {
     setLoading(true);
-   try {
-    const accessToken = localStorage.getItem("access_token");
-    const formData = new URLSearchParams();
-    formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
-    // formData.append('type', 'get');
-    const response = await fetch(`https://ouptel.com/api/get-user-stories?access_token=${accessToken}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'X-Requested-With': 'XMLHttpRequest',
-        "Accept": "application/json"
-      },
-      body: formData.toString(),
-    })
-    const data = await response.json();
+    try {
+      const accessToken = localStorage.getItem("access_token");
+      const formData = new URLSearchParams();
+      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
+      // formData.append('type', 'get');
+      const response = await fetch(`https://ouptel.com/api/get-user-stories?access_token=${accessToken}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-Requested-With': 'XMLHttpRequest',
+          "Accept": "application/json"
+        },
+        body: formData.toString(),
+      })
+      const data = await response.json();
 
-    
-    if (data?.api_status === 200) {
-      // Extract the stories array from the response
-      const storiesData = data?.stories || data?.data || [];
-     
-      setUserStories(storiesData);
-    } else {
-      setError(data?.errors?.error_text || 'Failed to fetch stories');
+
+      if (data?.api_status === 200) {
+        // Extract the stories array from the response
+        const storiesData = data?.stories || data?.data || [];
+
+        setUserStories(storiesData);
+      } else {
+        setError(data?.errors?.error_text || 'Failed to fetch stories');
+      }
+      setLoading(false);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);  
-   } catch (error) {
-    setError(error.message);
-   } finally {
-    setLoading(false);
-   }
   }
 
- 
- 
+
+
   const handleStoryClick = (user) => {
-  
+
     setSelectedUserForStories(user);
     setShowStoriesPreview(true);
   };
@@ -853,8 +853,8 @@ const Home = () => {
       {/* Notification */}
       {notification.show && (
         <div className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg transition-all duration-300 ${notification.type === 'success'
-            ? 'bg-green-500 text-white'
-            : 'bg-red-500 text-white'
+          ? 'bg-green-500 text-white'
+          : 'bg-red-500 text-white'
           }`}>
           {notification.message}
         </div>
@@ -866,23 +866,23 @@ const Home = () => {
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 md:mb-6 px-2 md:px-4">Vibe</h2>
             <div className="px-2 md:px-4">
               <ScrollableSection>
-                                 {Array.isArray(userStories || []) && (userStories || []).length > 0 ? (
-                   (userStories || []).map((user, index) => {
-                      
-                     return (
-                       <FeedCard
-                         key={user.user_id || index}
-                         image={user.stories && user.stories.length > 0 ? user.stories[0].thumbnail : (user.avatar_url || user.avatar)}
-                         username={user.username || user.first_name}
-                         isVideo={false}
-                         avatar={user.avatar_url || user.avatar}
-                         onClick={() => handleStoryClick(user)}
-                       />
-                     );
-                   })
-                 ) : (
+                {Array.isArray(userStories || []) && (userStories || []).length > 0 ? (
+                  (userStories || []).map((user, index) => {
+
+                    return (
+                      <FeedCard
+                        key={user.user_id || index}
+                        image={user.stories && user.stories.length > 0 ? user.stories[0].thumbnail : (user.avatar_url || user.avatar)}
+                        username={user.username || user.first_name}
+                        isVideo={false}
+                        avatar={user.avatar_url || user.avatar}
+                        onClick={() => handleStoryClick(user)}
+                      />
+                    );
+                  })
+                ) : (
                   ""
-                 )}
+                )}
               </ScrollableSection>
             </div>
           </div>
@@ -909,54 +909,52 @@ const Home = () => {
             </div>
 
             <div className="mb-4 md:mb-6 mt-4 flex flex-col gap-4 md:gap-6 smooth-content-transition ">
-              {loading ? <Loader /> : (
-                newFeeds?.map((post) => {
-                  const postId = post?.id;
-                  // Get comments for this post from state, with fallback to ref
-                  const commentsForPost = postComments[postId] || [];
-
-              
-
-                  return (
+              {newFeeds?.map((post) => {
+                const postId = post?.id;
+                // Get comments for this post from state, with fallback to ref
+                const commentsForPost = postComments[postId] || [];
 
 
-                    <PostCard
-                      key={postId}
-                      post_id={postId}
-                     
-                      user={post?.author || post?.publisher}
-                      content={post?.post_text || post?.postText}
-                      blog={post?.blog}
-                      iframelink={post?.post_youtube || post?.postYoutube}
-                      postfile={post?.post_file || post?.postFile}
-                      postFileName={post?.postFileName}
-                      {...getFileTypeProps(post)}
-                      likes={post?.reactions_count || post?.post_likes}
-                      comments={post?.comments_count || post?.post_comments}
-                      shares={post?.shares_count || post?.post_shares}
-                      saves={post?.is_post_saved}
-                      timeAgo={post?.created_at_human || post?.post_created_at}
-                      handleLike={handleLike}
-                      
-                      isLiked={post?.is_liked || likedPosts.has(postId)}
-                      isSaved={savedPosts.has(postId)}
-                      fetchComments={fetchComments}
-                      commentsData={commentsForPost}
-                      savePost={savePost}
-                      reportPost={reportPost}
-                      hidePost={hidePost}
-                      commentPost={commentPost}
-                      getNewsFeed={getNewFeeds}
-                      openImagePopup={openImagePopup}
-                      handleReaction={handleReaction}
-                      postReaction={postReactions[post?.id]}  
-                      postReactionCounts={post?.reaction_counts}
-                      currentReaction={post?.current_reaction || post?.user_reaction}
-                      userReaction={post?.user_reaction}
-                    />
-                  );
-                })
-              )}
+
+                return (
+
+
+                  <PostCard
+                    key={postId}
+                    post_id={postId}
+
+                    user={post?.author || post?.publisher}
+                    content={post?.post_text || post?.postText}
+                    blog={post?.blog}
+                    iframelink={post?.post_youtube || post?.postYoutube}
+                    postfile={post?.post_file || post?.postFile}
+                    postFileName={post?.postFileName}
+                    {...getFileTypeProps(post)}
+                    likes={post?.reactions_count || post?.post_likes}
+                    comments={post?.comments_count || post?.post_comments}
+                    shares={post?.shares_count || post?.post_shares}
+                    saves={post?.is_post_saved}
+                    timeAgo={post?.created_at_human || post?.post_created_at}
+                    handleLike={handleLike}
+
+                    isLiked={post?.is_liked || likedPosts.has(postId)}
+                    isSaved={savedPosts.has(postId)}
+                    fetchComments={fetchComments}
+                    commentsData={commentsForPost}
+                    savePost={savePost}
+                    reportPost={reportPost}
+                    hidePost={hidePost}
+                    commentPost={commentPost}
+                    getNewsFeed={getNewFeeds}
+                    openImagePopup={openImagePopup}
+                    handleReaction={handleReaction}
+                    postReaction={postReactions[post?.id]}
+                    postReactionCounts={post?.reaction_counts}
+                    currentReaction={post?.current_reaction || post?.user_reaction}
+                    userReaction={post?.user_reaction}
+                  />
+                );
+              })}
 
             </div>
 
@@ -994,7 +992,7 @@ const Home = () => {
       {showStoriesPreview && selectedUserForStories && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg max-w-md w-full max-h-[80vh] h-full overflow-y-auto">
-                            <div className="p-4 border-b border-[#d3d1d1] flex items-center justify-between">
+            <div className="p-4 border-b border-[#d3d1d1] flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <img
                   src={selectedUserForStories.avatar_url || selectedUserForStories.avatar || "/perimg.png"}
@@ -1021,7 +1019,7 @@ const Home = () => {
                 ×
               </button>
             </div>
-            
+
             <div className="p-4">
               {selectedUserForStories.stories && selectedUserForStories.stories.length > 0 ? (
                 <div className="space-y-4">

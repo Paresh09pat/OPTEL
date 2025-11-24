@@ -17,6 +17,11 @@ const DesignSettings = () => {
   const [updateLoading, setUpdateLoading] = useState(false);
   const [updateSuccess, setUpdateSuccess] = useState(false);
   const [selectedTheme, setSelectedTheme] = useState('default');
+  const [isCoverImageValid, setIsCoverImageValid] = useState(true);
+
+  useEffect(() => {
+    setIsCoverImageValid(Boolean(designSettings.cover_path));
+  }, [designSettings.cover_path]);
 
   // Fetch design settings from API
   useEffect(() => {
@@ -39,6 +44,7 @@ const DesignSettings = () => {
         if (data.api_status === '200') {
           setDesignData(data.design_settings);
           setDesignSettings(data.design_settings);
+          setIsCoverImageValid(Boolean(data.design_settings.cover_path));
           
           // Set theme based on cover default status
           setSelectedTheme(data.design_settings.is_cover_default ? 'default' : 'my-background');
@@ -57,6 +63,7 @@ const DesignSettings = () => {
           is_avatar_default: false,
           is_cover_default: false
         });
+        setIsCoverImageValid(false);
         setSelectedTheme('default');
       } finally {
         setLoading(false);
@@ -111,6 +118,7 @@ const DesignSettings = () => {
         setUpdateSuccess(true);
         setDesignData(data.design_settings);
         setDesignSettings(data.design_settings);
+        setIsCoverImageValid(Boolean(data.design_settings.cover_path));
         
         // Show success message for 3 seconds
         setTimeout(() => {
@@ -150,11 +158,12 @@ const DesignSettings = () => {
                 className="w-full h-48 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center cursor-pointer hover:border-purple-400 transition-colors"
                 onClick={() => handleImageUpload('cover')}
               >
-                {designSettings.cover_path ? (
+                {designSettings.cover_path && isCoverImageValid ? (
                   <img 
                     src={designSettings.cover_path} 
                     alt="Background" 
                     className="w-full h-full object-cover rounded-lg"
+                    onError={() => setIsCoverImageValid(false)}
                   />
                 ) : (
                   <div className="text-center">
