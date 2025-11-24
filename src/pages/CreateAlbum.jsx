@@ -57,7 +57,7 @@ const CreateAlbum = () => {
       );
 
       const data = await response.json();
-cr
+    
       if (data.ok === true) {
         setAlbumName("");
         setSelectedFiles([]);
@@ -69,14 +69,14 @@ cr
       console.error("Error creating album:", error);
       toast.error("Error creating album. Please try again.");
     }
-    finally{
-        setLoading(false)
+    finally {
+      setLoading(false)
     }
   };
 
   return (
-    <>  
-    {loading && <Loader/>}
+    <>
+      {loading && <Loader />}
       <div className="bg-white w-full h-full flex flex-col">
         <div className="w-full h-[98px] sticky pt-8 top-0 z-10 bg-[#EDF6F9]">
           <div className="flex items-center justify-between h-full px-4 md:px-7 md:flex-row gap-4">
