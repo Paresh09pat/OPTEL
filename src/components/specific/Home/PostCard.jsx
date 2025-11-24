@@ -1,12 +1,15 @@
-import { memo, useState, useEffect, useCallback } from 'react';
-import { Heart, MessageCircle, Share, Bookmark, MoreHorizontal, Smile, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown, X } from 'lucide-react';
-import { IoBookmark } from "react-icons/io5";
+import axios from 'axios';
+import { Bookmark, ChevronDown, ChevronUp, MessageCircle, MoreHorizontal, Share, Smile, ThumbsUp, X } from 'lucide-react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import { FaFilePdf, FaPaperPlane } from 'react-icons/fa';
+import { IoBookmark } from "react-icons/io5";
 import { useNavigate } from 'react-router-dom';
-import SharePopup from './SharePopup';
-import Avatar from '../../Avatar';
+import { toast } from 'react-toastify';
 import { useUser } from '../../../context/UserContext';
-const PostCard = ({ user, content, image, video, audio, file, likes, comments, shares, saves, timeAgo, post_id, handleLike, handleDislike, isLiked, fetchComments, commentsData, savePost, isSaved, blog, multipleImages, hasMultipleImages, reportPost, hidePost, commentPost, iframelink, postfile, postFileName, getNewsFeed, openImagePopup, handleReaction, postReaction, postReactionCounts, currentReaction, userReaction }) => {
+import { baseUrl } from '../../../utils/constant';
+import Avatar from '../../Avatar';
+import SharePopup from './SharePopup';
+const PostCard = ({ user, content, image, video, audio, file, likes, comments, shares, saves, timeAgo, post_id, handleLike, handleDislike, isLiked, commentsData, savePost, isSaved, blog, multipleImages, hasMultipleImages, reportPost, hidePost, iframelink, postfile, postFileName, getNewsFeed, openImagePopup, handleReaction, postReaction, postReactionCounts, currentReaction, userReaction }) => {
   const navigate = useNavigate();
   const { userData } = useUser();
   const [clickedComments, setClickedComments] = useState(false);
@@ -33,6 +36,26 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
   const [editReplyText, setEditReplyText] = useState('');
   const [hoverTimeout, setHoverTimeout] = useState(null);
   const [showReactionPopup, setShowReactionPopup] = useState(false);
+  const buildAuthHeaders = useCallback(() => {
+    const accessToken = localStorage.getItem("access_token");
+    const headers = {
+      'Content-Type': 'application/json',
+      Accept: 'application/json'
+    };
+    if (accessToken) {
+      headers.Authorization = `Bearer ${accessToken}`;
+    }
+    return headers;
+  }, []);
+  const findParentCommentId = useCallback((replyId) => {
+    const normalizedReplyId = Number(replyId);
+    for (const [commentId, replies] of Object.entries(commentReplies)) {
+      if (Array.isArray(replies) && replies.some((reply) => Number(reply.id) === normalizedReplyId || Number(reply.reply_id) === normalizedReplyId)) {
+        return Number(commentId);
+      }
+    }
+    return null;
+  }, [commentReplies]);
   // Update local comments when prop changes
   useEffect(() => {
     if (commentsData && Array.isArray(commentsData)) {
@@ -132,22 +155,52 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
     }
   }, [showSharePopup]);
 
+  const fetchPostComments = useCallback(async (showLoader = true) => {
+    if (showLoader) {
+      setIsLoadingComments(true);
+    }
+    try {
+      const response = await axios.get(
+        `${baseUrl}/api/v1/posts/${post_id}/comments`,
+        {
+          params: { per_page: 20 },
+          headers: buildAuthHeaders()
+        }
+      );
+      const data = response.data;
+      if (data?.ok === true) {
+        const fetched =
+          (Array.isArray(data?.data?.comments) && data.data.comments) ||
+          (Array.isArray(data?.data?.data) && data.data.data) ||
+          (Array.isArray(data?.data) && data.data) ||
+          [];
+        if (Array.isArray(fetched)) {
+          setLocalCommentsData(fetched);
+          return fetched;
+        }
+      } else {
+        console.log('Failed to fetch comments:', data);
+      }
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+    } finally {
+      if (showLoader) {
+        setIsLoadingComments(false);
+      }
+    }
+    return [];
+  }, [post_id, buildAuthHeaders]);
+
   const handleClickComments = useCallback(async () => {
     try {
       if (!clickedComments) {
-        setIsLoadingComments(true);
-        const fetchedComments = await fetchComments(post_id);
-
-        if (fetchedComments && Array.isArray(fetchedComments)) {
-          setLocalCommentsData(fetchedComments);
-        }
-        setIsLoadingComments(false);
+        await fetchPostComments(true);
       }
       setClickedComments(!clickedComments);
     } catch (error) {
-      setIsLoadingComments(false);
+      console.error('Error toggling comments:', error);
     }
-  }, [clickedComments, fetchComments, post_id]);
+  }, [clickedComments, fetchPostComments]);
 
   const toggleShowAllComments = useCallback(() => {
     setShowAllComments(!showAllComments);
@@ -314,23 +367,35 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
   }, [post_id, content]);
 
   const handleCommentPost = useCallback(async () => {
-    if (!commentInput.trim()) return; // Don't post empty comments
+    if (!commentInput.trim()) {
+      toast.error('Please enter a comment before posting.');
+      return; // Don't post empty comments
+    }
 
-    const comment = commentInput;
+    const comment = commentInput.trim();
     console.log(comment);
 
     try {
-      const result = await commentPost(post_id, commentInput);
-      if (result.success) {
-        // Clear the comment input after successful submission
+      const response = await axios.post(
+        `${baseUrl}/api/v1/posts/${post_id}/comments`,
+        { text: comment },
+        {
+          headers: buildAuthHeaders()
+        }
+      );
+      const data = response.data;
+      if (data?.ok === true) {
         setCommentInput('');
-        // Close any open menus
         setShowOptionsMenu(false);
+        await fetchPostComments(false);
+      } else {
+        toast.error(data?.message || 'Unable to post comment. Please try again.');
       }
     } catch (error) {
       console.error('Error posting comment:', error);
+      toast.error(error?.response?.data?.message || error?.message || 'Something went wrong while posting your comment.');
     }
-  }, [post_id, commentInput, commentPost]);
+  }, [post_id, commentInput, buildAuthHeaders, fetchPostComments]);
 
   // Add reply handlers
   const handleStartReply = useCallback((commentId, commenterName) => {
@@ -356,7 +421,6 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
 
   // Define fetchReply function first
   const fetchReply = useCallback(async (comment_id) => {
-    // If replies are already loaded, toggle them
     if (commentReplies[comment_id]) {
       setCommentReplies(prev => {
         const newReplies = { ...prev };
@@ -369,79 +433,80 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
     setLoadingReplies(prev => ({ ...prev, [comment_id]: true }));
 
     try {
-      const accessToken = localStorage.getItem("access_token");
-      const formData = new URLSearchParams();
-      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
-      formData.append('type', 'fetch_comments_reply');
-      formData.append('comment_id', comment_id);
-      const response = await fetch(`https://ouptel.com/api/comments?access_token=${accessToken}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-Requested-With': 'XMLHttpRequest',
-          "Accept": "application/json"
-        },
-        body: formData.toString(),
-      });
-      const data = await response.json();
-      if (data?.api_status === 200) {
-        console.log('Replies fetched:', data);
+      const response = await axios.get(
+        `${baseUrl}/api/v1/comments/${comment_id}/replies`,
+        {
+          params: { per_page: 20 },
+          headers: buildAuthHeaders()
+        }
+      );
+      const data = response.data;
+      if (data?.ok === true) {
         setCommentReplies(prev => ({
           ...prev,
-          [comment_id]: data.data || []
+          [comment_id]: data?.data?.replies || data?.data || []
         }));
       } else {
-        console.log('Failed to fetch replies:', response);
+        console.log('Failed to fetch replies:', data);
       }
     } catch (error) {
       console.error('Error fetching replies:', error);
     } finally {
       setLoadingReplies(prev => ({ ...prev, [comment_id]: false }));
     }
-  }, [commentReplies]);
+  }, [commentReplies, buildAuthHeaders]);
+
+  const sendCommentReaction = useCallback(async ({ targetId, reactionType, loadingKey, refreshRepliesFor = null }) => {
+    setCommentActionLoading(prev => ({ ...prev, [loadingKey]: true }));
+    try {
+      const response = await axios.post(
+        `${baseUrl}/api/v1/comments/${targetId}/reactions`,
+        { reaction: reactionType },
+        { headers: buildAuthHeaders() }
+      );
+      const data = response.data;
+      if (data?.ok === true) {
+        if (refreshRepliesFor) {
+          fetchReply(refreshRepliesFor);
+        } else if (clickedComments) {
+          await fetchPostComments(false);
+        }
+      } else {
+        console.log('Failed to react on comment:', data);
+      }
+    } catch (error) {
+      console.error('Error reacting on comment:', error);
+    } finally {
+      setCommentActionLoading(prev => ({ ...prev, [loadingKey]: false }));
+    }
+  }, [buildAuthHeaders, clickedComments, fetchPostComments, fetchReply]);
 
   // Define editComment function after fetchReply
   const editComment = useCallback(async (comment_id, newText) => {
     setCommentActionLoading(prev => ({ ...prev, [`edit_${comment_id}`]: true }));
     try {
-      const accessToken = localStorage.getItem("access_token");
-      const formData = new URLSearchParams();
-      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
-      formData.append('type', 'edit');
-      formData.append('comment_id', comment_id);
-      formData.append('text', newText);
-      const response = await fetch(`https://ouptel.com/api/comments?access_token=${accessToken}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-Requested-With': 'XMLHttpRequest',
-          "Accept": "application/json"
-        },
-        body: formData.toString(),
-      });
-      const data = await response.json();
-      if (data?.api_status === 200) {
-        console.log('Comment edit successful:', data);
-        // Refresh comments to show updated text
+      const response = await axios.put(
+        `${baseUrl}/api/v1/comments/${comment_id}`,
+        { text: newText },
+        { headers: buildAuthHeaders() }
+      );
+      const data = response.data;
+      if (data?.ok === true) {
         if (clickedComments) {
-          const fetchedComments = await fetchComments(post_id);
-          if (fetchedComments && Array.isArray(fetchedComments)) {
-            setLocalCommentsData(fetchedComments);
-          }
+          await fetchPostComments(false);
         }
-        // Also refresh replies if any are loaded
         if (commentReplies[comment_id]) {
           fetchReply(comment_id);
         }
       } else {
-        console.log('Failed to edit comment:', response);
+        console.log('Failed to edit comment:', data);
       }
     } catch (error) {
       console.error('Error editing comment:', error);
     } finally {
       setCommentActionLoading(prev => ({ ...prev, [`edit_${comment_id}`]: false }));
     }
-  }, [fetchComments, post_id, clickedComments, commentReplies, fetchReply]);
+  }, [buildAuthHeaders, clickedComments, commentReplies, fetchPostComments, fetchReply]);
 
   const handleSubmitEdit = useCallback(async (commentId) => {
     if (!editText.trim()) return;
@@ -458,41 +523,26 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
   const editCommentReply = useCallback(async (reply_id, newText) => {
     setCommentActionLoading(prev => ({ ...prev, [`edit_reply_${reply_id}`]: true }));
     try {
-      const accessToken = localStorage.getItem("access_token");
-      const formData = new URLSearchParams();
-      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
-      formData.append('type', 'edit_reply');
-      formData.append('reply_id', reply_id);
-      formData.append('text', newText);
-      const response = await fetch(`https://ouptel.com/api/comments?access_token=${accessToken}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-Requested-With': 'XMLHttpRequest',
-          "Accept": "application/json"
-        },
-        body: formData.toString(),
-      });
-      const data = await response.json();
-      if (data?.api_status === 200) {
-        console.log('Reply edit successful:', data);
-        // Refresh replies to show updated text
-        // Find which comment this reply belongs to and refresh it
-        for (const commentId of Object.keys(commentReplies)) {
-          if (commentReplies[commentId].some(reply => reply.id === reply_id)) {
-            fetchReply(commentId);
-            break;
-          }
+      const response = await axios.put(
+        `${baseUrl}/api/v1/comments/${reply_id}`,
+        { text: newText },
+        { headers: buildAuthHeaders() }
+      );
+      const data = response.data;
+      if (data?.ok === true) {
+        const parentCommentId = findParentCommentId(reply_id);
+        if (parentCommentId) {
+          fetchReply(parentCommentId);
         }
       } else {
-        console.log('Failed to edit reply:', response);
+        console.log('Failed to edit reply:', data);
       }
     } catch (error) {
       console.error('Error editing reply:', error);
     } finally {
       setCommentActionLoading(prev => ({ ...prev, [`edit_reply_${reply_id}`]: false }));
     }
-  }, [commentReplies, fetchReply]);
+  }, [buildAuthHeaders, findParentCommentId, fetchReply]);
 
   // Add reply edit handlers
   const handleStartEditReply = useCallback((replyId, currentText) => {
@@ -520,37 +570,18 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
   const deleteComment = useCallback(async (comment_id) => {
     setCommentActionLoading(prev => ({ ...prev, [`delete_${comment_id}`]: true }));
     try {
-      const accessToken = localStorage.getItem("access_token");
-      const formData = new URLSearchParams();
-      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
-      formData.append('type', 'delete');
-      formData.append('comment_id', comment_id);
-      const response = await fetch(`https://ouptel.com/api/comments?access_token=${accessToken}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-Requested-With': 'XMLHttpRequest',
-          "Accept": "application/json"
-        },
-        body: formData.toString(),
-      });
-      const data = await response.json();
-      if (data?.api_status === 200) {
-        console.log('Comment delete successful:', data);
-
-        // Call getNewsFeed to refresh the entire feed
+      const response = await axios.delete(
+        `${baseUrl}/api/v1/comments/${comment_id}`,
+        { headers: buildAuthHeaders() }
+      );
+      const data = response.data;
+      if (data?.ok === true) {
         if (getNewsFeed && typeof getNewsFeed === 'function') {
           getNewsFeed();
         }
-
-        // Refresh comments to show updated list
         if (clickedComments) {
-          const fetchedComments = await fetchComments(post_id);
-          if (fetchedComments && Array.isArray(fetchedComments)) {
-            setLocalCommentsData(fetchedComments);
-          }
+          await fetchPostComments(false);
         }
-        // Also remove any loaded replies for this comment
         if (commentReplies[comment_id]) {
           setCommentReplies(prev => {
             const newReplies = { ...prev };
@@ -559,96 +590,63 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
           });
         }
       } else {
-        console.log('Failed to delete comment:', response);
+        console.log('Failed to delete comment:', data);
       }
     } catch (error) {
       console.error('Error deleting comment:', error);
     } finally {
       setCommentActionLoading(prev => ({ ...prev, [`delete_${comment_id}`]: false }));
     }
-  }, [fetchComments, post_id, clickedComments, commentReplies, getNewsFeed]);
+  }, [buildAuthHeaders, clickedComments, commentReplies, fetchPostComments, getNewsFeed]);
 
   // New function for deleting comment replies
   const deleteCommentReply = useCallback(async (reply_id) => {
     setCommentActionLoading(prev => ({ ...prev, [`delete_reply_${reply_id}`]: true }));
     try {
-      const accessToken = localStorage.getItem("access_token");
-      const formData = new URLSearchParams();
-      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
-      formData.append('type', 'delete_reply');
-      formData.append('reply_id', reply_id);
-      const response = await fetch(`https://ouptel.com/api/comments?access_token=${accessToken}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-Requested-With': 'XMLHttpRequest',
-          "Accept": "application/json"
-        },
-        body: formData.toString(),
-      });
-      const data = await response.json();
-      if (data?.api_status === 200) {
-        console.log('Reply delete successful:', data);
-        // Refresh replies to show updated list
-        // Find which comment this reply belongs to and refresh it
-        for (const commentId of Object.keys(commentReplies)) {
-          if (commentReplies[commentId].some(reply => reply.id === reply_id)) {
-            fetchReply(commentId);
-            break;
-          }
+      const response = await axios.delete(
+        `${baseUrl}/api/v1/comments/${reply_id}`,
+        { headers: buildAuthHeaders() }
+      );
+      const data = response.data;
+      if (data?.ok === true) {
+        const parentCommentId = findParentCommentId(reply_id);
+        if (parentCommentId) {
+          fetchReply(parentCommentId);
         }
       } else {
-        console.log('Failed to delete reply:', response);
+        console.log('Failed to delete reply:', data);
       }
     } catch (error) {
       console.error('Error deleting reply:', error);
     } finally {
       setCommentActionLoading(prev => ({ ...prev, [`delete_reply_${reply_id}`]: false }));
     }
-  }, [commentReplies, fetchReply]);
+  }, [buildAuthHeaders, findParentCommentId, fetchReply]);
 
   // Define addCommentReply function first
   const addCommentReply = useCallback(async (comment_id, reply) => {
     setLoading(true);
     try {
-      const accessToken = localStorage.getItem("access_token");
-      const formData = new URLSearchParams();
-      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
-      formData.append('type', 'create_reply');
-      formData.append('comment_id', comment_id);
-      formData.append('text', reply);
-      const response = await fetch(`https://ouptel.com/api/comments?access_token=${accessToken}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-Requested-With': 'XMLHttpRequest',
-          "Accept": "application/json"
-        },
-        body: formData.toString(),
-      })
-      const data = await response.json();
-      if (data?.api_status === 200) {
-        console.log(data);
-        // Clear the reply input and close reply mode after successful submission
+      const response = await axios.post(
+        `${baseUrl}/api/v1/posts/${post_id}/comments`,
+        { text: reply, parent_id: comment_id },
+        { headers: buildAuthHeaders() }
+      );
+      const data = response.data;
+      if (data?.ok === true) {
         setReplyInput('');
         setReplyingTo(null);
-        // Refresh comments and also refresh replies for the specific comment
-        fetchComments(post_id);
-        // Refresh replies for this comment to show the new reply
-        if (replyingTo) {
-          fetchReply(replyingTo.id);
-        }
+        await fetchPostComments(false);
+        fetchReply(comment_id);
       } else {
-        console.log(response);
+        console.log('Failed to create reply:', data);
       }
     } catch (error) {
       console.error('Error adding comment reply:', error);
-      // Remove setError since it's not defined
-      console.error('Error message:', error.message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [post_id, buildAuthHeaders, fetchPostComments, fetchReply]);
 
   const handleSubmitReply = useCallback(async (commentId) => {
     if (!replyInput.trim()) return;
@@ -670,161 +668,40 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
 
 
   const likeComment = useCallback(async (comment_id) => {
-    setCommentActionLoading(prev => ({ ...prev, [`like_${comment_id}`]: true }));
-    try {
-      const accessToken = localStorage.getItem("access_token");
-      const formData = new URLSearchParams();
-      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
-      formData.append('type', 'comment_like');
-      formData.append('comment_id', comment_id);
-      const response = await fetch(`https://ouptel.com/api/comments?access_token=${accessToken}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-Requested-With': 'XMLHttpRequest',
-          "Accept": "application/json"
-        },
-        body: formData.toString(),
-      });
-      const data = await response.json();
-      if (data?.api_status === 200) {
-        console.log('Comment/Reply like/unlike successful:', data);
-        // Refresh comments to show updated like status
-        if (clickedComments) {
-          const fetchedComments = await fetchComments(post_id);
-          if (fetchedComments && Array.isArray(fetchedComments)) {
-            setLocalCommentsData(fetchedComments);
-          }
-        }
-        // Also refresh replies if any are loaded
-        if (commentReplies[comment_id]) {
-          fetchReply(comment_id);
-        }
-      } else {
-        console.log('Failed to like/unlike comment/reply:', response);
-      }
-    } catch (error) {
-      console.error('Error liking/unliking comment/reply:', error);
-    } finally {
-      setCommentActionLoading(prev => ({ ...prev, [`like_${comment_id}`]: false }));
-    }
-  }, [fetchComments, post_id, clickedComments, commentReplies, fetchReply]);
+    await sendCommentReaction({
+      targetId: comment_id,
+      reactionType: 1,
+      loadingKey: `like_${comment_id}`
+    });
+  }, [sendCommentReaction]);
 
-  // New function for liking comment replies
   const likeCommentReply = useCallback(async (reply_id) => {
-    setCommentActionLoading(prev => ({ ...prev, [`reply_like_${reply_id}`]: true }));
-    try {
-      const accessToken = localStorage.getItem("access_token");
-      const formData = new URLSearchParams();
-      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
-      formData.append('type', 'reply_like');
-      formData.append('reply_id', reply_id);
-      const response = await fetch(`https://ouptel.com/api/comments?access_token=${accessToken}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-Requested-With': 'XMLHttpRequest',
-          "Accept": "application/json"
-        },
-        body: formData.toString(),
-      });
-      const data = await response.json();
-      if (data?.api_status === 200) {
-        console.log('Reply like/unlike successful:', data);
-        // Refresh replies to show updated like status
-        // Find which comment this reply belongs to and refresh it
-        for (const commentId of Object.keys(commentReplies)) {
-          if (commentReplies[commentId].some(reply => reply.id === reply_id)) {
-            fetchReply(commentId);
-            break;
-          }
-        }
-      } else {
-        console.log('Failed to like/unlike reply:', response);
-      }
-    } catch (error) {
-      console.error('Error liking/unliking reply:', error);
-    } finally {
-      setCommentActionLoading(prev => ({ ...prev, [`reply_like_${reply_id}`]: false }));
-    }
-  }, [commentReplies, fetchReply]);
+    const parentCommentId = findParentCommentId(reply_id);
+    await sendCommentReaction({
+      targetId: reply_id,
+      reactionType: 1,
+      loadingKey: `reply_like_${reply_id}`,
+      refreshRepliesFor: parentCommentId || undefined
+    });
+  }, [findParentCommentId, sendCommentReaction]);
 
-  // New function for disliking comments
   const dislikeComment = useCallback(async (comment_id) => {
-    setCommentActionLoading(prev => ({ ...prev, [`comment_dislike_${comment_id}`]: true }));
-    try {
-      const accessToken = localStorage.getItem("access_token");
-      const formData = new URLSearchParams();
-      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
-      formData.append('type', 'comment_dislike');
-      formData.append('comment_id', comment_id);
-      const response = await fetch(`https://ouptel.com/api/comments?access_token=${accessToken}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-Requested-With': 'XMLHttpRequest',
-          "Accept": "application/json"
-        },
-        body: formData.toString(),
-      });
-      const data = await response.json();
-      if (data?.api_status === 200) {
-        console.log('Comment dislike successful:', data);
-        // Refresh comments to show updated dislike status
-        if (clickedComments) {
-          const fetchedComments = await fetchComments(post_id);
-          if (fetchedComments && Array.isArray(fetchedComments)) {
-            setLocalCommentsData(fetchedComments);
-          }
-        }
-      } else {
-        console.log('Failed to dislike comment:', response);
-      }
-    } catch (error) {
-      console.error('Error disliking comment:', error);
-    } finally {
-      setCommentActionLoading(prev => ({ ...prev, [`comment_dislike_${comment_id}`]: false }));
-    }
-  }, [fetchComments, post_id, clickedComments]);
+    await sendCommentReaction({
+      targetId: comment_id,
+      reactionType: 2,
+      loadingKey: `comment_dislike_${comment_id}`
+    });
+  }, [sendCommentReaction]);
 
-  // New function for disliking comment replies
   const dislikeCommentReply = useCallback(async (reply_id) => {
-    setCommentActionLoading(prev => ({ ...prev, [`reply_dislike_${reply_id}`]: true }));
-    try {
-      const accessToken = localStorage.getItem("access_token");
-      const formData = new URLSearchParams();
-      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
-      formData.append('type', 'reply_dislike');
-      formData.append('reply_id', reply_id);
-      const response = await fetch(`https://ouptel.com/api/comments?access_token=${accessToken}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-Requested-With': 'XMLHttpRequest',
-          "Accept": "application/json"
-        },
-        body: formData.toString(),
-      });
-      const data = await response.json();
-      if (data?.api_status === 200) {
-        console.log('Reply dislike successful:', data);
-        // Refresh replies to show updated dislike status
-        // Find which comment this reply belongs to and refresh it
-        for (const commentId of Object.keys(commentReplies)) {
-          if (commentReplies[commentId].some(reply => reply.id === reply_id)) {
-            fetchReply(commentId);
-            break;
-          }
-        }
-      } else {
-        console.log('Failed to dislike reply:', response);
-      }
-    } catch (error) {
-      console.error('Error disliking reply:', error);
-    } finally {
-      setCommentActionLoading(prev => ({ ...prev, [`reply_dislike_${reply_id}`]: false }));
-    }
-  }, [commentReplies, fetchReply]);
+    const parentCommentId = findParentCommentId(reply_id);
+    await sendCommentReaction({
+      targetId: reply_id,
+      reactionType: 2,
+      loadingKey: `reply_dislike_${reply_id}`,
+      refreshRepliesFor: parentCommentId || undefined
+    });
+  }, [findParentCommentId, sendCommentReaction]);
 
   const ownerid = localStorage.getItem('user_id');
 

@@ -9,6 +9,7 @@ import ScrollableSection from '../components/specific/Home/ScrollableSection';
 import Loader from '../components/loading/Loader';
 import { useUser } from '../context/UserContext';
 import axios from 'axios';
+import { toast } from 'react-toastify';
 
 const feedCards = [
   {
@@ -669,6 +670,7 @@ const Home = () => {
           }
         }
       );
+      console.log("response>>",response)
   
       const data = response.data;
   
@@ -698,11 +700,14 @@ const Home = () => {
           )
         );
   
+        console.log("data>>",data)
         return { success: true, comment: newComment };
       } else {
         return { success: false, error: data };
+        toast.error(data?.errors?.error_text);
       }
     } catch (error) {
+      toast.error(error.message);
       return { success: false, error: error.message };
     } finally {
       setLoading(false);

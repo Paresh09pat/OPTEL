@@ -396,7 +396,13 @@ const Chatbox = ({ onClose, isMobile = false }) => {
           </div>
           {/* Full width notifications drawer */}
           {notificationsOpen && (
-            <div className="absolute inset-0 bg-white z-20 flex flex-col p-6 overflow-y-auto rounded-lg border border-[#d3d1d1] shadow-2xl">
+            <div 
+              className="fixed top-0 h-screen bg-white z-50 flex flex-col p-6 overflow-y-auto border border-[#d3d1d1] shadow-2xl"
+              style={{ 
+                width: containerRect?.width || '100%',
+                left: containerRect?.left || 0
+              }}
+            >
               <div className="flex items-center justify-between border-b border-[#e6e6e6] pb-4">
                 <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
                 <div className="flex items-center gap-3">
@@ -651,45 +657,6 @@ const Chatbox = ({ onClose, isMobile = false }) => {
         </div>
       </div>
 
-      {notificationsOpen && (
-        <div className="absolute inset-0 bg-white z-50 flex flex-col p-6 overflow-y-auto rounded-lg border border-[#d3d1d1] shadow-2xl">
-          <div className="flex items-center justify-between border-b border-[#e6e6e6] pb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
-            <div className="flex items-center gap-3">
-              <button className="text-sm text-blue-500 hover:text-blue-700">Mark read</button>
-              <button
-                onClick={toggleNotifications}
-                className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-                aria-label="Close notifications"
-              >
-                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          </div>
-          <div className="mt-6 flex-1 overflow-y-auto space-y-3 pr-1">
-            {[
-              { title: 'New message from John', time: '2 min ago', indicator: 'bg-blue-500' },
-              { title: 'Group invitation', time: '5 min ago', indicator: 'bg-green-500' },
-              { title: 'System update', time: '1 hour ago', indicator: 'bg-gray-400' },
-              { title: 'New follower request', time: '2 hours ago', indicator: 'bg-purple-500' },
-              { title: 'Weekly digest is ready', time: 'Yesterday', indicator: 'bg-yellow-500' },
-              { title: 'Comment on your post', time: '2 days ago', indicator: 'bg-red-500' },
-              { title: 'Reminder: Complete your profile', time: '3 days ago', indicator: 'bg-indigo-500' },
-            ].map((notification, index) => (
-              <div key={index} className="flex items-start gap-3 p-3 rounded-xl border border-[#EEF2F7] hover:border-blue-100 hover:bg-blue-50/40 transition-colors">
-                <div className={`w-2 h-2 rounded-full mt-2 ${notification.indicator}`}></div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-800">{notification.title}</p>
-                  <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
-                </div>
-                <button className="text-xs text-blue-500 hover:text-blue-700">View</button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   )
 }

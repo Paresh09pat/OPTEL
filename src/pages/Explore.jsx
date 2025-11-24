@@ -47,9 +47,9 @@ const Explore = () => {
   const handleSearch = async (pageOverride = null) => {
     try {
       setLoading(true);
-      
+
       const currentPage = pageOverride !== null ? pageOverride : pagination.page;
-      
+
       // Build query parameters
       const params = new URLSearchParams({
         verified: filters.verified,
@@ -74,7 +74,7 @@ const Explore = () => {
 
       const accessToken = localStorage.getItem('access_token');
       const apiUrl = `${import.meta.env.VITE_API_URL}/api/v1/search/explore?${params.toString()}`;
-      
+
       console.log('API URL:', apiUrl);
       console.log('Search filters:', filters);
 
@@ -86,11 +86,11 @@ const Explore = () => {
       });
 
       console.log('API Response:', response.data);
-      
+
       // Update states with API response
       if (response.data && response.data.results) {
         const results = response.data.results;
-        
+
         // Update users with pagination
         if (results.users && results.users.data) {
           setUsers(results.users.data);
@@ -106,14 +106,14 @@ const Explore = () => {
         } else {
           setUsers([]);
         }
-        
+
         // Update pages (no pagination for pages)
         if (results.pages && Array.isArray(results.pages)) {
           setPages(results.pages);
         } else {
           setPages([]);
         }
-        
+
         // Update groups (no pagination for groups)
         if (results.groups && Array.isArray(results.groups)) {
           setGroups(results.groups);
@@ -311,31 +311,28 @@ const Explore = () => {
         <div className="flex flex-wrap gap-2 mb-4 sm:mb-6">
           <button
             onClick={() => setActiveTab('users')}
-            className={`px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all ${
-              activeTab === 'users'
+            className={`px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all ${activeTab === 'users'
                 ? 'bg-blue-600 text-white'
                 : 'bg-white text-gray-700 border border-gray-300 cursor-pointer'
-            }`}
+              }`}
           >
             Users
           </button>
           <button
             onClick={() => setActiveTab('pages')}
-            className={`px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all ${
-              activeTab === 'pages'
+            className={`px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all ${activeTab === 'pages'
                 ? 'bg-blue-600 text-white'
                 : 'bg-white text-gray-700 border border-gray-300 cursor-pointer'
-            }`}
+              }`}
           >
             Pages
           </button>
           <button
             onClick={() => setActiveTab('groups')}
-            className={`px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all ${
-              activeTab === 'groups'
+            className={`px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all ${activeTab === 'groups'
                 ? 'bg-blue-600 text-white'
                 : 'bg-white text-gray-700 border border-gray-300 cursor-pointer'
-            }`}
+              }`}
           >
             Groups
           </button>
@@ -410,31 +407,24 @@ const Explore = () => {
                   <div className="flex items-center gap-2 sm:gap-3 justify-end sm:justify-start">
                     <button
                       onClick={() => window.open(user.profile_url, '_blank')}
-                      className="px-3 sm:px-4 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-full text-xs sm:text-sm flex items-center gap-2 hover:bg-gray-50 transition-colors whitespace-nowrap"
+                      className="px-3 sm:px-4 py-1.5 bg-blue-600 text-white rounded-full text-xs sm:text-sm flex items-center gap-2 hover:bg-blue-700 transition-colors whitespace-nowrap"
                     >
                       <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span>View Profile</span>
                     </button>
-                    <button
-                      onClick={() => handleFriendRequest(user.user_id)}
-                      className="px-3 sm:px-4 py-1.5 bg-blue-600 text-white rounded-full text-xs sm:text-sm flex items-center gap-2 hover:bg-blue-700 transition-colors whitespace-nowrap"
-                    >
-                      <UserPlus className="w-3 h-3 sm:w-4 sm:h-4" />
-                      <span>Add Friend</span>
-                    </button>
+
                   </div>
                 </div>
               </div>
             ))}
-            
-            {/* Results Count and Pagination for Users */}
+
             {!loading && users.length > 0 && (
               <div className="mt-6 space-y-4">
                 {/* Results Count */}
                 <div className="text-center text-sm text-gray-600">
                   Showing {((pagination.page - 1) * pagination.per_page) + 1} - {Math.min(pagination.page * pagination.per_page, pagination.total)} of {pagination.total.toLocaleString()} results
                 </div>
-                
+
                 {/* Pagination Controls */}
                 {pagination.last_page > 1 && (
                   <div className="flex justify-center items-center gap-2 flex-wrap">
