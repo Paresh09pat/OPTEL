@@ -30,11 +30,11 @@ const Forum = () => {
   })
 
   return (
-    <div className="bg-gray-100 w-full min-h-screen p-6">
+    <div className="min-h-screen bg-[#EDF6F9] p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-black">Forum</h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-lg sm:text-xl lg:text-2xl font-medium text-gray-900">Forum</h1>
           <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm border">
             <div className="w-8 h-8 bg-pink-200 rounded-full flex items-center justify-center">
               <span className="text-pink-600 text-sm font-semibold">👤</span>
@@ -43,26 +43,25 @@ const Forum = () => {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="mb-6">
-          <div className="flex space-x-2 bg-white rounded-lg py-4 px-6 shadow-sm border border-[#d3d1d1]">
+        <div className="mb-8">
+          <div className="flex flex-wrap gap-3">
             {tabs.map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-6 py-3 rounded-full text-sm font-medium transition-all ${
-                  activeTab === tab
-                    ? 'bg-red-500 text-white shadow-md'
-                    : 'text-gray-600 hover:text-gray-800 bg-gray-50'
-                }`}
+                className={`px-6 py-3 cursor-pointer rounded-full font-medium transition-all duration-300 ${activeTab === tab
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-300'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm'
+                  }`}
               >
                 {tab}
               </button>
             ))}
           </div>
-          
+
           {/* Search Icon - positioned to the right */}
           <div className="float-right -mt-12 mr-4">
-            <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center shadow-md cursor-pointer hover:bg-red-600 transition-colors">
+            <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center shadow-md cursor-pointer hover:bg-blue-700 transition-colors">
               <FaSearch className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -72,20 +71,19 @@ const Forum = () => {
         {/* Main Content */}
         <div className="flex-1">
           {activeTab === 'Members' && (
-            <div className="bg-white rounded-xl shadow-sm  border border-[#d3d1d1] p-8">
+            <div className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 border border-[#808080] p-4 sm:p-6 lg:p-8">
               <h2 className="text-2xl font-bold text-black mb-6">List of users</h2>
-              
+
               {/* Alphabetical Filter */}
               <div className="flex flex-wrap gap-2 mb-8">
                 {alphabet.map((letter) => (
                   <button
                     key={letter}
                     onClick={() => setSelectedLetter(selectedLetter === letter ? '' : letter)}
-                    className={`w-8 h-8 text-sm font-medium rounded transition-colors ${
-                      selectedLetter === letter
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                    }`}
+                    className={`w-8 h-8 text-sm font-medium rounded-full transition-all duration-300 ${selectedLetter === letter
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-300'
+                        : 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm'
+                      }`}
                   >
                     {letter}
                   </button>
@@ -127,7 +125,7 @@ const Forum = () => {
 
               {/* Load More Button */}
               <div className="text-center mt-8">
-                <button className="text-red-400 hover:text-red-500 text-lg font-medium transition-colors">
+                <button className="px-6 py-3 bg-white text-gray-700 rounded-full border-2 border-gray-300 hover:bg-gray-50 transition-all duration-200 shadow-sm hover:shadow-md font-medium">
                   + Load more users
                 </button>
               </div>
@@ -135,21 +133,21 @@ const Forum = () => {
           )}
 
           {activeTab === 'Browse Forum' && (
-            <div className="bg-white rounded-xl shadow-sm  border border-[#d3d1d1] p-8">
+            <div className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 border border-[#808080] p-4 sm:p-6 lg:p-8">
               <h2 className="text-2xl font-bold text-black mb-6">Browse Forum</h2>
               <p className="text-gray-600">Forum categories and discussions will be displayed here.</p>
             </div>
           )}
 
           {activeTab === 'My Threads' && (
-            <div className="bg-white rounded-xl shadow-sm border border-[#d3d1d1] p-8">
+            <div className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 border border-[#808080] p-4 sm:p-6 lg:p-8">
               <h2 className="text-2xl font-bold text-black mb-6">My Threads</h2>
               <p className="text-gray-600">Your forum threads will be displayed here.</p>
             </div>
           )}
 
           {activeTab === 'My Messages' && (
-            <div className="bg-white rounded-xl shadow-sm border border-[#d3d1d1] p-8">
+            <div className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 border border-[#808080] p-4 sm:p-6 lg:p-8">
               <h2 className="text-2xl font-bold text-black mb-6">My Messages</h2>
               <p className="text-gray-600">Your forum messages will be displayed here.</p>
             </div>

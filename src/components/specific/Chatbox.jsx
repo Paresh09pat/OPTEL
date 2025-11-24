@@ -181,6 +181,22 @@ const Chatbox = ({ onClose, isMobile = false }) => {
   useEffect(() => {
   }, [activeSection]);
 
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setSearchOpen(false);
+      }
+    };
+
+    if (searchOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+    } else {
+      document.removeEventListener('keydown', handleKeyDown);
+    }
+
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [searchOpen]);
+
   // Track container bounds for notification overlay alignment
   useEffect(() => {
     const updateContainerRect = () => {
@@ -275,52 +291,19 @@ const Chatbox = ({ onClose, isMobile = false }) => {
             <div className="flex items-center justify-center xl:gap-4 lg:gap-2 relative">
               {/* Search Icon and Input - Inline */}
               <div className="relative flex items-center search-container">
-                {!searchOpen ? (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="text-gray-500 size-[25px] cursor-pointer transition-colors hover:text-blue-500"
-                    width={24}
-                    height={24}
-                    viewBox="0 0 24 24"
-                    onClick={toggleSearch}
-                  >
-                    <g fill="none" stroke="currentColor" strokeWidth={2}>
-                      <circle cx={11} cy={11} r="7"></circle>
-                      <path strokeLinecap="round" d="M11 8a3 3 0 0 0-3 3m12 9l-3-3"></path>
-                    </g>
-                  </svg>
-                ) : (
-                                     <div className="flex items-center gap-2 bg-white border border-[#d3d1d1] rounded-lg px-2 py-1 shadow-sm">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="text-gray-400 size-[18px]"
-                      width={18}
-                      height={18}
-                      viewBox="0 0 24 24"
-                    >
-                      <g fill="none" stroke="currentColor" strokeWidth={2}>
-                        <circle cx={11} cy={11} r="7"></circle>
-                        <path strokeLinecap="round" d="M11 8a3 3 0 0 0-3 3m12 9l-3-3"></path>
-                      </g>
-                    </svg>
-                    <input
-                      type="text"
-                      placeholder='Search...'
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className='w-32 sm:w-8 lg:w-8 text-gray-700 text-sm outline-none border-none bg-transparent'
-                      autoFocus
-                    />
-                    <button
-                      onClick={toggleSearch}
-                      className="text-gray-400 hover:text-gray-600 transition-colors"
-                    >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                )}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className={`text-gray-500 size-[25px] cursor-pointer transition-colors hover:text-blue-500 ${searchOpen ? 'text-blue-500' : ''}`}
+                  width={24}
+                  height={24}
+                  viewBox="0 0 24 24"
+                  onClick={toggleSearch}
+                >
+                  <g fill="none" stroke="currentColor" strokeWidth={2}>
+                    <circle cx={11} cy={11} r="7"></circle>
+                    <path strokeLinecap="round" d="M11 8a3 3 0 0 0-3 3m12 9l-3-3"></path>
+                  </g>
+                </svg>
               </div>
 
               {/* Bell Icon and Notifications */}
@@ -352,7 +335,7 @@ const Chatbox = ({ onClose, isMobile = false }) => {
                       Profile
                     </Link>
                     <Link
-                      to="/profile-settings"
+                      to="/profile"
                       onClick={() => setMoreOptionsOpen(false)}
                       className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                     >
@@ -442,6 +425,57 @@ const Chatbox = ({ onClose, isMobile = false }) => {
           )}
         </div>
       </div>
+
+      {/* Search Modal */}
+      {searchOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-start justify-center pt-24 px-4"
+          onClick={toggleSearch}
+        >
+          <div
+            className="w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-[#d3d1d1] p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-lg font-semibold text-gray-900">Search</p>
+              <button
+                onClick={toggleSearch}
+                className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                aria-label="Close search modal"
+              >
+                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex items-center gap-3 bg-[#F8FAFC] border border-[#d3d1d1] rounded-xl px-4 py-3 shadow-inner">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="text-gray-400 size-[20px]"
+                width={20}
+                height={20}
+                viewBox="0 0 24 24"
+              >
+                <g fill="none" stroke="currentColor" strokeWidth={2}>
+                  <circle cx={11} cy={11} r="7"></circle>
+                  <path strokeLinecap="round" d="M11 8a3 3 0 0 0-3 3m12 9l-3-3"></path>
+                </g>
+              </svg>
+              <input
+                type="text"
+                placeholder="Search by name or message..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full text-gray-800 text-base outline-none border-none bg-transparent"
+                autoFocus
+              />
+            </div>
+            <div className="text-sm text-gray-500">
+              Start typing to filter your chats. Press `Esc` or click outside to close.
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Individual/Groups Toggle */}
              <div className="flex flex-col p-2 mt-2 bg-white rounded-lg border border-[#d3d1d1]">
