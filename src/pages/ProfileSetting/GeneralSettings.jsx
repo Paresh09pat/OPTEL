@@ -184,11 +184,7 @@ const GeneralSettings = () => {
       }
       
       if (formData.gender !== (userData?.gender || '')) {
-        // Convert gender to gender_text format (capitalize first letter)
-        const genderText = formData.gender 
-          ? formData.gender.charAt(0).toUpperCase() + formData.gender.slice(1)
-          : '';
-        userDataToUpdate.gender_text = genderText;
+        userDataToUpdate.gender = formData.gender;
       }
       // Convert both values to numbers for proper comparison
       const currentCountryId = parseInt(userData?.country_id) || 0;
