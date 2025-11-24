@@ -145,7 +145,7 @@ const Blog = () => {
           <h1 className="text-2xl font-bold text-[#212121] mb-4">Blogs</h1>
           <div className="flex gap-6 items-center">
             <Link
-              to={"/my-albums/create"}
+              // to={"/my-albums/create"}
               className="border border-[#d3d1d1] cursor-pointer py-1.5 px-3.5 rounded-2xl flex items-center gap-1.5"
             >
               <img

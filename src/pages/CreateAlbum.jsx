@@ -211,7 +211,7 @@ const CreateAlbum = () => {
             <div className="w-full text-center">
               <button
                 type="submit"
-                className="w-[20rem] cursor-pointer h-[50px] border border-[#d3d1d1] text-[#76B82A] font-semibold  text-[20px] py-2 px-8 rounded-lg hover:bg-[#8BC34B] transition hover:text-[#fff] "
+                className="w-[20rem] h-[50px] rounded-2xl border-2 border-blue-600 text-blue-600 bg-white font-semibold text-[20px] hover:bg-blue-600 hover:text-white transition-all duration-300 shadow-lg hover:shadow-xl"
               >
                 Publish Album
               </button>
