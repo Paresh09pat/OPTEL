@@ -1,6 +1,7 @@
 // components/ProfilePictureAndCover.js
 import React, { useState } from 'react';
 import { Image, Upload } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 const ProfilePictureAndCover = () => {
   const [profilePicture, setProfilePicture] = useState(null);
@@ -20,7 +21,7 @@ const ProfilePictureAndCover = () => {
         };
         reader.readAsDataURL(file);
       } else {
-        alert('Please select a valid image file.');
+        toast.error('Please select a valid image file.');
       }
     }
   };

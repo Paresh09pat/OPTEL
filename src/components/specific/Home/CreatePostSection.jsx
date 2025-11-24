@@ -674,11 +674,11 @@ const CreatePostPopup = ({
         // Validate poll if it's enabled
         if (showPoll) {
             if (!pollQuestion.trim()) {
-                alert('Please enter a poll question');
+                toast.error('Please enter a poll question');
                 return;
             }
             if (!pollOptions.some(opt => opt.trim())) {
-                alert('Please enter at least one poll option');
+                toast.error('Please enter at least one poll option');
                 return;
             }
         }

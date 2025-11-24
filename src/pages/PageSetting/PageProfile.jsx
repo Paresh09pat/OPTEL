@@ -11,6 +11,7 @@ import QuickActionsSection from '../../components/specific/Home/QuickActionSecti
 import verified from '/icons/verified.png';
 import ProfilePicture from '/mobile.jpg';
 import { BiSolidMessageDetail } from "react-icons/bi";
+import { toast } from 'react-toastify';
 
 
 const post =
@@ -64,7 +65,7 @@ const ProfilePage = () => {
                 };
                 reader.readAsDataURL(file);
             } else {
-                alert('Please select a valid image file.');
+                toast.error('Please select a valid image file.');
             }
         }
     };

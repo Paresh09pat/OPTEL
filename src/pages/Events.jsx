@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { HiUsers } from 'react-icons/hi'
-import { FaChevronUp, FaChevronDown } from 'react-icons/fa'
-import axios from 'axios';
+import React, { useEffect, useRef, useState } from 'react';
+import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { HiUsers } from 'react-icons/hi';
+import { toast } from 'react-toastify';
 import Loader from '../components/loading/Loader';
-import { Link } from 'react-router-dom';
 
 const Events = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -116,27 +115,27 @@ const Events = () => {
     e.preventDefault();
     
     if (!eventName.trim()) {
-      alert("Please enter event name");
+      toast.error("Please enter event name");
       return;
     }
     
     if (!eventLocation.trim()) {
-      alert("Please enter event location");
+      toast.error("Please enter event location");
       return;
     }
     
     if (!startDate || !endDate) {
-      alert("Please select start and end dates");
+      toast.error("Please select start and end dates");
       return;
     }
     
     if (!startTime || !endTime) {
-      alert("Please select start and end times");
+      toast.error("Please select start and end times");
       return;
     }
     
     if (!selectedFile) {
-      alert("Please select an image");
+      toast.error("Please select an image");
       return;
     }
 
@@ -165,7 +164,7 @@ const Events = () => {
       const data = await response.json();
 
       if (data.ok === true) {
-        alert("Event created successfully!");
+        toast.success("Event created successfully!");
         // Reset form
         setEventName('');
         setEventDescription('');
@@ -181,7 +180,7 @@ const Events = () => {
       }
     } catch (error) {
       console.error("Error creating event:", error);
-      alert("Error creating event. Please try again.");
+      toast.error("Error creating event. Please try again.");
     } finally {
       setFormLoading(false);
     }

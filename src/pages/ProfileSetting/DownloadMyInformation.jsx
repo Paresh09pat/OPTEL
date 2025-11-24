@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FiInfo, FiFileText, FiFlag, FiUsers, FiUser, FiDownload } from "react-icons/fi";
 import axios from "axios";
 import Avatar from "../../components/Avatar";
+import { toast } from "react-toastify";
 
 const DownloadMyInformation = () => {
   const [selectedCards, setSelectedCards] = useState([]);
@@ -146,7 +147,7 @@ const DownloadMyInformation = () => {
       const downloadLink = await generateDownloadLink();
       if (downloadLink) {
         await downloadFile(downloadLink, 'my-information.html');
-        alert('HTML file downloaded successfully!');
+        toast.success('HTML file downloaded successfully!');
       }
     } finally {
       setLoading(false);
@@ -161,7 +162,7 @@ const DownloadMyInformation = () => {
       const downloadLink = await generateDownloadLink();
       if (downloadLink) {
         await convertHtmlToPdf(downloadLink);
-        alert('PDF download initiated! Check your browser\'s print dialog.');
+        toast.success('PDF download initiated! Check your browser\'s print dialog.');
       }
     } finally {
       setLoading(false);

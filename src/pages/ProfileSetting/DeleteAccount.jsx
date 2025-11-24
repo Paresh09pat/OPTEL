@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FiEye, FiEyeOff, FiAlertTriangle } from "react-icons/fi";
 import axios from "axios";
 import Avatar from "../../components/Avatar";
+import { toast } from "react-toastify";
 
 const DeleteAccount = () => {
   const [password, setPassword] = useState("");
@@ -83,7 +84,7 @@ const DeleteAccount = () => {
       const data = response.data;
       
       if (data.api_status === '200') {
-        alert('Account deletion request submitted. You will receive a confirmation email.');
+        toast.success('Account deletion request submitted. You will receive a confirmation email.');
         
         // Clear local storage and redirect to login
         localStorage.removeItem('access_token');
@@ -96,7 +97,7 @@ const DeleteAccount = () => {
         // Redirect to login page
         window.location.href = '/login';
       } else {
-        throw new Error(data.api_text || 'Failed to delete account');
+        toast.error(data.api_text || 'Failed to delete account');
       }
       
     } catch (err) {
