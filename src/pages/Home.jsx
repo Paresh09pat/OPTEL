@@ -10,6 +10,7 @@ import Loader from '../components/loading/Loader';
 import { useUser } from '../context/UserContext';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { dummyFriendSuggestions } from '../constants/friendSuggestions';
 
 const feedCards = [
   {
@@ -63,8 +64,7 @@ const Home = () => {
   const [userStories, setUserStories] = useState([]);
   const [selectedUserForStories, setSelectedUserForStories] = useState(null);
   const [showStoriesPreview, setShowStoriesPreview] = useState(false);
-  const [friendSuggestions, setFriendSuggestions] = useState([
-  ]);
+  const [friendSuggestions, setFriendSuggestions] = useState(dummyFriendSuggestions);
 
   const [newFeeds, setNewFeeds] = useState([]);
   const [likedPosts, setLikedPosts] = useState(() => {
@@ -780,12 +780,20 @@ const Home = () => {
         body: formData.toString(),
       })
       const data = await response.json();
-      if (data?.api_status === 200) {
+      if (data?.api_status === 200 && data?.data && data.data.length > 0) {
         setFriendSuggestions(data?.data);
       } else {
-        setError(response?.data?.errors?.error_text);
+        // Use dummy data as fallback if API fails or returns no data
+        setFriendSuggestions(dummyFriendSuggestions);
+        if (response?.data?.errors?.error_text) {
+          setError(response?.data?.errors?.error_text);
+        }
       }
+
+      
     } catch (error) {
+      // Use dummy data as fallback on error
+      setFriendSuggestions(dummyFriendSuggestions);
       setError(error.message);
     } finally {
       setLoading(false);
