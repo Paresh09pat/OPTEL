@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FiEye, FiEyeOff, FiUser, FiMail, FiLock } from 'react-icons/fi';
+import { toast } from 'react-toastify';
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -17,35 +18,38 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
-    setError(''); // Clear error when user types
   };
 
   const validateForm = () => {
     if (!formData.username || !formData.email || !formData.password || !formData.confirm_password ||
       !formData.first_name || !formData.last_name || !formData.gender) {
-      setError('All fields are required');
+      toast.error('All fields are required');
+      return false;
+    }
+
+    if (!acceptedTerms) {
+      toast.error('You must accept the Terms of Service and Privacy Policy');
       return false;
     }
 
     if (formData.password !== formData.confirm_password) {
-      setError('Passwords do not match');
+      toast.error('Passwords do not match');
       return false;
     }
 
     if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
+      toast.error('Password must be at least 6 characters long');
       return false;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      setError('Please enter a valid email address');
+      toast.error('Please enter a valid email address');
       return false;
     }
 
@@ -60,7 +64,6 @@ const Signup = () => {
     }
 
     setLoading(true);
-    setError('');
 
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/signup`, {
@@ -82,14 +85,38 @@ const Signup = () => {
         // Store user data for the next pages
         localStorage.setItem("signup_user_data", JSON.stringify(data.data));
 
+        // Show success toast
+        toast.success('Account created successfully!');
+
         // Navigate to profile photo upload page
         navigate('/profile-photo-upload');
       } else {
-        setError(data.message || 'Signup failed. Please try again.');
+        // Handle validation errors
+        if (data.errors && typeof data.errors === 'object') {
+          let errorMessages = [];
+
+          // Process nested errors
+          Object.keys(data.errors).forEach((field) => {
+            if (Array.isArray(data.errors[field]) && data.errors[field].length > 0) {
+              errorMessages.push(data.errors[field][0]);
+            }
+          });
+
+          // Show toast with all error messages
+          if (errorMessages.length > 0) {
+            toast.error(errorMessages.join(', '));
+          } else {
+            toast.error(data.message || 'Validation failed');
+          }
+        } else {
+          // Handle simple error message
+          const errorMsg = data.message || 'Signup failed. Please try again.';
+          toast.error(errorMsg);
+        }
       }
     } catch (err) {
       console.error('Signup error:', err);
-      setError('Network error. Please check your connection and try again.');
+      toast.error('Network error. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -112,17 +139,6 @@ const Signup = () => {
 
         {/* Form */}
         <form className="mt-8 space-y-6 bg-white  p-8 rounded-xl shadow-lg border border-[#d3d1d1]" onSubmit={handleSubmit}>
-          {/* Error/Success Messages */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700  px-4 py-3 rounded-lg">
-              {error}
-            </div>
-          )}
-          {success && (
-            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
-              {success}
-            </div>
-          )}
 
           {/* Name Fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -271,11 +287,40 @@ const Signup = () => {
               onChange={handleChange}
               className="w-full px-3 py-2 border border-[#d3d1d1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1d60eb] focus:border-transparent"
             >
-              <option value="">Select Gender</option>
+              <option value="" disabled>Gender</option>
               <option value="male">Male</option>
               <option value="female">Female</option>
               <option value="other">Other</option>
             </select>
+          </div>
+
+          {/* Terms and Privacy Checkbox */}
+          <div className="flex items-start">
+            <div className="flex items-center h-5">
+              <input
+                id="accept-terms"
+                name="accept-terms"
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={(e) => {
+                  setAcceptedTerms(e.target.checked);
+                }}
+                className="w-4 h-4 text-[#1d60eb] bg-gray-100 border-gray-300 rounded focus:ring-[#1d60eb] focus:ring-2"
+                required
+              />
+            </div>
+            <div className="ml-3 text-sm">
+              <label htmlFor="accept-terms" className="text-gray-600">
+                By creating an account, you agree to our{' '}
+                <Link to="/terms-of-service" className="text-[#1d60eb] hover:text-[#1a4fc7] hover:underline">
+                  Terms of Service
+                </Link>
+                {' '}and{' '}
+                <Link to="/privacy-policy" className="text-[#1d60eb] hover:text-[#1a4fc7] hover:underline">
+                  Privacy Policy
+                </Link>
+              </label>
+            </div>
           </div>
 
           {/* Submit Button */}
@@ -283,18 +328,10 @@ const Signup = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-[#1d60eb] hover:bg-[#1a4fc7] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1d60eb] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full cursor-pointer flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-[#1d60eb] hover:bg-[#1a4fc7] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1d60eb] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? 'Creating Account...' : 'Create Account'}
             </button>
-          </div>
-
-          {/* Terms and Privacy */}
-          <div className="text-center text-sm text-gray-600">
-            By creating an account, you agree to our{' '}
-            <Link to="/terms-of-service" className="text-[#1d60eb] hover:text-[#1a4fc7] hover:underline">Terms of Service</Link>
-            {' '}and{' '}
-            <Link to="/privacy-policy" className="text-[#1d60eb] hover:text-[#1a4fc7] hover:underline">Privacy Policy</Link>
           </div>
         </form>
       </div>
