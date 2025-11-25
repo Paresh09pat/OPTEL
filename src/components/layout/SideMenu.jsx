@@ -164,7 +164,7 @@ const SideMenu = ({ onClose, isMobile = false }) => {
                 </button>
                 <button
                   onClick={() => {
-                    navigate('/profile')
+                    navigate('/profile-settings')
                     setProfileMenuOpen(false)
                   }}
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"

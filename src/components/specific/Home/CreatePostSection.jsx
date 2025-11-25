@@ -7,6 +7,7 @@ import { BarChart3, MapPin, Send, Smile, X } from 'lucide-react';
 import { Palette } from 'lucide-react';
 import axios from 'axios';
 import { useUser } from '../../../context/UserContext';
+import { toast } from 'react-toastify';
 
 
 const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
@@ -15,7 +16,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
     const [showPopup, setShowPopup] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [loading, setLoading] = useState(false);
-    
+
     // Additional post features
     const [postLink, setPostLink] = useState('');
     const [postLinkTitle, setPostLinkTitle] = useState('');
@@ -136,20 +137,20 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
     const detectPostType = (text, files, link, youtube, album) => {
         // If album name is provided, it's definitely an album
         if (album && album.trim()) return 'album';
-        
+
         // If YouTube link is provided, it's a video post
         if (youtube && youtube.trim()) return 'video';
-        
+
         // If link is provided, it's a link post
         if (link && link.trim()) return 'link';
-        
+
         // Check files for type detection
         if (files && files.length > 0) {
             const imageFiles = files.filter(f => f.file && f.file.type.startsWith('image/'));
             const hasVideos = files.some(f => f.file && f.file.type.startsWith('video/'));
             const hasAudio = files.some(f => f.file && f.file.type.startsWith('audio/'));
             const hasOtherFiles = files.some(f => f.file && !f.file.type.startsWith('image/') && !f.file.type.startsWith('video/') && !f.file.type.startsWith('audio/'));
-            
+
             // Multiple images = album, single image = photo
             if (imageFiles.length > 1) return 'album';
             if (imageFiles.length === 1) return 'photo';
@@ -157,14 +158,42 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
             if (hasAudio) return 'audio';
             if (hasOtherFiles) return 'file';
         }
-        
+
         return 'text';
     };
 
-  
+
 
     const createNewPost = async (postText, selectedFiles, pollData = null) => {
+        // Validation: Check if post has any content
+        const hasText = postText && postText.trim().length > 0;
+        const hasFiles = selectedFiles && selectedFiles.length > 0;
+        const hasLink = postLink && postLink.trim().length > 0;
+        const hasYoutubeLink = youtubeLink && youtubeLink.trim().length > 0;
+        const hasAlbumName = albumName && albumName.trim().length > 0;
+        
+        // Check if poll is valid (if showPoll is true, it must have question and at least one option)
+        let hasValidPoll = false;
+        if (pollData && pollData.showPoll) {
+            const hasPollQuestion = pollData.pollQuestion && pollData.pollQuestion.trim().length > 0;
+            const hasPollOptions = pollData.pollOptions && pollData.pollOptions.some(opt => opt && opt.trim().length > 0);
+            hasValidPoll = hasPollQuestion && hasPollOptions;
+        }
+
+        // If nothing is provided, show error and return
+        if (!hasText && !hasFiles && !hasLink && !hasYoutubeLink && !hasAlbumName && !hasValidPoll) {
+            const errorMessage = "Please add some content to your post.";
+            if (showNotification) {
+                showNotification(errorMessage, 'error');
+            } else {
+                toast.error(errorMessage);
+            }
+            return;
+        }
+
         setLoading(true);
+
+       
         try {
             const accessToken = localStorage.getItem("access_token");
             const user_id = localStorage.getItem("user_id");
@@ -173,9 +202,9 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
             const formData = new FormData();
             // Detect post type automatically
             const detectedPostType = detectPostType(postText, selectedFiles, postLink, youtubeLink, albumName);
-            
-           
-          
+
+
+
             formData.append('postText', postText);
             formData.append('user_id', user_id);
             formData.append('postType', detectedPostType);
@@ -235,14 +264,14 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
             console.log("Selected files:", selectedFiles);
             console.log("Detected post type:", detectedPostType);
             console.log("Album name:", albumName);
-            
+
             let imageCount = 0;
             selectedFiles.forEach((fileObj, index) => {
                 console.log(`File ${index}:`, fileObj);
                 if (fileObj.file && fileObj.file.type.startsWith("image/")) {
                     imageCount++;
                     console.log(`Appending image file ${imageCount}:`, fileObj.file.name, fileObj.file.type);
-                    
+
                     // For album posts, use album_images[]
                     if (detectedPostType === 'album') {
                         console.log("Using album_images[] for file:", fileObj.file.name);
@@ -294,22 +323,22 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
 
             const data = await response.data;
             console.log("Create post response:", data);
-            
+
             if (data.ok === true) {
                 // Show success message
                 console.log("Post created successfully:", data.message);
                 if (showNotification) {
                     showNotification(data.message || "Post created successfully!", 'success');
                 }
-                
+
                 // Refresh the feed to show the new post
                 fetchNewFeeds();
-                
+
                 // Reset form state
                 setPostText("");
                 setSelectedFiles([]);
                 setShowPopup(false);
-                
+
                 // Reset additional features
                 setPostLink("");
                 setPostLinkTitle("");
@@ -323,7 +352,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
                 setGroupId("");
                 setPostType("text");
                 setPostPrivacy("0");
-                
+
                 // Reset poll state if poll was created
                 if (pollData && pollData.showPoll) {
                     resetPoll();
@@ -478,7 +507,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
                                             />
                                         </div>
                                     )}
-                                    
+
                                     {/* Video Preview */}
                                     {fileObj.type === 'video' && fileObj.file && (
                                         <div className="mb-2">
@@ -490,7 +519,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
                                             />
                                         </div>
                                     )}
-                                    
+
                                     {/* File Info */}
                                     <div className="flex items-center justify-between">
                                         <div className="flex-1 min-w-0">
@@ -506,7 +535,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
                                                 {(fileObj.file.size / 1024 / 1024).toFixed(2)} MB
                                             </div>
                                         </div>
-                                        
+
                                         {/* Remove Button */}
                                         <button
                                             onClick={() => handleRemoveFile(index)}
@@ -575,14 +604,14 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
 export default memo(CreatePostSection);
 
 
-const CreatePostPopup = ({ 
-    isOpen, onClose, createNewPost, setShowPopup, 
-    showPoll, pollQuestion, pollOptions, pollDuration, 
-    setPollQuestion, setPollOptions, setPollDuration, 
+const CreatePostPopup = ({
+    isOpen, onClose, createNewPost, setShowPopup,
+    showPoll, pollQuestion, pollOptions, pollDuration,
+    setPollQuestion, setPollOptions, setPollDuration,
     addPollOption, removePollOption, updatePollOption, resetPoll, setShowPoll,
     // Additional features
     postLink, setPostLink, postLinkTitle, setPostLinkTitle, postLinkContent, setPostLinkContent,
-    youtubeLink, setYoutubeLink, location, setLocation, feeling, setFeeling, 
+    youtubeLink, setYoutubeLink, location, setLocation, feeling, setFeeling,
     selectedGif, setSelectedGif, backgroundColor, setBackgroundColor,
     albumName, setAlbumName, groupId, setGroupId, postType, setPostType, postPrivacy, setPostPrivacy
 }) => {
@@ -686,7 +715,7 @@ const CreatePostPopup = ({
         console.log("Popup selectedFiles before createNewPost:", selectedFiles);
         console.log("Popup postText:", postText);
         console.log("Popup albumName:", albumName);
-        
+
         setPostText('');
         await createNewPost(postText, selectedFiles, { showPoll, pollQuestion, pollOptions, pollDuration });
         setShowPopup(false);
@@ -865,7 +894,7 @@ const CreatePostPopup = ({
                                         Duration: {pollDuration} {pollDuration === '1' ? 'day' : pollDuration === '7' ? 'days' : pollDuration === '30' ? 'days' : 'days'}
                                     </p>
                                 </div>
-                                )}
+                            )}
 
                             {/* Reset Poll Button */}
                             {/* <div className="mt-4 text-center">
@@ -901,7 +930,7 @@ const CreatePostPopup = ({
                                                     />
                                                 </div>
                                             )}
-                                            
+
                                             {/* Video Preview */}
                                             {file.type === 'video' && file.file && (
                                                 <div className="mb-2">
@@ -913,7 +942,7 @@ const CreatePostPopup = ({
                                                     />
                                                 </div>
                                             )}
-                                            
+
                                             {/* File Info */}
                                             <div className="flex items-center justify-between">
                                                 <div className="flex-1 min-w-0">
@@ -929,7 +958,7 @@ const CreatePostPopup = ({
                                                         {(file.file.size / 1024 / 1024).toFixed(2)} MB
                                                     </div>
                                                 </div>
-                                                
+
                                                 {/* Remove Button */}
                                                 <button
                                                     onClick={() => removeFile(index)}
