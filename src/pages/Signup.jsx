@@ -27,8 +27,8 @@ const Signup = () => {
   };
 
   const validateForm = () => {
-    if (!formData.username || !formData.email || !formData.password || !formData.confirm_password || 
-        !formData.first_name || !formData.last_name || !formData.gender) {
+    if (!formData.username || !formData.email || !formData.password || !formData.confirm_password ||
+      !formData.first_name || !formData.last_name || !formData.gender) {
       setError('All fields are required');
       return false;
     }
@@ -54,7 +54,7 @@ const Signup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -78,10 +78,10 @@ const Signup = () => {
         localStorage.setItem("user_id", data.data.user_id);
         localStorage.setItem("access_token", data.data.token);
         localStorage.setItem("isVerified", data.data.verified);
-        
+
         // Store user data for the next pages
         localStorage.setItem("signup_user_data", JSON.stringify(data.data));
-        
+
         // Navigate to profile photo upload page
         navigate('/profile-photo-upload');
       } else {
@@ -97,7 +97,7 @@ const Signup = () => {
 
   return (
     <div className="min-h-screen bg-[#EDF6F9] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+      <div className="max-w-xl w-full space-y-8">
         {/* Header */}
         <div className="text-center">
           <img src="/op_logo.png" alt="Optel Logo" className="mx-auto h-20 w-auto" />
@@ -111,10 +111,10 @@ const Signup = () => {
         </div>
 
         {/* Form */}
-        <form className="mt-8 space-y-6 bg-white p-8 rounded-xl shadow-lg border border-[#d3d1d1]" onSubmit={handleSubmit}>
+        <form className="mt-8 space-y-6 bg-white  p-8 rounded-xl shadow-lg border border-[#d3d1d1]" onSubmit={handleSubmit}>
           {/* Error/Success Messages */}
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            <div className="bg-red-50 border border-red-200 text-red-700  px-4 py-3 rounded-lg">
               {error}
             </div>
           )}
@@ -292,9 +292,9 @@ const Signup = () => {
           {/* Terms and Privacy */}
           <div className="text-center text-sm text-gray-600">
             By creating an account, you agree to our{' '}
-            <a href="#" className="text-[#1d60eb] hover:text-[#1a4fc7]">Terms of Service</a>
+            <Link to="/terms-of-service" className="text-[#1d60eb] hover:text-[#1a4fc7] hover:underline">Terms of Service</Link>
             {' '}and{' '}
-            <a href="#" className="text-[#1d60eb] hover:text-[#1a4fc7]">Privacy Policy</a>
+            <Link to="/privacy-policy" className="text-[#1d60eb] hover:text-[#1a4fc7] hover:underline">Privacy Policy</Link>
           </div>
         </form>
       </div>

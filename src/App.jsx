@@ -33,6 +33,9 @@ import ProfilePhotoUpload from "./pages/ProfilePhotoUpload";
 import TellUsAboutYou from "./pages/TellUsAboutYou";
 import ProtectedRoute from "./components/ProtectedRoute";
 import BlogDetailed from "./pages/BlogDetailed";
+import TermsOfService from "./pages/TermsOfService";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import NotFound404 from "./pages/NotFound404";
 import { ToastContainer } from "react-toastify";
 
 function App() {
@@ -49,6 +52,9 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/profile-photo-upload" element={<ProfilePhotoUpload />} />
         <Route path="/tell-us-about-you" element={<TellUsAboutYou />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="*" element={<NotFound404 />} />
 
         {/* Protected / Layout Routes */}
         <Route path="/" element={<ProtectedRoute />}>
