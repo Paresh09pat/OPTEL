@@ -82,6 +82,83 @@ const Home = () => {
   const [imagePopup, setImagePopup] = useState({ show: false, images: [], currentIndex: 0 });
 
   const [postReactions, setPostReactions] = useState({}); // Track reactions for each post
+  const [userLocation, setUserLocation] = useState(null); // Store user location
+
+  // Request location access when component mounts
+  useEffect(() => {
+    const requestLocationAccess = () => {
+      // Check if geolocation is supported
+      if (!navigator.geolocation) {
+        console.log('Geolocation is not supported by this browser.');
+        return;
+      }
+
+      // Check if permission was already requested
+      const locationPermissionRequested = localStorage.getItem('location_permission_requested');
+      
+      if (locationPermissionRequested) {
+        // Permission was already requested, just get location if granted
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const location = {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            };
+            setUserLocation(location);
+            localStorage.setItem('user_location', JSON.stringify(location));
+          },
+          (error) => {
+            // Silently handle error if permission was already requested
+            console.log('Location access denied or unavailable:', error.message);
+          }
+        );
+        return;
+      }
+
+      // First time - show info message then request permission
+      toast.info('We would like to access your location to provide better services.', {
+        autoClose: 3000,
+      });
+
+      // Request permission after showing info (browser will show its own permission dialog)
+      setTimeout(() => {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const location = {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            };
+            setUserLocation(location);
+            localStorage.setItem('user_location', JSON.stringify(location));
+            localStorage.setItem('location_permission_requested', 'true');
+            toast.success('Location access granted!');
+          },
+          (error) => {
+            localStorage.setItem('location_permission_requested', 'true');
+            if (error.code === error.PERMISSION_DENIED) {
+              toast.error('Location access denied. You can enable it later in your browser settings.');
+            } else if (error.code === error.POSITION_UNAVAILABLE) {
+              toast.error('Location information is unavailable.');
+            } else if (error.code === error.TIMEOUT) {
+              toast.error('Location request timed out.');
+            } else {
+              toast.error('Unable to retrieve your location.');
+            }
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          }
+        );
+      }, 1500);
+    };
+
+    // Request location access after a short delay to ensure page is loaded
+    const timer = setTimeout(requestLocationAccess, 2000);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   const getNewFeeds = async (type) => {
     const formData = new URLSearchParams();

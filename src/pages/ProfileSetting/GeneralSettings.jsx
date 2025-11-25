@@ -3,6 +3,7 @@ import { FiEdit3, FiCalendar } from "react-icons/fi";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import axios from "axios";
+import { toast } from "react-toastify";
 import Avatar from "../../components/Avatar";
 
 const GeneralSettings = () => {
@@ -19,12 +20,9 @@ const GeneralSettings = () => {
   const [countryIdToName, setCountryIdToName] = useState({});
   const [nameToCountryId, setNameToCountryId] = useState({});
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [userData, setUserData] = useState(null);
   const [userLoading, setUserLoading] = useState(true);
   const [updateLoading, setUpdateLoading] = useState(false);
-  const [updateSuccess, setUpdateSuccess] = useState(false);
-  const [updateError, setUpdateError] = useState(null);
 
   // Get user ID from localStorage
   const userId = localStorage.getItem('user_id') 
@@ -80,7 +78,7 @@ const GeneralSettings = () => {
         }
       } catch (err) {
         console.error('Error fetching user data:', err);
-        setError('Failed to load user data. Please try again.');
+        toast.error('Failed to load user data. Please try again.');
       } finally {
         setUserLoading(false);
       }
@@ -93,7 +91,6 @@ const GeneralSettings = () => {
   useEffect(() => {
     const fetchCountries = async () => {
       setLoading(true);
-      setError(null);
       try {
         const response = await fetch('https://restcountries.com/v3.1/all?fields=name');
         if (!response.ok) {
@@ -119,7 +116,7 @@ const GeneralSettings = () => {
         setCountryIdToName(idToName);
         setNameToCountryId(nameToId);
       } catch (err) {
-        setError('Failed to load countries. Please try again.');
+        toast.error('Failed to load countries. Please try again.');
         console.error('Error fetching countries:', err);
         // Fallback to a basic list if API fails
         const fallbackCountries = ['India', 'United States', 'United Kingdom', 'Canada', 'Australia'];
@@ -151,8 +148,6 @@ const GeneralSettings = () => {
     e.preventDefault();
     
     setUpdateLoading(true);
-    setUpdateError(null);
-    setUpdateSuccess(false);
     
     try {
       // Prepare user data for API - only include changed fields
@@ -196,8 +191,6 @@ const GeneralSettings = () => {
 
       // Only send request if there are changes
       if (Object.keys(userDataToUpdate).length === 0) {
-        setUpdateSuccess(true);
-        setTimeout(() => setUpdateSuccess(false), 3000);
         return;
       }
 
@@ -263,22 +256,15 @@ const GeneralSettings = () => {
           console.error('Error refreshing user data:', refreshErr);
         }
         
-        setUpdateSuccess(true);
-        // Hide success message after 3 seconds
-        setTimeout(() => {
-          setUpdateSuccess(false);
-        }, 3000);
+        toast.success("General settings updated successfully!");
       } else {
         throw new Error(data.api_text || 'Failed to update general settings');
       }
       
     } catch (err) {
       console.error('Error updating general settings:', err);
-      if (err.response?.data?.api_text) {
-        setUpdateError(err.response.data.api_text);
-      } else {
-        setUpdateError('Failed to update general settings. Please try again.');
-      }
+      const errorMessage = err.response?.data?.api_text || 'Failed to update general settings. Please try again.';
+      toast.error(errorMessage);
     } finally {
       setUpdateLoading(false);
     }
@@ -444,9 +430,6 @@ const GeneralSettings = () => {
                   </option>
                 ))}
               </select>
-              {error && (
-                <p className="text-red-500 text-sm mt-1">{error}</p>
-              )}
             </div>
           </div>
 
@@ -469,24 +452,6 @@ const GeneralSettings = () => {
             </button>
           </div>
         </form>
-      )}
-      
-      {updateSuccess && (
-        <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <p className="text-green-600 text-sm">General settings updated successfully!</p>
-        </div>
-      )}
-      
-      {updateError && (
-        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-600 text-sm">{updateError}</p>
-        </div>
-      )}
-      
-      {error && (
-        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-600 text-sm">{error}</p>
-        </div>
       )}
     </div>
   );

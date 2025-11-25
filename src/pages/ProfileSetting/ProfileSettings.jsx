@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { toast } from 'react-toastify';
 
 const ProfileSettings = () => {
   const [formData, setFormData] = useState({
@@ -18,10 +19,7 @@ const ProfileSettings = () => {
   });
   const [userData, setUserData] = useState(null);
   const [userLoading, setUserLoading] = useState(true);
-  const [userError, setUserError] = useState(null);
   const [updateLoading, setUpdateLoading] = useState(false);
-  const [updateSuccess, setUpdateSuccess] = useState(false);
-  const [updateError, setUpdateError] = useState(null);
 
   // Get user ID from localStorage
   const userId = localStorage.getItem('user_id') || '222102'; // Default fallback
@@ -31,7 +29,6 @@ const ProfileSettings = () => {
     const fetchUserData = async () => {
       try {
         setUserLoading(true);
-        setUserError(null);
         const response = await axios.get(
           `${import.meta.env.VITE_API_URL}/api/v1/profile/user-data?user_profile_id=${userId}&fetch=user_data`,
           {
@@ -66,7 +63,7 @@ const ProfileSettings = () => {
         }
       } catch (err) {
         console.error('Error fetching user data:', err);
-        setUserError('Failed to load user data. Please try again.');
+        toast.error('Failed to load user data. Please try again.');
         // Set fallback data to maintain UI
         setFormData({
           firstName: 'Aman',
@@ -114,8 +111,6 @@ const ProfileSettings = () => {
     e.preventDefault();
     
     setUpdateLoading(true);
-    setUpdateError(null);
-    setUpdateSuccess(false);
     
     try {
       // Convert relationship text back to ID
@@ -165,8 +160,6 @@ const ProfileSettings = () => {
 
       // Only send request if there are changes
       if (Object.keys(userDataToUpdate).length === 0) {
-        setUpdateSuccess(true);
-        setTimeout(() => setUpdateSuccess(false), 3000);
         return;
       }
 
@@ -187,22 +180,15 @@ const ProfileSettings = () => {
       const data = response.data;
       
       if (data.api_status === '200') {
-        setUpdateSuccess(true);
-        // Hide success message after 3 seconds
-        setTimeout(() => {
-          setUpdateSuccess(false);
-        }, 3000);
+        toast.success("Profile updated successfully!");
       } else {
         throw new Error(data.api_text || 'Failed to update profile');
       }
       
     } catch (err) {
       console.error('Error updating profile:', err);
-      if (err.response?.data?.api_text) {
-        setUpdateError(err.response.data.api_text);
-      } else {
-        setUpdateError('Failed to update profile. Please try again.');
-      }
+      const errorMessage = err.response?.data?.api_text || 'Failed to update profile. Please try again.';
+      toast.error(errorMessage);
     } finally {
       setUpdateLoading(false);
     }
@@ -395,24 +381,6 @@ const ProfileSettings = () => {
             </button>
           </div> 
         </form>
-      )}
-      
-      {updateSuccess && (
-        <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <p className="text-green-600 text-sm">Profile updated successfully!</p>
-        </div>
-      )}
-      
-      {updateError && (
-        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-600 text-sm">{updateError}</p>
-        </div>
-      )}
-      
-      {userError && (
-        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-600 text-sm">{userError}</p>
-        </div>
       )}
     </div>
   );
