@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
@@ -272,15 +273,25 @@ export default memo(InfiniteFriendSuggestions);
 
 
 const FriendSuggestionCard = ({ user, onAddFriend, followedUsers, requestedUsers, loadingUsers }) => {
+    const navigate = useNavigate();
     const userId = user.id || user.user_id;
     const isFollowed = followedUsers.has(userId);
     const isRequested = requestedUsers.has(userId) || user.is_following === true;
     const isLoading = loadingUsers.has(userId);
     const isDisabled = isFollowed || isRequested || isLoading;
 
+    const handleUserClick = () => {
+        if (userId) {
+            navigate(`/profile/${userId}`);
+        }
+    };
+
     return (
         <div className="bg-white rounded-xl shadow-sm border border-[#d3d1d1] overflow-hidden min-w-[150px] max-w-[150px] md:min-w-[160px] md:max-w-[160px] flex-shrink-0 hover:shadow-md transition-shadow duration-200">
-            <div className="relative flex items-center justify-center">
+            <div 
+                className="relative flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={handleUserClick}
+            >
                 <img
                     src={user?.avatar_url || user?.avatar || '/user.png'}
                     alt={user.name}
@@ -291,10 +302,25 @@ const FriendSuggestionCard = ({ user, onAddFriend, followedUsers, requestedUsers
                 />
             </div>
             <div className="p-3 text-center">
-                <h3 className="font-semibold text-gray-900 text-xs md:text-sm mb-1 truncate">{user.name}</h3>
-                <p className="text-xs text-gray-500 mb-3 truncate">{user.username}</p>
+                <h3 
+                    className="font-semibold text-gray-900 text-xs md:text-sm mb-1 truncate cursor-pointer hover:text-blue-600 transition-colors"
+                    onClick={handleUserClick}
+                >
+                    {user.name}
+                </h3>
+                <p 
+                    className="text-xs text-gray-500 mb-3 truncate cursor-pointer hover:text-blue-600 transition-colors"
+                    onClick={handleUserClick}
+                >
+                    {user.username}
+                </p>
                 <button
-                    onClick={!isDisabled ? onAddFriend : undefined}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        if (!isDisabled) {
+                            onAddFriend();
+                        }
+                    }}
                     disabled={isDisabled}
                     className={`px-2 md:px-3 py-1.5 rounded-md text-xs md:text-sm w-full font-medium transition-colors flex items-center justify-center gap-2
                  ${isDisabled
