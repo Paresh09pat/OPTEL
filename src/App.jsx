@@ -79,6 +79,7 @@ function App() {
             <Route path="/my-albums/create" element={<CreateAlbum />} />
             <Route path="/pagescomp/mainpages/createpage" element={<CreatePage />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/profile/:userId" element={<Profile />} />
             <Route path="/profile-settings" element={<MainProfileSetting />} />
             <Route path="/pagescomp/mainpages/pagesetting/mainpagesetting" element={<MainPageSetting />} />
             <Route path="/PageProfile" element={<PageProfile />} />

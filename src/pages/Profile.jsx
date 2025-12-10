@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { FiEdit3 } from 'react-icons/fi'
 import { LiaEdit } from 'react-icons/lia'
 import CreatePostSection from '../components/specific/Home/CreatePostSection'
@@ -8,6 +8,8 @@ import PostCard from '../components/specific/Home/PostCard'
 import Avatar from '../components/Avatar'
 import axios from 'axios'
 import Loader from '../components/loading/Loader'
+import FollowersFollowingModal from '../components/specific/Profile/FollowersFollowingModal'
+
 const Profile = () => {
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -15,10 +17,15 @@ const Profile = () => {
     const [posts, setPosts] = useState([]);
     const [postsLoading, setPostsLoading] = useState(true);
     const [postsError, setPostsError] = useState(null);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [modalType, setModalType] = useState(null); // 'followers', 'following', or 'posts'
     const navigate = useNavigate();
+    const { userId: urlUserId } = useParams();
 
-    // Get user ID from localStorage or URL params
-    const userId = localStorage.getItem('user_id') || '222102'; // Default fallback
+    // Get user ID from URL params, or fallback to localStorage, or default
+    const userId = urlUserId || localStorage.getItem('user_id') || '222102';
+    const currentUserId = localStorage.getItem('user_id');
+    const isOwnProfile = !urlUserId || urlUserId === currentUserId;
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -105,7 +112,8 @@ const Profile = () => {
                             name: post.author?.username || post.author?.name || 'Unknown',
                             avatar: post.author?.avatar_url,
                             fullName: post.author?.name || 'Unknown User',
-                            email: post.author?.email
+                            email: post.author?.email,
+                            user_id: post.author?.user_id || post.author?.id || post.author?.userId
                         },
                         content: post.post_text || '',
                         image: post.post_photo_url || null,
@@ -157,6 +165,47 @@ const Profile = () => {
         navigate('/profile-settings');
     };
 
+    // Get counts directly from user_data
+    const getCounts = () => {
+        return {
+            post_count: userData?.user_data?.post_count || 0,
+            followers_count: userData?.user_data?.followers_number || 0,
+            following_count: userData?.user_data?.following_number || 0,
+        };
+    };
+
+    const counts = getCounts();
+
+    const handleOpenModal = (type) => {
+        // For posts, just scroll to posts section instead of opening modal
+        if (type === 'posts') {
+            const postsSection = document.querySelector('[data-posts-section]');
+            if (postsSection) {
+                postsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            return;
+        }
+        setModalType(type);
+        setModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setModalOpen(false);
+        setModalType(null);
+    };
+
+    // Get users for modal based on type - using data from API response
+    const getModalUsers = () => {
+        if (modalType === 'followers') {
+            // Return followers array from API response
+            return Array.isArray(userData?.followers) ? userData.followers : [];
+        } else if (modalType === 'following') {
+            // Return following array from API response
+            return Array.isArray(userData?.following) ? userData.following : [];
+        }
+        return [];
+    };
+
   // Show error message if API fails
   if (error && !userData) {
     return (
@@ -186,14 +235,16 @@ const Profile = () => {
                     backgroundRepeat: "no-repeat"
                 }}
             >
-                {/* Edit Button */}
-                <button 
-                    onClick={handleEditProfile}
-                    className="absolute top-4 right-4 border cursor-pointer bg-white text-black border-[#d3d1d1] px-4 py-2 rounded-lg transition-colors flex items-center gap-2 font-medium"
-                >
-                    <LiaEdit className="w-5 h-5" />
-                    Edit
-                </button>
+                {/* Edit Button - Only show on own profile */}
+                {isOwnProfile && (
+                    <button 
+                        onClick={handleEditProfile}
+                        className="absolute top-4 right-4 border cursor-pointer bg-white text-black border-[#d3d1d1] px-4 py-2 rounded-lg transition-colors flex items-center gap-2 font-medium"
+                    >
+                        <LiaEdit className="w-5 h-5" />
+                        Edit
+                    </button>
+                )}
             </div>
             <div className="relative w-full bg-[#FFFFFF] px-4 sm:px-6 lg:px-10 py-5">
                 {/* Mobile Layout */}
@@ -220,23 +271,35 @@ const Profile = () => {
                     
                     {/* Stats Row */}
                     <div className="flex items-center justify-around">
-                        <div className="flex flex-col gap-1 text-center">
+                        <div 
+                            className="flex flex-col gap-1 text-center cursor-pointer hover:opacity-70 transition-opacity"
+                            onClick={() => handleOpenModal('posts')}
+                            title="View posts"
+                        >
                             <p className='text-lg font-medium text-[#212121]'>
-                                {loading ? '...' : userData?.user_data?.post_count || 100}
+                                {loading ? '...' : counts.post_count}
                             </p>
                             <p className='text-xs font-medium text-[#808080]'>Posts</p>
                         </div>
                         <div className="w-[1px] h-[40px] bg-[#808080]"></div>
-                        <div className="flex flex-col gap-1 text-center">
+                        <div 
+                            className="flex flex-col gap-1 text-center cursor-pointer hover:opacity-70 transition-opacity"
+                            onClick={() => handleOpenModal('followers')}
+                            title="View followers"
+                        >
                             <p className='text-lg font-medium text-[#212121]'>
-                                {loading ? '...' : userData?.user_data?.followers_number || 433}
+                                {loading ? '...' : counts.followers_count}
                             </p>
                             <p className='text-xs font-medium text-[#808080]'>Followers</p>
                         </div>
                         <div className="w-[1px] h-[40px] bg-[#808080]"></div>
-                        <div className="flex flex-col gap-1 text-center">
+                        <div 
+                            className="flex flex-col gap-1 text-center cursor-pointer hover:opacity-70 transition-opacity"
+                            onClick={() => handleOpenModal('following')}
+                            title="View following"
+                        >
                             <p className='text-lg font-medium text-[#212121]'>
-                                {loading ? '...' : userData?.user_data?.following_number || 403}
+                                {loading ? '...' : counts.following_count}
                             </p>
                             <p className='text-xs font-medium text-[#808080]'>Following</p>
                         </div>
@@ -264,23 +327,35 @@ const Profile = () => {
                         </div>
                     </div>
                     <div className="flex items-center justify-between gap-3 lg:gap-5">
-                        <div className="flex flex-col gap-2 text-center items-center justify-between">
+                        <div 
+                            className="flex flex-col gap-2 text-center items-center justify-between cursor-pointer hover:opacity-70 transition-opacity"
+                            onClick={() => handleOpenModal('posts')}
+                            title="View posts"
+                        >
                             <p className='text-lg lg:text-xl font-medium text-[#212121]'>
-                                {loading ? '...' : userData?.user_data?.post_count || 100}
+                                {loading ? '...' : counts.post_count}
                             </p>
                             <p className='text-xs lg:text-sm font-medium text-[#808080]'>Posts</p>
                         </div>
                         <div className="w-[1px] h-[45px] lg:h-[55px] bg-[#808080]"></div>
-                        <div className="flex flex-col gap-2 text-center items-center justify-between">
+                        <div 
+                            className="flex flex-col gap-2 text-center items-center justify-between cursor-pointer hover:opacity-70 transition-opacity"
+                            onClick={() => handleOpenModal('followers')}
+                            title="View followers"
+                        >
                             <p className='text-lg lg:text-xl font-medium text-[#212121]'>
-                                {loading ? '...' : userData?.user_data?.followers_number || 433}
+                                {loading ? '...' : counts.followers_count}
                             </p>
                             <p className='text-xs lg:text-sm font-medium text-[#808080]'>Followers</p>
                         </div>
                         <div className="w-[1px] h-[45px] lg:h-[55px] bg-[#808080]"></div>
-                        <div className="flex flex-col gap-2 text-center items-center justify-between">
+                        <div 
+                            className="flex flex-col gap-2 text-center items-center justify-between cursor-pointer hover:opacity-70 transition-opacity"
+                            onClick={() => handleOpenModal('following')}
+                            title="View following"
+                        >
                             <p className='text-lg lg:text-xl font-medium text-[#212121]'>
-                                {loading ? '...' : userData?.user_data?.following_number || 403}
+                                {loading ? '...' : counts.following_count}
                             </p>
                             <p className='text-xs lg:text-sm font-medium text-[#808080]'>Following</p>
                         </div>
@@ -288,13 +363,16 @@ const Profile = () => {
                 </div>
             </div>
         </div>
-        <div className="w-full mt-4 px-5">
-        <CreatePostSection  />
-        </div>
+        {/* Only show CreatePostSection on own profile */}
+        {isOwnProfile && (
+            <div className="w-full mt-4 px-5">
+                <CreatePostSection  />
+            </div>
+        )}
         <div className="w-full mt-4 px-5">
             <QuickActionSection />
         </div>
-        <div className="w-full mt-4 px-5">
+        <div className="w-full mt-4 px-5" data-posts-section>
             {postsLoading ? (
                 <Loader />
             ) : posts.length > 0 ? (
@@ -319,6 +397,15 @@ const Profile = () => {
                 </div>
             )}
         </div>
+
+        {/* Followers/Following Modal */}
+        <FollowersFollowingModal
+            isOpen={modalOpen}
+            onClose={handleCloseModal}
+            type={modalType}
+            users={getModalUsers()}
+            loading={loading}
+        />
     </div>
   )
 }

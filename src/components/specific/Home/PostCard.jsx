@@ -710,7 +710,15 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
   return (
                     <div className="bg-white rounded-xl overflow-hidden border border-[#d3d1d1] smooth-content-transition max-w-full" key={post_id}>
       <div className="p-4 flex items-center justify-between">
-        <div className="flex items-center space-x-3">
+        <div 
+          className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={() => {
+            const userIdToNavigate = user?.user_id || user?.id || user?.userId;
+            if (userIdToNavigate) {
+              navigate(`/profile/${userIdToNavigate}`);
+            }
+          }}
+        >
           <Avatar
             src={user?.avatar_url || user?.avatar}
             name={user?.fullName || user?.name}
@@ -1027,17 +1035,35 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                   <div key={comment.id} className="space-y-3">
                     {/* Main Comment */}
                     <div className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                      <Avatar
-                        src={comment.publisher?.avatar_url || comment.publisher?.avatar}
-                        name={`${comment.publisher?.first_name || 'Unknown'} ${comment.publisher?.last_name || ''}`}
-                        email={comment.publisher?.email}
-                        alt={comment.publisher?.name || 'User'}
-                        size="sm"
-                      />
+                      <div
+                        className="cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => {
+                          const userIdToNavigate = comment.publisher?.user_id || comment.publisher?.id || comment.publisher?.userId;
+                          if (userIdToNavigate) {
+                            navigate(`/profile/${userIdToNavigate}`);
+                          }
+                        }}
+                      >
+                        <Avatar
+                          src={comment.publisher?.avatar_url || comment.publisher?.avatar}
+                          name={`${comment.publisher?.first_name || 'Unknown'} ${comment.publisher?.last_name || ''}`}
+                          email={comment.publisher?.email}
+                          alt={comment.publisher?.name || 'User'}
+                          size="sm"
+                        />
+                      </div>
                       <div className="flex-1 min-w-0 max-w-full overflow-hidden">
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1 min-w-0 overflow-hidden">
-                            <span className="font-medium text-sm text-gray-900 block truncate">
+                            <span 
+                              className="font-medium text-sm text-gray-900 block truncate cursor-pointer hover:text-blue-600 transition-colors"
+                              onClick={() => {
+                                const userIdToNavigate = comment.publisher?.user_id || comment.publisher?.id || comment.publisher?.userId;
+                                if (userIdToNavigate) {
+                                  navigate(`/profile/${userIdToNavigate}`);
+                                }
+                              }}
+                            >
                               {comment.publisher?.first_name || 'Unknown'} {comment.publisher?.last_name || ''}
                             </span>
                             <span className="text-xs text-gray-500 block truncate">
@@ -1291,17 +1317,35 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                         {commentReplies[comment.id].map((reply) => (
                           <div key={reply.id} className="p-3 bg-blue-50 rounded-lg border-l-2 border-blue-200">
                             <div className="flex items-start space-x-2">
-                              <Avatar
-                                src={reply.publisher?.avatar_url || reply.publisher?.avatar}
-                                name={`${reply.publisher?.first_name || 'Unknown'} ${reply.publisher?.last_name || ''}`}
-                                email={reply.publisher?.email}
-                                alt={reply.publisher?.name || 'User'}
-                                size="sm"
-                              />
+                              <div
+                                className="cursor-pointer hover:opacity-80 transition-opacity"
+                                onClick={() => {
+                                  const userIdToNavigate = reply.publisher?.user_id || reply.publisher?.id || reply.publisher?.userId;
+                                  if (userIdToNavigate) {
+                                    navigate(`/profile/${userIdToNavigate}`);
+                                  }
+                                }}
+                              >
+                                <Avatar
+                                  src={reply.publisher?.avatar_url || reply.publisher?.avatar}
+                                  name={`${reply.publisher?.first_name || 'Unknown'} ${reply.publisher?.last_name || ''}`}
+                                  email={reply.publisher?.email}
+                                  alt={reply.publisher?.name || 'User'}
+                                  size="sm"
+                                />
+                              </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between mb-1">
                                   <div className="flex items-center space-x-2">
-                                    <span className="font-medium text-xs text-gray-900">
+                                    <span 
+                                      className="font-medium text-xs text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
+                                      onClick={() => {
+                                        const userIdToNavigate = reply.publisher?.user_id || reply.publisher?.id || reply.publisher?.userId;
+                                        if (userIdToNavigate) {
+                                          navigate(`/profile/${userIdToNavigate}`);
+                                        }
+                                      }}
+                                    >
                                       {reply.publisher?.first_name || 'Unknown'} {reply.publisher?.last_name || ''}
                                     </span>
                                     <span className="text-xs text-gray-500">

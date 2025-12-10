@@ -8,6 +8,8 @@ import { FaArrowTrendUp } from "react-icons/fa6";
 import { useNavigate, Link } from 'react-router-dom';
 import { useChatContext } from '../../context/ChatContext';
 import { useUser } from '../../context/UserContext';
+import StoryCreateModal from './StoryCreateModal';
+import StoryViewer from './StoryViewer';
 
 
 
@@ -22,6 +24,11 @@ const Chatbox = ({ onClose, isMobile = false }) => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [storyModalOpen, setStoryModalOpen] = useState(false);
+  const [storyViewerOpen, setStoryViewerOpen] = useState(false);
+  const [userStories, setUserStories] = useState([]);
+  const [storiesLoading, setStoriesLoading] = useState(false);
+  const [storyBorderAnimating, setStoryBorderAnimating] = useState(false);
   const containerRef = useRef(null);
   const [containerRect, setContainerRect] = useState(null);
   const navigate = useNavigate();
@@ -176,7 +183,62 @@ const Chatbox = ({ onClose, isMobile = false }) => {
   useEffect(() => {
     getalluserchats();
     getallgroupchats();
+    fetchUserStories();
   }, []);
+
+  // Fetch user stories
+  const fetchUserStories = async () => {
+    setStoriesLoading(true);
+    try {
+      const accessToken = localStorage.getItem('access_token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/stories/user-stories`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          limit: 20,
+          offset: 0
+        }),
+      });
+
+      const data = await response.json();
+      if (data?.api_status === 200 && data?.stories && data.stories.length > 0) {
+        // Find current user's stories
+        const userId = localStorage.getItem('user_id');
+        const currentUserStories = data.stories.find(
+          (storyGroup) => storyGroup.user_id.toString() === userId.toString()
+        );
+        if (currentUserStories && currentUserStories.stories && currentUserStories.stories.length > 0) {
+          setUserStories(currentUserStories.stories);
+        } else {
+          setUserStories([]);
+        }
+      } else {
+        setUserStories([]);
+      }
+    } catch (error) {
+      console.error('Error fetching stories:', error);
+      setUserStories([]);
+    } finally {
+      setStoriesLoading(false);
+    }
+  };
+
+  // Handle profile image click - show stories if exist, otherwise show create modal
+  const handleProfileImageClick = () => {
+    if (userStories && userStories.length > 0) {
+      // Trigger animation on click
+      setStoryBorderAnimating(true);
+      setTimeout(() => {
+        setStoryBorderAnimating(false);
+      }, 600); // Animation duration
+      setStoryViewerOpen(true);
+    } else {
+      setStoryModalOpen(true);
+    }
+  };
 
   useEffect(() => {
   }, [activeSection]);
@@ -266,25 +328,46 @@ const Chatbox = ({ onClose, isMobile = false }) => {
 
       {/* Profile Section */}
       <div className="pt-8 sticky top-0 z-10 bg-[#EDF6F9] ">
-        <div className={`w-full xl:p-1 lg:p-1 rounded-lg bg-white shadow-[#EDF6F9] shadow-md border border-[#d3d1d1] sticky top-5 z-10 profile-section relative ${notificationsOpen ? 'min-h-[70vh]' : ''}`}>
+        <div className={`w-full xl:p-1 lg:p-1 rounded-lg bg-white shadow-[#EDF6F9] shadow-md border border-[#d3d1d1] sticky top-5 z-10 profile-section  ${notificationsOpen ? 'min-h-[70vh]' : ''}`}>
           <div className="flex xl:p-1 lg:p-1 items-center justify-between">
-            <div className="relative w-[58px] h-[58px] rounded-full bg-[#EDF6F9] border-[4px] border-inset border-[#ffffff] shadow-md shadow-fuchsia-400">
-              {userData?.avatar_url ? (
-                <img 
-                  src={userData.avatar_url || "https://img.freepik.com/premium-vector/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4866.jpg?semt=ais_hybrid&w=740&q=80"} 
-                  alt="Profile" 
-                  className="w-full h-full object-cover rounded-full"
-                  onError={(e) => {
-                    e.target.src = "https://img.freepik.com/premium-vector/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4866.jpg?semt=ais_hybrid&w=740&q=80";
+            <div className="relative">
+              {/* Story indicator border - Instagram style gradient ring with click animation */}
+              {userStories && userStories.length > 0 && (
+                <div 
+                  className="absolute inset-[-3px] rounded-full z-[-1]"
+                  style={{
+                    background: 'conic-gradient(from 0deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%, #f09433 100%)',
+                    animation: storyBorderAnimating ? 'spin-gradient-once 0.6s ease-out' : 'none',
                   }}
                 />
-              ) : (
-                <div className="w-full h-full bg-gray-300 flex items-center justify-center">
-                  <FaUser className="text-gray-600 text-xl" />
-                </div>
               )}
-              <div className="grid place-items-center absolute -right-1 -bottom-1 bg-black w-5 h-5 rounded-full border-inset border-[2px] shadow-2xl shadow-fuchsia-400 border-white">
-                <FaPlus className='text-white size-[10px]' />
+              <div 
+                className="relative w-[58px] h-[58px] rounded-full bg-[#EDF6F9] border-[4px] border-inset border-[#ffffff] shadow-md shadow-fuchsia-400 cursor-pointer hover:opacity-90 transition-opacity z-10"
+                onClick={handleProfileImageClick}
+              >
+                {userData?.avatar_url ? (
+                  <img 
+                    src={userData.avatar_url || "https://img.freepik.com/premium-vector/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4866.jpg?semt=ais_hybrid&w=740&q=80"} 
+                    alt="Profile" 
+                    className="w-full h-full object-cover rounded-full"
+                    onError={(e) => {
+                      e.target.src = "https://img.freepik.com/premium-vector/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4866.jpg?semt=ais_hybrid&w=740&q=80";
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-300 flex items-center justify-center">
+                    <FaUser className="text-gray-600 text-xl" />
+                  </div>
+                )}
+                <div 
+                  className="grid place-items-center absolute -right-1 -bottom-1 bg-black w-5 h-5 rounded-full border-inset border-[2px] shadow-2xl shadow-fuchsia-400 border-white cursor-pointer hover:bg-gray-800 transition-colors z-10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setStoryModalOpen(true);
+                  }}
+                >
+                  <FaPlus className='text-white size-[10px]' />
+                </div>
               </div>
             </div>
 
@@ -690,6 +773,24 @@ const Chatbox = ({ onClose, isMobile = false }) => {
           </div>
         </div>
       </div>
+
+      {/* Story Create Modal */}
+      <StoryCreateModal 
+        isOpen={storyModalOpen} 
+        onClose={() => setStoryModalOpen(false)}
+        onStoryCreated={fetchUserStories}
+      />
+
+      {/* Story Viewer */}
+      {userStories && userStories.length > 0 && (
+        <StoryViewer
+          isOpen={storyViewerOpen}
+          onClose={() => setStoryViewerOpen(false)}
+          stories={userStories}
+          currentUser={userData}
+          onStoryDeleted={fetchUserStories}
+        />
+      )}
 
     </div>
   )

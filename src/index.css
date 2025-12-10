@@ -160,3 +160,13 @@ article::-webkit-scrollbar {
 .smooth-scroll::-webkit-scrollbar {
   display: none !important;
 }
+
+/* Instagram-style spinning gradient border animation for stories - plays once on click */
+@keyframes spin-gradient-once {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
