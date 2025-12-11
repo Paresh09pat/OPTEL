@@ -862,7 +862,26 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
       {iframelink && iframelink !== "" && <iframe src={`https://www.youtube.com/embed/${iframelink}`} className="w-full h-[300px] object-cover" controls></iframe>}
 
       {/* Handle audio */}
-      {audio && <audio src={audio} controls className="w-full h-auto object-cover" />}
+      {audio && (
+        <div className="w-full bg-gray-50 rounded-lg p-4">
+          <audio 
+            src={audio} 
+            controls 
+            className="w-full"
+            onPlay={(e) => {
+              // Pause all other audio elements when this one plays
+              const audios = document.querySelectorAll("audio");
+              audios.forEach((audioEl) => {
+                if (audioEl !== e.target) {
+                  audioEl.pause();
+                }
+              });
+            }}
+          >
+            Your browser does not support the audio element.
+          </audio>
+        </div>
+      )}
 
       {postfile && postfile !== "" && (
         <>

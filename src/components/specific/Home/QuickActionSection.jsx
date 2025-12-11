@@ -7,59 +7,45 @@ const QuickActionsSection = ({ className = '', fetchNewFeeds }) => {
 
   const actions = [
     {
-      icon: () => <Icon icon="iconoir:post-solid" width="30" height="30" style={{ color: '#9748ff' }} />,
-      color: 'text-purple-500',
-      name: "text",
-      tooltip: 'Texts', 
-      // 'photos','video','music','files','maps','text'
-
-    },
-    {
       icon: () => <Icon icon="solar:album-bold" width="30" height="30" style={{ color: '#8BC34B' }} />,
       color: 'text-green-500',
-      name: "photos",
-      tooltip: 'images'
+      name: "image",
+      tooltip: 'Images'
     },
     {
       icon: () => <Icon icon="solar:folder-bold" width="30" height="30" style={{ color: '#F44336' }} />,
       color: 'text-red-500',
-      name: "files",
-      tooltip: 'files'
+      name: "file",
+      tooltip: 'Files'
     },
     {
       icon: () => <Icon icon="vscode-icons:file-type-video" width="30" height="30" style={{ color: '#8BC34B' }} />,
       color: 'text-green-600',
       name: "video",
-      tooltip: 'videos'
+      tooltip: 'Videos'
     },
     {
-      icon: () => <Icon icon="mdi:audio-video" width="30" height="30" style={{ color: '#01A9F4' }} />,
+      icon: () => <Icon icon="solar:music-note-bold" width="30" height="30" style={{ color: '#01A9F4' }} />,
       color: 'text-blue-500',
-      name: "music",
-      tooltip: 'audio'
-    },
-    {
-      icon: () => <Icon icon="fluent:document-one-page-multiple-24-filled" width="30" height="30" style={{ color: '#F69F58' }} />,
-      color: 'text-orange-500',
-
-      tooltip: 'Pages'
+      name: "audio",
+      tooltip: 'Audio'
     },
     {
       icon: () => <Icon icon="bxl:blogger" width="30" height="30" style={{ color: '#F25D4D' }} />,
       color: 'text-red-500',
-
-      tooltip: 'Blog'
+      name: "blogs",
+      tooltip: 'Blogs'
     },
     {
       icon: () => <Icon icon="mingcute:news-fill" width="30" height="30" style={{ color: '#009DA0' }} />,
       color: 'text-teal-500',
-
+      name: "articles",
       tooltip: 'Articles'
     },
     {
       icon: () => <Icon icon="hugeicons:new-job" width="30" height="30" style={{ color: '#4CAF50' }} />,
       color: 'text-green-500',
-
+      name: "jobs",
       tooltip: 'Jobs'
     },
   ];

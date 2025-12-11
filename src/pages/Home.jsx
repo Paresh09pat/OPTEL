@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 
 import CreatePostSection from '../components/specific/Home/CreatePostSection';
 import FeedCard from '../components/specific/Home/FeedCard';
@@ -83,6 +83,9 @@ const Home = () => {
 
   const [postReactions, setPostReactions] = useState({}); // Track reactions for each post
   const [userLocation, setUserLocation] = useState(null); // Store user location
+  const isFetchingRef = useRef(false); // Track if a request is in progress
+  const lastFilterRef = useRef(null); // Track the last filter type
+  const lastCallTimeRef = useRef(0); // Track the last API call time for debouncing
 
   // Request location access when component mounts
   useEffect(() => {
@@ -160,26 +163,50 @@ const Home = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  const getNewFeeds = async (type) => {
-    const formData = new URLSearchParams();
-
-    if (type) {
-      formData.append('post_type', type);
+  const getNewFeeds = useCallback(async (type) => {
+    const now = Date.now();
+    
+    // Prevent multiple simultaneous API calls
+    if (isFetchingRef.current) {
+      return;
     }
 
+    // Debounce: Prevent rapid successive calls (within 500ms)
+    if (now - lastCallTimeRef.current < 500) {
+      return;
+    }
+
+    // Prevent duplicate calls with the same filter within 1 second
+    if (lastFilterRef.current === type && (now - lastCallTimeRef.current) < 1000) {
+      return;
+    }
 
     try {
+      isFetchingRef.current = true;
+      lastFilterRef.current = type;
+      lastCallTimeRef.current = now;
       setError(null);
       const accessToken = localStorage.getItem("access_token");
       setLoading(true);
 
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/v1/new-feed`, {
+      // Build query parameters
+      const params = new URLSearchParams();
+      params.append('per_page', '10');
+      
+      // Valid filter types: image, file, video, audio, blogs, articles, jobs
+      const validFilters = ['image', 'file', 'video', 'audio', 'blogs', 'articles', 'jobs'];
+      
+      if (type && validFilters.includes(type)) {
+        params.append('filter', type);
+      }
+
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/v1/new-feed?${params.toString()}`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken}`,
         },
-
-      })
+      });
+      
       const data = await response.data;
 
 
@@ -216,12 +243,14 @@ const Home = () => {
 
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
-  }
+  }, []);
 
 
   useEffect(() => {
     getNewFeeds();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const posts = [];
@@ -354,18 +383,28 @@ const Home = () => {
     setLoading(true);
     try {
       const accessToken = localStorage.getItem("access_token");
+      const wasSaved = savedPosts.has(post_id);
 
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/v1/posts/${post_id}/save`, {}, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-          "Accept": "application/json"
-        },
-      })
+      // Use DELETE method to unsave, POST method to save
+      const response = wasSaved
+        ? await axios.delete(`${import.meta.env.VITE_API_URL}/api/v1/posts/${post_id}/save`, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${accessToken}`,
+              "Accept": "application/json"
+            },
+          })
+        : await axios.post(`${import.meta.env.VITE_API_URL}/api/v1/posts/${post_id}/save`, {}, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${accessToken}`,
+              "Accept": "application/json"
+            },
+          });
+
       const data = await response.data;
       if (data?.ok === true) {
         // Update the saved state
-        const wasSaved = savedPosts.has(post_id);
         setSavedPosts(prev => {
           const newSavedPosts = new Set(prev);
           if (wasSaved) {
@@ -422,7 +461,7 @@ const Home = () => {
     }
   }
   const getPostReaction = async (post_id) => {
-    setLoading(true);
+    // Don't set loading state for individual post reactions to avoid UI flicker and multiple loading states
     try {
       const accessToken = localStorage.getItem("access_token");
       const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/v1/posts/${post_id}/reactions`, {
@@ -436,8 +475,6 @@ const Home = () => {
     } catch (error) {
       console.error('Error getting post reaction:', error);
       return null;
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -617,28 +654,30 @@ const Home = () => {
     setLoading(true);
     try {
       const accessToken = localStorage.getItem("access_token");
-      const formData = new URLSearchParams();
-      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
-      formData.append('post_id', post_id);
-      const response = await fetch(`https://ouptel.com/api/hide_post?access_token=${accessToken}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-Requested-With': 'XMLHttpRequest',
-          "Accept": "application/json"
-        },
-        body: formData.toString(),
-      })
-      const data = await response.json();
-      if (data?.api_status === 200) {
+
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/v1/posts/hide`,
+        { post_id: post_id },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+            "Accept": "application/json"
+          },
+        }
+      );
+
+      const data = await response.data;
+      if (data?.ok === true) {
         // Remove the hidden post from the feed
         setNewFeeds(prev => prev.filter(post => post.id !== post_id));
-        showNotification('Post hidden successfully');
+        toast.success('Post hidden successfully');
       } else {
-        showNotification('Failed to hide post', 'error');
+        toast.error(data?.message || 'Failed to hide post');
       }
     } catch (error) {
-      showNotification('Error hiding post', 'error');
+      const errorMsg = error?.response?.data?.message || 'Error hiding post';
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -655,7 +694,33 @@ const Home = () => {
       return `https://ouptel.com/${url.replace(/^\//, '')}`;
     };
 
-    // Handle new API album_images structure (HIGHEST PRIORITY)
+    // Handle audio posts with post_record_url (HIGHEST PRIORITY for audio)
+    if (post?.post_record_url) {
+      // Check if it's an audio file by URL pattern or post_type
+      const isAudio = post?.post_type === 'audio' || 
+                      post?.post_record_url.includes('/audio/') ||
+                      post?.post_record_url.includes('/sounds/') ||
+                      /\.(mp3|wav|ogg|aac|flac|wma|m4a)/i.test(post.post_record_url);
+      
+      if (isAudio) {
+        return { audio: ensureFullUrl(post.post_record_url) };
+      }
+    }
+
+    // Handle audio posts with post_record (fallback)
+    if (post?.post_record) {
+      // Check if it's an audio file by URL pattern or post_type
+      const isAudio = post?.post_type === 'audio' || 
+                      post?.post_record.includes('/audio/') ||
+                      post?.post_record.includes('/sounds/') ||
+                      /\.(mp3|wav|ogg|aac|flac|wma|m4a)/i.test(post.post_record);
+      
+      if (isAudio) {
+        return { audio: ensureFullUrl(post.post_record) };
+      }
+    }
+
+    // Handle new API album_images structure
     if (post?.album_images && Array.isArray(post.album_images) && post.album_images.length > 0) {
       const processedImages = post.album_images.map(img => ({
         id: img.id,
@@ -712,11 +777,17 @@ const Home = () => {
         url.includes('image') ||
         url.includes('photo');
 
+      // Check if URL contains audio-like patterns
+      const urlLooksLikeAudio = /\.(mp3|wav|ogg|aac|flac|wma|m4a)/i.test(url) ||
+        url.includes('audio') ||
+        url.includes('sound') ||
+        url.includes('posts/audio');
+
       if (imageExtensions.includes(ext) || urlLooksLikeImage) {
         return { image: url };
       } else if (videoExtensions.includes(ext)) {
         return { video: url };
-      } else if (audioExtensions.includes(ext)) {
+      } else if (audioExtensions.includes(ext) || urlLooksLikeAudio) {
         return { audio: url };
       }
       // Only show file download for non-media files

@@ -224,7 +224,7 @@ const Profile = () => {
   }
 
   return (
-    <div className=" w-full h-full pt-8 bg-[#EDF6F9]">
+    <div className=" w-full h-auto pt-8 bg-[#EDF6F9]">
         <div className="flex flex-col  border border-[#d3d1d1] rounded-xl overflow-hidden">
             <div 
                 className="relative h-[200px] w-full"
