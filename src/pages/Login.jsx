@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { FaEye, FaEyeSlash, FaLock, FaShieldAlt, FaUser } from "react-icons/fa";
 import { useUser } from '../context/UserContext';
 import { toast } from 'react-toastify';
+import { baseUrl } from '../utils/constant';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -18,7 +19,7 @@ const Login = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/v1/login`,
+        `${baseUrl}/api/v1/login`,
         {
           email: username,
           password,
