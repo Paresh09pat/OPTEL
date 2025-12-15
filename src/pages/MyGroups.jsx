@@ -11,6 +11,7 @@ const MyGroups = () => {
   const [createGroupModal, setCreateGroupModal] = useState(false);
   const [suggestedGroups, setSuggestedGroups] = useState([]);
   const [myGroups, setMyGroups] = useState([]);
+  const [joinedGroups, setJoinedGroups] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [expandedGroup, setExpandedGroup] = useState(null);
@@ -78,12 +79,45 @@ const MyGroups = () => {
     }
   };
 
+  // Fetch joined groups from API
+  const fetchJoinedGroups = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const accessToken = localStorage.getItem("access_token");
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_URL}/api/v1/groups?type=joined_groups`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+
+      if (response.data && response.data.data) {
+        setJoinedGroups(response.data.data);
+      } else {
+        setJoinedGroups([]);
+      }
+    } catch (err) {
+      console.error("Error fetching joined groups:", err);
+      setError("Failed to load joined groups. Please try again.");
+      setJoinedGroups([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Load groups when component mounts or when tab is selected
   useEffect(() => {
     if (activeTab === "suggested") {
       fetchSuggestedGroups();
     } else if (activeTab === "myGroups") {
       fetchMyGroups();
+    } else if (activeTab === "joined") {
+      fetchJoinedGroups();
     }
   }, [activeTab]);
 
@@ -99,8 +133,10 @@ const MyGroups = () => {
       const accessToken = localStorage.getItem("access_token");
 
       const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/v1/groups/${groupId}/join`,
-        {},
+        `${import.meta.env.VITE_API_URL}/api/v1/groups/join`,
+        {
+          group_id: groupId,
+        },
         {
           headers: {
             "Content-Type": "application/json",
@@ -191,7 +227,8 @@ const MyGroups = () => {
   const getCurrentGroups = () => {
     if (activeTab === "myGroups") return myGroups;
     if (activeTab === "suggested") return suggestedGroups;
-    return groups.joined;
+    if (activeTab === "joined") return joinedGroups;
+    return [];
   };
 
   return (
@@ -250,7 +287,8 @@ const MyGroups = () => {
             {/* Groups Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {(activeTab === "suggested" && loading) ||
-              (activeTab === "myGroups" && loading) ? (
+              (activeTab === "myGroups" && loading) ||
+              (activeTab === "joined" && loading) ? (
                 // Loading state for groups
                 <div className="col-span-full flex justify-center items-center py-16">
                   <div className="flex flex-col items-center gap-4">
@@ -258,12 +296,15 @@ const MyGroups = () => {
                     <p className="text-gray-600">
                       {activeTab === "suggested"
                         ? "Loading suggested groups..."
-                        : "Loading my groups..."}
+                        : activeTab === "myGroups"
+                        ? "Loading my groups..."
+                        : "Loading joined groups..."}
                     </p>
                   </div>
                 </div>
               ) : (activeTab === "suggested" && error) ||
-                (activeTab === "myGroups" && error) ? (
+                (activeTab === "myGroups" && error) ||
+                (activeTab === "joined" && error) ? (
                 // Error state for groups
                 <div className="col-span-full flex justify-center items-center py-16">
                   <div className="text-center">
@@ -272,7 +313,9 @@ const MyGroups = () => {
                       onClick={
                         activeTab === "suggested"
                           ? fetchSuggestedGroups
-                          : fetchMyGroups
+                          : activeTab === "myGroups"
+                          ? fetchMyGroups
+                          : fetchJoinedGroups
                       }
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
@@ -511,7 +554,7 @@ const MyGroups = () => {
                     </div>
                   </div>
                 ))
-              ) : (
+              ) : activeTab === "joined" ? (
                 getCurrentGroups().map((group) => (
                   <div
                     key={group.id}
@@ -520,16 +563,24 @@ const MyGroups = () => {
                     {/* Header with Logo and Title */}
                     <div className="p-4 sm:p-5 flex items-center gap-3">
                       <div
-                        className={`w-12 h-12   rounded-full flex items-center justify-center shadow-md shadow-[#00000040] flex-shrink-0`}
+                        className={`w-12 h-12 rounded-full flex items-center justify-center shadow-md shadow-[#00000040] flex-shrink-0 overflow-hidden`}
                       >
-                        <span className="text-2xl">{group.logo}</span>
+                        {group.avatar_url ? (
+                          <img
+                            src={group.avatar_url}
+                            alt={group.group_name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-2xl">👥</span>
+                        )}
                       </div>
                       <div>
                         <h3 className="text-lg sm:text-xl font-bold text-gray-900">
-                          {group.name}
+                          {group.group_name}
                         </h3>
                         <p className="text-gray-600 text-sm">
-                          {group.subtitle}
+                          {group.group_title}
                         </p>
                       </div>
                     </div>
@@ -537,24 +588,39 @@ const MyGroups = () => {
                     {/* Cover Image */}
                     <div className="w-full h-56 sm:h-64 bg-gradient-to-br from-purple-600 to-blue-600 overflow-hidden">
                       <img
-                        src={group.image}
-                        alt={group.name}
+                        src={
+                          group.cover_url ||
+                          "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&q=80"
+                        }
+                        alt={group.group_name}
                         className="w-full h-full object-cover"
                       />
                     </div>
 
-                    {/* Footer with Members and Join Button */}
+                    {/* Group Description */}
+                    {group.about && (
+                      <div className="p-4 sm:p-5 border-b border-gray-100">
+                        <p className="text-gray-600 text-sm line-clamp-2">
+                          {group.about
+                            .replace(/<br\s*\/?>/gi, " ")
+                            .substring(0, 100)}
+                          {group.about.length > 100 && "..."}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Footer with Members */}
                     <div className="p-4 sm:p-5 flex items-center justify-between">
                       <div className="flex items-center gap-2 text-gray-700">
                         <HiUsers className="w-5 h-5 text-[#3D8CFA]" />
                         <span className="font-semibold text-sm">
-                          {group.members}
+                          {group.members_count} Members
                         </span>
                       </div>
                     </div>
                   </div>
                 ))
-              )}
+              ) : null}
             </div>
             {/* Empty State */}
             {getCurrentGroups().length === 0 && !loading && !error && (

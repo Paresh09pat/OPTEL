@@ -10,6 +10,7 @@ const Explore = () => {
   const [pages, setPages] = useState([]);
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [countries, setCountries] = useState([]);
 
   // Filter states
   const [filters, setFilters] = useState({
@@ -33,6 +34,36 @@ const Explore = () => {
     total: 0,
     last_page: 1,
   });
+
+  // Fetch countries on component mount
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        const accessToken = localStorage.getItem('access_token');
+        const response = await axios.get('https://admin.ouptel.in/api/v1/countries', {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken || ''}`,
+          },
+        });
+        
+        // Handle different possible response structures
+        if (response.data) {
+          if (Array.isArray(response.data)) {
+            setCountries(response.data);
+          } else if (response.data.data && Array.isArray(response.data.data)) {
+            setCountries(response.data.data);
+          } else if (response.data.countries && Array.isArray(response.data.countries)) {
+            setCountries(response.data.countries);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching countries:', error);
+      }
+    };
+
+    fetchCountries();
+  }, []);
 
   // Call API on initial load
   useEffect(() => {
@@ -282,9 +313,21 @@ const Explore = () => {
               }}
             >
               <option value="all">Country : All</option>
-              <option value="India">India</option>
-              <option value="United States">United States</option>
-              <option value="United Kingdom">United Kingdom</option>
+              {countries.map((country, index) => {
+                // Handle different country data structures
+                const countryName = typeof country === 'string' 
+                  ? country 
+                  : country.name || country.country_name || country.country || country.title || '';
+                const countryValue = typeof country === 'string' 
+                  ? country 
+                  : country.name || country.country_name || country.country || country.id || country.code || '';
+                
+                return countryName ? (
+                  <option key={index} value={countryValue}>
+                    {countryName}
+                  </option>
+                ) : null;
+              })}
             </select>
           </div>
 
