@@ -9,6 +9,7 @@ import Avatar from '../components/Avatar'
 import axios from 'axios'
 import Loader from '../components/loading/Loader'
 import FollowersFollowingModal from '../components/specific/Profile/FollowersFollowingModal'
+import { toast } from 'react-toastify'
 
 const Profile = () => {
     const [userData, setUserData] = useState(null);
@@ -19,6 +20,8 @@ const Profile = () => {
     const [postsError, setPostsError] = useState(null);
     const [modalOpen, setModalOpen] = useState(false);
     const [modalType, setModalType] = useState(null); // 'followers', 'following', or 'posts'
+    const [isFollowing, setIsFollowing] = useState(false);
+    const [isFollowLoading, setIsFollowLoading] = useState(false);
     const navigate = useNavigate();
     const { userId: urlUserId } = useParams();
 
@@ -58,6 +61,8 @@ const Profile = () => {
                     if (data.user_data?.username) {
                         localStorage.setItem('user_username', data.user_data.username);
                     }
+                    // Update follow status based on API response
+                    setIsFollowing(!data.user_data?.can_follow && !isOwnProfile);
                 } else {
                     throw new Error(data.api_text || 'Failed to fetch user data');
                 }
@@ -165,6 +170,62 @@ const Profile = () => {
         navigate('/profile-settings');
     };
 
+    const handleFollow = async () => {
+        if (isOwnProfile || !userData?.user_data?.can_follow) return;
+        
+        setIsFollowLoading(true);
+        try {
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_URL}/api/v1/people-follow/follow`,
+                {
+                    user_id: userId
+                },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`,
+                    }
+                }
+            );
+            
+            const data = response.data;
+            
+            // Check if the API returned an error response
+            if (data?.ok === false) {
+                toast.error(data?.message || 'Failed to follow user. Please try again later.');
+                return;
+            }
+            
+            if (data?.api_status === 200 || data?.ok === true) {
+                setIsFollowing(true);
+                toast.success('Successfully followed user!');
+                // Refresh user data to get updated counts and follow status
+                const refreshResponse = await axios.get(
+                    `${import.meta.env.VITE_API_URL}/api/v1/profile/user-data?user_profile_id=${userId}&fetch=user_data,followers,following`,
+                    {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`,
+                        }
+                    }
+                );
+                if (refreshResponse.data.api_status === '200') {
+                    setUserData(refreshResponse.data);
+                    // Update follow status after refresh
+                    setIsFollowing(!refreshResponse.data.user_data?.can_follow && !isOwnProfile);
+                }
+            } else {
+                toast.error(data?.message || 'Failed to follow user. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error following user:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to follow user. Please try again later.';
+            toast.error(errorMessage);
+        } finally {
+            setIsFollowLoading(false);
+        }
+    };
+
     // Get counts directly from user_data
     const getCounts = () => {
         return {
@@ -260,12 +321,47 @@ const Profile = () => {
                             className='mt-[-5rem] z-10 border border-[#d3d1d1] shadow-lg' 
                         />
                         <div className="flex flex-col gap-1 text-[#212121] mt-4">
-                            <h3 className='text-lg font-medium'>
-                                {loading ? 'Loading...' : `${userData?.user_data?.first_name || 'Aman'} ${userData?.user_data?.last_name || 'Shaikh'}`}
-                            </h3>
+                            <div className="flex items-center justify-center gap-2">
+                                <h3 className='text-lg font-medium'>
+                                    {loading ? 'Loading...' : `${userData?.user_data?.first_name || 'Aman'} ${userData?.user_data?.last_name || 'Shaikh'}`}
+                                </h3>
+                                {!isOwnProfile && userData?.user_data?.is_following_me && (
+                                    <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
+                                        Follows you
+                                    </span>
+                                )}
+                            </div>
                             <p className='text-sm font-medium'>
                                 @{userData?.user_data?.username || 'aman.shaikh'}
                             </p>
+                            {/* Follow Button - Mobile */}
+                            {!isOwnProfile && (
+                                <div className="mt-2">
+                                    {userData?.user_data?.can_follow ? (
+                                        <button
+                                            onClick={handleFollow}
+                                            disabled={isFollowLoading}
+                                            className="px-6 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto"
+                                        >
+                                            {isFollowLoading ? (
+                                                <>
+                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                                    <span>Following...</span>
+                                                </>
+                                            ) : (
+                                                'Follow'
+                                            )}
+                                        </button>
+                                    ) : (
+                                        <button
+                                            disabled
+                                            className="px-6 py-2 bg-gray-200 text-gray-600 rounded-lg font-medium cursor-not-allowed"
+                                        >
+                                            {isFollowing ? 'Following' : 'Requested'}
+                                        </button>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
                     
@@ -318,15 +414,50 @@ const Profile = () => {
                             className='mt-[-5rem] z-10 border border-[#d3d1d1] shadow-lg' 
                         />
                         <div className="flex flex-col gap-2 text-[#212121]">
-                            <h3 className='text-lg lg:text-xl font-medium'>
-                                {loading ? 'Loading...' : `${userData?.user_data?.first_name || 'Aman'} ${userData?.user_data?.last_name || 'Shaikh'}`}
-                            </h3>
+                            <div className="flex items-center gap-2">
+                                <h3 className='text-lg lg:text-xl font-medium'>
+                                    {loading ? 'Loading...' : `${userData?.user_data?.first_name || 'Aman'} ${userData?.user_data?.last_name || 'Shaikh'}`}
+                                </h3>
+                                {!isOwnProfile && userData?.user_data?.is_following_me && (
+                                    <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
+                                        Follows you
+                                    </span>
+                                )}
+                            </div>
                             <p className='text-sm font-medium'>
                                 @{userData?.user_data?.username || 'aman.shaikh'}
                             </p>
                         </div>
                     </div>
                     <div className="flex items-center justify-between gap-3 lg:gap-5">
+                        {/* Follow Button - Desktop */}
+                        {!isOwnProfile && (
+                            <div className="mr-4">
+                                {userData?.user_data?.can_follow ? (
+                                    <button
+                                        onClick={handleFollow}
+                                        disabled={isFollowLoading}
+                                        className="px-6 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                    >
+                                        {isFollowLoading ? (
+                                            <>
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                                <span>Following...</span>
+                                            </>
+                                        ) : (
+                                            'Follow'
+                                        )}
+                                    </button>
+                                ) : (
+                                    <button
+                                        disabled
+                                        className="px-6 py-2 bg-gray-200 text-gray-600 rounded-lg font-medium cursor-not-allowed"
+                                    >
+                                        {isFollowing ? 'Following' : 'Requested'}
+                                    </button>
+                                )}
+                            </div>
+                        )}
                         <div 
                             className="flex flex-col gap-2 text-center items-center justify-between cursor-pointer hover:opacity-70 transition-opacity"
                             onClick={() => handleOpenModal('posts')}
