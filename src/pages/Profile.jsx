@@ -61,8 +61,8 @@ const Profile = () => {
                     if (data.user_data?.username) {
                         localStorage.setItem('user_username', data.user_data.username);
                     }
-                    // Update follow status based on API response
-                    setIsFollowing(!data.user_data?.can_follow && !isOwnProfile);
+                    // Update follow status based on is_following from API response
+                    setIsFollowing(data.user_data?.is_following === true && !isOwnProfile);
                 } else {
                     throw new Error(data.api_text || 'Failed to fetch user data');
                 }
@@ -171,7 +171,7 @@ const Profile = () => {
     };
 
     const handleFollow = async () => {
-        if (isOwnProfile || !userData?.user_data?.can_follow) return;
+        if (isOwnProfile || userData?.user_data?.is_following) return;
         
         setIsFollowLoading(true);
         try {
@@ -190,13 +190,8 @@ const Profile = () => {
             
             const data = response.data;
             
-            // Check if the API returned an error response
-            if (data?.ok === false) {
-                toast.error(data?.message || 'Failed to follow user. Please try again later.');
-                return;
-            }
-            
-            if (data?.api_status === 200 || data?.ok === true) {
+            // Check for successful follow response
+            if (data?.api_status === 200 && data?.follow_status === "followed") {
                 setIsFollowing(true);
                 toast.success('Successfully followed user!');
                 // Refresh user data to get updated counts and follow status
@@ -211,15 +206,65 @@ const Profile = () => {
                 );
                 if (refreshResponse.data.api_status === '200') {
                     setUserData(refreshResponse.data);
-                    // Update follow status after refresh
-                    setIsFollowing(!refreshResponse.data.user_data?.can_follow && !isOwnProfile);
+                    // Update follow status after refresh using is_following
+                    setIsFollowing(refreshResponse.data.user_data?.is_following === true && !isOwnProfile);
                 }
             } else {
+                // Handle error response
                 toast.error(data?.message || 'Failed to follow user. Please try again.');
             }
         } catch (error) {
             console.error('Error following user:', error);
             const errorMessage = error.response?.data?.message || error.message || 'Failed to follow user. Please try again later.';
+            toast.error(errorMessage);
+        } finally {
+            setIsFollowLoading(false);
+        }
+    };
+
+    const handleUnfollow = async () => {
+        if (isOwnProfile || !userData?.user_data?.is_following) return;
+        
+        setIsFollowLoading(true);
+        try {
+            const response = await axios.delete(
+                `${import.meta.env.VITE_API_URL}/api/v1/users/${userId}/follow`,
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`,
+                    }
+                }
+            );
+            
+            const data = response.data;
+            
+            // Check for successful unfollow response
+            if (data?.ok === true && data?.data?.status === "unfollowed") {
+                setIsFollowing(false);
+                toast.success(data?.message || 'Successfully unfollowed user!');
+                // Refresh user data to get updated counts and follow status
+                const refreshResponse = await axios.get(
+                    `${import.meta.env.VITE_API_URL}/api/v1/profile/user-data?user_profile_id=${userId}&fetch=user_data,followers,following`,
+                    {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`,
+                        }
+                    }
+                );
+                if (refreshResponse.data.api_status === '200') {
+                    setUserData(refreshResponse.data);
+                    // Update follow status after refresh using is_following
+                    setIsFollowing(refreshResponse.data.user_data?.is_following === true && !isOwnProfile);
+                }
+            } else {
+                // Handle error response
+                toast.error(data?.message || 'Failed to unfollow user. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error unfollowing user:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to unfollow user. Please try again later.';
             toast.error(errorMessage);
         } finally {
             setIsFollowLoading(false);
@@ -337,7 +382,22 @@ const Profile = () => {
                             {/* Follow Button - Mobile */}
                             {!isOwnProfile && (
                                 <div className="mt-2">
-                                    {userData?.user_data?.can_follow ? (
+                                    {userData?.user_data?.is_following ? (
+                                        <button
+                                            onClick={handleUnfollow}
+                                            disabled={isFollowLoading}
+                                            className="px-6 py-2 border border-blue-500 text-blue-500 bg-transparent rounded-lg font-medium hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto"
+                                        >
+                                            {isFollowLoading ? (
+                                                <>
+                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                                    <span>Unfollowing...</span>
+                                                </>
+                                            ) : (
+                                                'Unfollow'
+                                            )}
+                                        </button>
+                                    ) : (
                                         <button
                                             onClick={handleFollow}
                                             disabled={isFollowLoading}
@@ -351,13 +411,6 @@ const Profile = () => {
                                             ) : (
                                                 'Follow'
                                             )}
-                                        </button>
-                                    ) : (
-                                        <button
-                                            disabled
-                                            className="px-6 py-2 bg-gray-200 text-gray-600 rounded-lg font-medium cursor-not-allowed"
-                                        >
-                                            {isFollowing ? 'Following' : 'Requested'}
                                         </button>
                                     )}
                                 </div>
@@ -433,7 +486,22 @@ const Profile = () => {
                         {/* Follow Button - Desktop */}
                         {!isOwnProfile && (
                             <div className="mr-4">
-                                {userData?.user_data?.can_follow ? (
+                                {userData?.user_data?.is_following ? (
+                                    <button
+                                        onClick={handleUnfollow}
+                                        disabled={isFollowLoading}
+                                        className="px-6 py-2 border border-blue-500 text-blue-500 bg-transparent rounded-lg font-medium hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                    >
+                                        {isFollowLoading ? (
+                                            <>
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                                <span>Unfollowing...</span>
+                                            </>
+                                        ) : (
+                                            'Unfollow'
+                                        )}
+                                    </button>
+                                ) : (
                                     <button
                                         onClick={handleFollow}
                                         disabled={isFollowLoading}
@@ -447,13 +515,6 @@ const Profile = () => {
                                         ) : (
                                             'Follow'
                                         )}
-                                    </button>
-                                ) : (
-                                    <button
-                                        disabled
-                                        className="px-6 py-2 bg-gray-200 text-gray-600 rounded-lg font-medium cursor-not-allowed"
-                                    >
-                                        {isFollowing ? 'Following' : 'Requested'}
                                     </button>
                                 )}
                             </div>
