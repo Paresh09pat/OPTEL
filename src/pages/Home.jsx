@@ -81,7 +81,6 @@ const Home = () => {
   // Image popup state
   const [imagePopup, setImagePopup] = useState({ show: false, images: [], currentIndex: 0 });
 
-  const [postReactions, setPostReactions] = useState({}); // Track reactions for each post
   const [userLocation, setUserLocation] = useState(null); // Store user location
   const isFetchingRef = useRef(false); // Track if a request is in progress
   const lastFilterRef = useRef(null); // Track the last filter type
@@ -234,9 +233,6 @@ const Home = () => {
           localStorage.setItem("saved_posts", JSON.stringify([...combined]));
           return combined;
         });
-
-        // Load reactions for all posts after feed is loaded
-        loadAllPostReactions(feedData);
       }
     } catch (error) {
       setError(error.message);
@@ -288,52 +284,37 @@ const Home = () => {
   }, []);
 
   const handleLike = async (post_id) => {
-    setLoading(true);
-    try {
-      const accessToken = localStorage.getItem("access_token");
+    // This function is kept for backward compatibility but uses data from feed
+    // The actual like action should use handleReaction instead
+    const post = newFeeds.find(p => p.id === post_id);
+    if (post) {
+      const wasLiked = post.is_liked || likedPosts.has(post_id);
+      
+      setLikedPosts(prev => {
+        const newLikedPosts = new Set(prev);
+        if (wasLiked) {
+          newLikedPosts.delete(post_id);
+        } else {
+          newLikedPosts.add(post_id);
+        }
+        localStorage.setItem("liked_posts", JSON.stringify([...newLikedPosts]));
+        return newLikedPosts;
+      });
 
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/v1/posts/${post_id}/reactions`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-          "Accept": "application/json"
-        },
-      })
-      const data = await response.data;
-      // Update the liked state and like count
-      if (data?.ok === true) {
-        const wasLiked = likedPosts.has(post_id);
-
-        setLikedPosts(prev => {
-          const newLikedPosts = new Set(prev);
-          if (wasLiked) {
-            newLikedPosts.delete(post_id);
-          } else {
-            newLikedPosts.add(post_id);
-          }
-          // Save to localStorage
-          localStorage.setItem("liked_posts", JSON.stringify([...newLikedPosts]));
-          return newLikedPosts;
-        });
-
-        // Update the like count in newFeeds
-        setNewFeeds(prev =>
-          prev.map(post =>
-            post.id === post_id
-              ? {
-                ...post,
-                reactions_count: wasLiked
-                  ? Math.max(0, parseInt(post.reactions_count || post.post_likes || 0) - 1)
-                  : parseInt(post.reactions_count || post.post_likes || 0) + 1,
-                is_liked: !wasLiked
-              }
-              : post
-          )
-        );
-      }
-    } catch (error) {
-    } finally {
-      setLoading(false);
+      // Update the like count in newFeeds based on current state
+      setNewFeeds(prev =>
+        prev.map(p =>
+          p.id === post_id
+            ? {
+              ...p,
+              reactions_count: wasLiked
+                ? Math.max(0, parseInt(p.reactions_count || p.post_likes || 0) - 1)
+                : parseInt(p.reactions_count || p.post_likes || 0) + 1,
+              is_liked: !wasLiked
+            }
+            : p
+        )
+      );
     }
   }
 
@@ -460,69 +441,6 @@ const Home = () => {
       setLoading(false);
     }
   }
-  const getPostReaction = async (post_id) => {
-    // Don't set loading state for individual post reactions to avoid UI flicker and multiple loading states
-    try {
-      const accessToken = localStorage.getItem("access_token");
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/v1/posts/${post_id}/reactions`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-      const data = await response.data;
-      return data;
-    } catch (error) {
-      console.error('Error getting post reaction:', error);
-      return null;
-    }
-  }
-
-  // Load reactions for all posts
-  const loadAllPostReactions = async (posts) => {
-    if (!posts || posts.length === 0) return;
-
-    try {
-      const reactionPromises = posts.map(async (post) => {
-        if (post.id) {
-          const reactionData = await getPostReaction(post.id);
-          return { postId: post.id, reactionData };
-        }
-        return null;
-      });
-
-      const results = await Promise.all(reactionPromises);
-
-      // Update postReactions state with all reaction data
-      const newPostReactions = {};
-      results.forEach(result => {
-        if (result && result.reactionData?.ok === true) {
-          newPostReactions[result.postId] = result.reactionData.data?.reaction_type || null;
-        }
-      });
-
-      setPostReactions(prev => ({ ...prev, ...newPostReactions }));
-
-      // Update newFeeds with reaction data
-      setNewFeeds(prev =>
-        prev.map(post => {
-          const result = results.find(r => r?.postId === post.id);
-          if (result && result.reactionData?.ok === true) {
-            return {
-              ...post,
-              reaction_counts: result.reactionData.data?.reaction_counts || {},
-              current_reaction: result.reactionData.data?.user_reaction || null,
-              user_reaction: result.reactionData.data?.user_reaction || null
-            };
-          }
-          return post;
-        })
-      );
-
-    } catch (error) {
-      console.error('Error loading post reactions:', error);
-    }
-  }
 
   const showNotification = (message, type = 'success') => {
     setNotification({ show: true, message, type });
@@ -571,18 +489,6 @@ const Home = () => {
   }, [imagePopup.show]);
 
 
-  // Reaction popup handlers
-  const showReactionPopup = (postId) => {
-    setReactionPopup({
-      show: true,
-      postId
-    });
-  };
-
-  const hideReactionPopup = () => {
-    setReactionPopup({ show: false, postId: null });
-  };
-
   const handleReaction = async (postId, reactionType) => {
     setLoading(true);
     try {
@@ -622,12 +528,6 @@ const Home = () => {
               : post
           )
         );
-
-        // Store the reaction type for this post
-        setPostReactions(prev => ({
-          ...prev,
-          [postId]: isRemoved ? null : data.data.user_reaction
-        }));
 
         console.log('Reaction updated:', {
           postId,
@@ -1104,7 +1004,7 @@ const Home = () => {
                     getNewsFeed={getNewFeeds}
                     openImagePopup={openImagePopup}
                     handleReaction={handleReaction}
-                    postReaction={postReactions[post?.id]}
+                    postReaction={post?.user_reaction || post?.current_reaction}
                     postReactionCounts={post?.reaction_counts}
                     currentReaction={post?.current_reaction || post?.user_reaction}
                     userReaction={post?.user_reaction}
@@ -1134,7 +1034,7 @@ const Home = () => {
                   isLiked={likedPosts.has(post.id)}
                   isSaved={savedPosts.has(post.id)}
                   savePost={savePost}
-                  postReaction={postReactions[post?.id]}
+                  postReaction={null}
                   reportPost={reportPost}
                   hidePost={hidePost}
                 />

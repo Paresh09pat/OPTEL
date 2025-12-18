@@ -241,11 +241,14 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
     return labels[reactionType] || 'Liked';
   };
 
-  // Get total reaction count
+  // Get total reaction count - use likes prop which contains reactions_count from API
   const getTotalReactionCount = () => {
-    if (postReactionCounts) {
+    // If postReactionCounts exists, calculate from it (for detailed breakdown)
+    // Otherwise, use likes prop which already contains reactions_count from /new-feed API
+    if (postReactionCounts && Object.keys(postReactionCounts).length > 0) {
       return Object.values(postReactionCounts).reduce((sum, count) => sum + count, 0);
     }
+    // Use likes prop which contains reactions_count from the feed API
     return likes || 0;
   };
 
@@ -940,10 +943,10 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
 
       <div className="p-4">
         <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
-          <span>{getTotalReactionCount()} Reactions</span>
+          <span>{getTotalReactionCount() || 0} Reactions</span>
           <div className="flex space-x-4">
-            <span>{comments} Comments</span>
-            <span>{shares} Shares</span>
+            <span>{comments || 0} Comments</span>
+            <span>{shares || 0} Shares</span>
           </div>
         </div>
 
