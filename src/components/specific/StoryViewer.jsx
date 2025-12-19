@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { FaTimes, FaChevronLeft, FaChevronRight, FaTrash } from 'react-icons/fa';
 import { toast } from 'react-toastify';
+import { ThumbsUp } from 'lucide-react';
 import DeleteStoryModal from './DeleteStoryModal';
+import { baseUrl } from '../../utils/constant';
+import axios from 'axios';
 
 const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted }) => {
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
@@ -11,6 +14,11 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted }) 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const storiesRef = useRef(stories);
   const currentStoryIndexRef = useRef(0);
+  // Reaction states
+  const [showReactionPopup, setShowReactionPopup] = useState(false);
+  const [hoverTimeout, setHoverTimeout] = useState(null);
+  const [storyReactions, setStoryReactions] = useState({}); // Store reactions for each story
+  const [reacting, setReacting] = useState(false);
 
   // Keep refs in sync
   useEffect(() => {
@@ -20,7 +28,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted }) 
 
   const currentStory = stories && stories.length > 0 ? stories[currentStoryIndex] : null;
 
-  // Define functions first before useEffects
+  // Define progress functions first (needed by hover handlers)
   const stopProgress = useCallback(() => {
     if (progressIntervalRef.current) {
       clearInterval(progressIntervalRef.current);
@@ -72,15 +80,215 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted }) 
     }, interval);
   }, [isPaused, stopProgress, nextStory]);
 
+  // Build auth headers
+  const buildAuthHeaders = useCallback(() => {
+    const accessToken = localStorage.getItem("access_token");
+    const headers = {
+      'Content-Type': 'application/json',
+      Accept: 'application/json'
+    };
+    if (accessToken) {
+      headers.Authorization = `Bearer ${accessToken}`;
+    }
+    return headers;
+  }, []);
+
+  // Get reaction emoji based on reaction type
+  const getReactionEmoji = (reactionType) => {
+    const reactions = {
+      1: '👍', // Thumbs up
+      2: '❤️', // Heart
+      3: '😂', // Haha
+      4: '😮', // Wow
+      5: '😢', // Sad
+      6: '😡'  // Angry
+    };
+    return reactions[reactionType] || '👍';
+  };
+
+  // Get reaction label based on reaction type
+  const getReactionLabel = (reactionType) => {
+    const labels = {
+      1: 'Liked',
+      2: 'Loved',
+      3: 'Haha',
+      4: 'Wow',
+      5: 'Sad',
+      6: 'Angry'
+    };
+    return labels[reactionType] || 'Liked';
+  };
+
+  // React to story
+  const handleStoryReaction = useCallback(async (storyId, reactionType) => {
+    if (!storyId || reacting) return;
+    
+    setReacting(true);
+    try {
+      const response = await axios.post(
+        `${baseUrl}/api/v1/stories/react`,
+        {
+          id: storyId,
+          reaction: reactionType
+        },
+        {
+          headers: buildAuthHeaders()
+        }
+      );
+
+      const data = response.data;
+      if (data?.ok === true || data?.api_status === 200) {
+        // Check if reaction was removed
+        if (data?.message === 'reaction removed') {
+          // Remove the reaction from state
+          setStoryReactions(prev => {
+            const newReactions = { ...prev };
+            delete newReactions[storyId];
+            return newReactions;
+          });
+          toast.success('Reaction removed');
+        } else {
+          // Update the reaction for this story
+          setStoryReactions(prev => ({
+            ...prev,
+            [storyId]: reactionType
+          }));
+          toast.success(`${getReactionLabel(reactionType)} story!`);
+        }
+        setShowReactionPopup(false);
+        // Resume story after reaction
+        setIsPaused(false);
+        if (isOpen && stories && stories.length > 0) {
+          startProgress();
+        }
+      } else {
+        toast.error(data?.message || 'Failed to react to story');
+        // Resume story even if reaction failed
+        setIsPaused(false);
+        if (isOpen && stories && stories.length > 0) {
+          startProgress();
+        }
+      }
+    } catch (error) {
+      console.error('Error reacting to story:', error);
+      toast.error(error?.response?.data?.message || error?.message || 'Something went wrong while reacting to the story.');
+      // Resume story even if error occurred
+      setIsPaused(false);
+      if (isOpen && stories && stories.length > 0) {
+        startProgress();
+      }
+    } finally {
+      setReacting(false);
+    }
+  }, [buildAuthHeaders, reacting, isOpen, stories, startProgress]);
+
+  // Handle hover with delay to prevent glitch
+  const handleReactionButtonMouseEnter = () => {
+    // Pause story when hovering over reaction button
+    setIsPaused(true);
+    stopProgress();
+    
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout);
+    }
+    
+    const timeout = setTimeout(() => {
+      setShowReactionPopup(true);
+    }, 300);
+    setHoverTimeout(timeout);
+  };
+
+  const handleReactionButtonMouseLeave = () => {
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout);
+      setHoverTimeout(null);
+    }
+    // Only resume story if popup is not shown (user moved away before popup appeared)
+    // If popup is shown, story stays paused until user leaves popup area
+    setTimeout(() => {
+      if (!showReactionPopup) {
+        // Resume story when leaving reaction button and popup never appeared
+        setIsPaused(false);
+        if (isOpen && stories && stories.length > 0) {
+          startProgress();
+        }
+      }
+    }, 100);
+  };
+
+  const handlePopupMouseEnter = () => {
+    // Keep story paused when hovering over popup
+    setIsPaused(true);
+    stopProgress();
+    
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout);
+      setHoverTimeout(null);
+    }
+  };
+
+  const handlePopupMouseLeave = () => {
+    setShowReactionPopup(false);
+    // Resume story when leaving popup
+    setIsPaused(false);
+    if (isOpen && stories && stories.length > 0) {
+      startProgress();
+    }
+  };
+
+  const handleReactionClick = (reactionType) => {
+    if (currentStory?.id) {
+      handleStoryReaction(currentStory.id, reactionType);
+    }
+  };
+
+  const handleClickOutside = (e) => {
+    if (showReactionPopup && !e.target.closest('[data-story-reaction-popup]') && !e.target.closest('[data-story-reaction-button]')) {
+      setShowReactionPopup(false);
+      // Resume story when clicking outside reaction area
+      setIsPaused(false);
+      if (isOpen && stories && stories.length > 0) {
+        startProgress();
+      }
+    }
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeout) {
+        clearTimeout(hoverTimeout);
+      }
+    };
+  }, [hoverTimeout]);
+
+  // Add click outside handler for reaction popup
+  useEffect(() => {
+    if (showReactionPopup) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [showReactionPopup]);
+
   // Reset when modal opens/closes
   useEffect(() => {
     if (isOpen && stories && stories.length > 0) {
       setCurrentStoryIndex(0);
       setProgress(0);
       setIsPaused(false);
+      setShowReactionPopup(false);
+      // Initialize reactions from story data if available
+      const initialReactions = {};
+      stories.forEach(story => {
+        if (story.user_reaction) {
+          initialReactions[story.id] = story.user_reaction;
+        }
+      });
+      setStoryReactions(initialReactions);
     } else {
       stopProgress();
       setProgress(0);
+      setShowReactionPopup(false);
     }
 
     return () => {
@@ -92,6 +300,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted }) 
   useEffect(() => {
     if (isOpen && stories && stories.length > 0 && !isPaused) {
       setProgress(0);
+      setShowReactionPopup(false); // Close reaction popup when story changes
       // Small delay to ensure state is updated
       const timer = setTimeout(() => {
         startProgress();
@@ -290,6 +499,91 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted }) 
             {currentStory?.description && (
               <p className="text-white/90 text-sm">{currentStory.description}</p>
             )}
+
+            {/* Reaction Button */}
+            <div className="relative mt-4 flex items-center gap-2">
+              <button
+                data-story-reaction-button
+                className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-black/30 hover:bg-black/50 transition-all duration-200 cursor-pointer ${
+                  storyReactions[currentStory?.id] ? 'text-blue-400' : 'text-white'
+                }`}
+                 onClick={(e) => {
+                   e.stopPropagation(); // Prevent triggering story pause/play
+                   // Pause story when clicking reaction button
+                   setIsPaused(true);
+                   stopProgress();
+                   if (storyReactions[currentStory?.id]) {
+                     // If already reacted, show popup to change reaction
+                     setShowReactionPopup(true);
+                   } else {
+                     // If not reacted, show popup to select reaction
+                     setShowReactionPopup(true);
+                   }
+                 }}
+                onMouseDown={(e) => e.stopPropagation()} // Prevent triggering story pause
+                onMouseUp={(e) => e.stopPropagation()} // Prevent triggering story play
+                onMouseEnter={handleReactionButtonMouseEnter}
+                onMouseLeave={handleReactionButtonMouseLeave}
+                disabled={reacting}
+              >
+                {storyReactions[currentStory?.id] ? (
+                  <>
+                    <span className="text-xl">{getReactionEmoji(storyReactions[currentStory?.id])}</span>
+                    <span className="text-sm font-medium">{getReactionLabel(storyReactions[currentStory?.id])}</span>
+                  </>
+                ) : (
+                  <>
+                    <ThumbsUp className="w-5 h-5" />
+                    <span className="text-sm font-medium">React</span>
+                  </>
+                )}
+              </button>
+
+              {/* Reaction Popup */}
+              {showReactionPopup && (
+                <div 
+                  className="absolute bottom-full left-0 mb-2 z-20"
+                  data-story-reaction-popup
+                  onMouseEnter={handlePopupMouseEnter}
+                  onMouseLeave={handlePopupMouseLeave}
+                  onMouseDown={(e) => e.stopPropagation()} // Prevent triggering story pause
+                  onMouseUp={(e) => e.stopPropagation()} // Prevent triggering story play
+                >
+                  <div className="bg-white rounded-full shadow-2xl border-2 border-gray-300 p-3 flex items-center space-x-2">
+                    {[
+                      { emoji: '👍', type: 1, label: 'Like' },
+                      { emoji: '❤️', type: 2, label: 'Love' },
+                      { emoji: '😂', type: 3, label: 'Haha' },
+                      { emoji: '😮', type: 4, label: 'Wow' },
+                      { emoji: '😢', type: 5, label: 'Sad' },
+                      { emoji: '😡', type: 6, label: 'Angry' }
+                    ].map((reaction) => {
+                      const isCurrentReaction = storyReactions[currentStory?.id] === reaction.type;
+                      return (
+                        <button
+                          key={reaction.type}
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent triggering story pause/play
+                            handleReactionClick(reaction.type);
+                          }}
+                          onMouseDown={(e) => e.stopPropagation()} // Prevent triggering story pause
+                          onMouseUp={(e) => e.stopPropagation()} // Prevent triggering story play
+                          className={`w-10 h-10 flex items-center justify-center text-2xl hover:scale-125 transition-all duration-200 rounded-full relative ${
+                            isCurrentReaction 
+                              ? 'bg-blue-100 ring-2 ring-blue-500' 
+                              : 'hover:bg-gray-100'
+                          }`}
+                          title={`${reaction.label}${isCurrentReaction ? ' - Current' : ''}`}
+                          disabled={reacting}
+                        >
+                          {reaction.emoji}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

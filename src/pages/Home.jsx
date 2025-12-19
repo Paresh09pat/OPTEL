@@ -6,7 +6,9 @@ import InfiniteFriendSuggestions from '../components/specific/Home/InfiniteFrien
 import PostCard from '../components/specific/Home/PostCard';
 import QuickActionsSection from '../components/specific/Home/QuickActionSection';
 import ScrollableSection from '../components/specific/Home/ScrollableSection';
+import StoriesSection from '../components/specific/Home/StoriesSection';
 import Loader from '../components/loading/Loader';
+import StoryViewer from '../components/specific/StoryViewer';
 import { useUser } from '../context/UserContext';
 import axios from 'axios';
 import { toast } from 'react-toastify';
@@ -921,25 +923,14 @@ const Home = () => {
           <div className="mb-6 md:mb-8">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 md:mb-6 px-2 md:px-4">Vibe</h2>
             <div className="px-2 md:px-4">
-              <ScrollableSection>
-                {Array.isArray(userStories || []) && (userStories || []).length > 0 ? (
-                  (userStories || []).map((user, index) => {
-
-                    return (
-                      <FeedCard
-                        key={user.user_id || index}
-                        image={user.stories && user.stories.length > 0 ? user.stories[0].thumbnail : (user.avatar_url || user.avatar)}
-                        username={user.username || user.first_name}
-                        isVideo={false}
-                        avatar={user.avatar_url || user.avatar}
-                        onClick={() => handleStoryClick(user)}
-                      />
-                    );
-                  })
-                ) : (
-                  ""
-                )}
-              </ScrollableSection>
+              <StoriesSection
+                userStories={userStories}
+                onStoryClick={handleStoryClick}
+                onStoryCreated={() => {
+                  getuserStories();
+                }}
+                currentUserId={localStorage.getItem('user_id')}
+              />
             </div>
           </div>
 
@@ -1044,77 +1035,25 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Stories Preview Modal */}
-      {showStoriesPreview && selectedUserForStories && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg max-w-md w-full max-h-[80vh] h-full overflow-y-auto">
-            <div className="p-4 border-b border-[#d3d1d1] flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <img
-                  src={selectedUserForStories.avatar_url || selectedUserForStories.avatar || "/perimg.png"}
-                  alt={selectedUserForStories.username || selectedUserForStories.first_name}
-                  className="w-10 h-10 rounded-full object-cover"
-                  onError={(e) => {
-                    e.target.src = "/perimg.png";
-                  }}
-                />
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {selectedUserForStories.first_name} {selectedUserForStories.last_name}
-                  </h3>
-                  <p className="text-sm text-gray-500">@{selectedUserForStories.username}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  setShowStoriesPreview(false);
-                  setSelectedUserForStories(null);
-                }}
-                className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="p-4">
-              {selectedUserForStories.stories && selectedUserForStories.stories.length > 0 ? (
-                <div className="space-y-4">
-                  {selectedUserForStories.stories.map((story, index) => (
-                    <div key={story.id} className="border border-[#d3d1d1] rounded-lg p-3">
-                      {story.thumbnail && (
-                        <img
-                          src={story.thumbnail}
-                          alt={story.description || "Story"}
-                          className="w-full h-full object-cover rounded-lg mb-3"
-                        />
-                      )}
-                      <div className="space-y-2">
-                        <p className="text-sm text-gray-600">
-                          {story.time_text || "Recently"}
-                        </p>
-                        {story.description && (
-                          <p className="text-gray-900">{story.description}</p>
-                        )}
-                        <div className="flex items-center justify-between text-sm text-gray-500">
-                          <span>{story.view_count || 0} views</span>
-                          {story.is_viewed ? (
-                            <span className="text-green-600">Viewed</span>
-                          ) : (
-                            <span className="text-blue-600">New</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  No stories available
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+      {/* Stories Viewer for Other Users */}
+      {showStoriesPreview && selectedUserForStories && selectedUserForStories.stories && selectedUserForStories.stories.length > 0 && (
+        <StoryViewer
+          isOpen={showStoriesPreview}
+          onClose={() => {
+            setShowStoriesPreview(false);
+            setSelectedUserForStories(null);
+          }}
+          stories={selectedUserForStories.stories}
+          currentUser={{
+            name: `${selectedUserForStories.first_name || ''} ${selectedUserForStories.last_name || ''}`.trim() || selectedUserForStories.username,
+            username: selectedUserForStories.username,
+            avatar_url: selectedUserForStories.avatar_url || selectedUserForStories.avatar
+          }}
+          onStoryDeleted={() => {
+            // Refresh stories after deletion
+            getuserStories();
+          }}
+        />
       )}
 
       {/* Image Popup/Modal */}
