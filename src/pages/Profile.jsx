@@ -22,6 +22,8 @@ const Profile = () => {
     const [modalType, setModalType] = useState(null); // 'followers', 'following', or 'posts'
     const [isFollowing, setIsFollowing] = useState(false);
     const [isFollowLoading, setIsFollowLoading] = useState(false);
+    const [isFriend, setIsFriend] = useState(false);
+    const [isFriendLoading, setIsFriendLoading] = useState(false);
     const navigate = useNavigate();
     const { userId: urlUserId } = useParams();
 
@@ -63,6 +65,8 @@ const Profile = () => {
                     }
                     // Update follow status based on is_following from API response
                     setIsFollowing(data.user_data?.is_following === true && !isOwnProfile);
+                    // Update friend status based on is_friend from API response
+                    setIsFriend(data.user_data?.is_friend === 1 || data.user_data?.is_friend === true);
                 } else {
                     throw new Error(data.api_text || 'Failed to fetch user data');
                 }
@@ -108,7 +112,7 @@ const Profile = () => {
 
                 // Use timeline API for all profiles (own and others)
                 const response = await axios.get(
-                    `${import.meta.env.VITE_API_URL}/api/v1/timeline?u=${username}&limit=20&before_post_id=`,
+                    `${import.meta.env.VITE_API_URL}/api/v1/timeline?u=${username}&limit=20`,
                     {
                         headers: {
                             "Authorization": "Bearer " + localStorage.getItem('access_token'),
@@ -212,6 +216,8 @@ const Profile = () => {
                     setUserData(refreshResponse.data);
                     // Update follow status after refresh using is_following
                     setIsFollowing(refreshResponse.data.user_data?.is_following === true && !isOwnProfile);
+                    // Update friend status after refresh
+                    setIsFriend(refreshResponse.data.user_data?.is_friend === 1 || refreshResponse.data.user_data?.is_friend === true);
                 }
             } else {
                 // Handle error response
@@ -261,6 +267,8 @@ const Profile = () => {
                     setUserData(refreshResponse.data);
                     // Update follow status after refresh using is_following
                     setIsFollowing(refreshResponse.data.user_data?.is_following === true && !isOwnProfile);
+                    // Update friend status after refresh
+                    setIsFriend(refreshResponse.data.user_data?.is_friend === 1 || refreshResponse.data.user_data?.is_friend === true);
                 }
             } else {
                 // Handle error response
@@ -272,6 +280,107 @@ const Profile = () => {
             toast.error(errorMessage);
         } finally {
             setIsFollowLoading(false);
+        }
+    };
+
+    const handleSendFriendRequest = async () => {
+        if (isOwnProfile || userData?.user_data?.is_friend === 1 || userData?.user_data?.is_friend === true) return;
+        
+        setIsFriendLoading(true);
+        try {
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_URL}/api/v1/friends/send-request`,
+                {
+                    user_id: userId.toString()
+                },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`,
+                    }
+                }
+            );
+            
+            const data = response.data;
+            
+            // Check for successful friend request response
+            if (data?.api_status === 200) {
+                setIsFriend(true);
+                toast.success(data?.message || 'Friend request sent successfully!');
+                // Refresh user data to get updated friend status
+                const refreshResponse = await axios.get(
+                    `${import.meta.env.VITE_API_URL}/api/v1/profile/user-data?user_profile_id=${userId}&fetch=user_data,followers,following`,
+                    {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`,
+                        }
+                    }
+                );
+                if (refreshResponse.data.api_status === '200') {
+                    setUserData(refreshResponse.data);
+                    // Update friend status after refresh
+                    setIsFriend(refreshResponse.data.user_data?.is_friend === 1 || refreshResponse.data.user_data?.is_friend === true);
+                }
+            } else {
+                // Handle error response
+                toast.error(data?.message || 'Failed to send friend request. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error sending friend request:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to send friend request. Please try again later.';
+            toast.error(errorMessage);
+        } finally {
+            setIsFriendLoading(false);
+        }
+    };
+
+    const handleUnfriend = async () => {
+        if (isOwnProfile || !(userData?.user_data?.is_friend === 1 || userData?.user_data?.is_friend === true)) return;
+        
+        setIsFriendLoading(true);
+        try {
+            const response = await axios.delete(
+                `${import.meta.env.VITE_API_URL}/api/v1/friends/${userId}`,
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`,
+                    }
+                }
+            );
+            
+            const data = response.data;
+            
+            // Check for successful unfriend response
+            if (data?.ok === true || data?.api_status === 200) {
+                setIsFriend(false);
+                toast.success(data?.message || 'Successfully unfriended user!');
+                // Refresh user data to get updated friend status
+                const refreshResponse = await axios.get(
+                    `${import.meta.env.VITE_API_URL}/api/v1/profile/user-data?user_profile_id=${userId}&fetch=user_data,followers,following`,
+                    {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`,
+                        }
+                    }
+                );
+                if (refreshResponse.data.api_status === '200') {
+                    setUserData(refreshResponse.data);
+                    // Update friend status after refresh
+                    setIsFriend(refreshResponse.data.user_data?.is_friend === 1 || refreshResponse.data.user_data?.is_friend === true);
+                }
+            } else {
+                // Handle error response
+                toast.error(data?.message || 'Failed to unfriend user. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error unfriending user:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to unfriend user. Please try again later.';
+            toast.error(errorMessage);
+        } finally {
+            setIsFriendLoading(false);
         }
     };
 
@@ -777,47 +886,11 @@ const Profile = () => {
                             <p className='text-sm font-medium'>
                                 @{userData?.user_data?.username || 'aman.shaikh'}
                             </p>
-                         
-                            {!isOwnProfile && (
-                                <div className="mt-2">
-                                    {userData?.user_data?.is_following ? (
-                                        <button
-                                            onClick={handleUnfollow}
-                                            disabled={isFollowLoading}
-                                            className="px-6 py-2 border border-blue-500 text-blue-500 bg-transparent rounded-lg font-medium hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto"
-                                        >
-                                            {isFollowLoading ? (
-                                                <>
-                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                                                    <span>Unfollowing...</span>
-                                                </>
-                                            ) : (
-                                                'Unfollow'
-                                            )}
-                                        </button>
-                                    ) : (
-                                        <button
-                                            onClick={handleFollow}
-                                            disabled={isFollowLoading}
-                                            className="px-6 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto"
-                                        >
-                                            {isFollowLoading ? (
-                                                <>
-                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                                    <span>Following...</span>
-                                                </>
-                                            ) : (
-                                                'Follow'
-                                            )}
-                                        </button>
-                                    )}
-                                </div>
-                            )}
                         </div>
                     </div>
                     
                     {/* Stats Row */}
-                    <div className="flex items-center justify-around">
+                    <div className="flex items-center justify-around mb-4">
                         <div 
                             className="flex flex-col gap-1 text-center cursor-pointer hover:opacity-70 transition-opacity"
                             onClick={() => handleOpenModal('posts')}
@@ -851,6 +924,77 @@ const Profile = () => {
                             <p className='text-xs font-medium text-[#808080]'>Following</p>
                         </div>
                     </div>
+
+                    {/* Action Buttons - Below Stats (Mobile) */}
+                    {!isOwnProfile && (
+                        <div className="flex flex-row gap-2 justify-end">
+                            {/* Follow/Unfollow Button */}
+                            {userData?.user_data?.is_following ? (
+                                <button
+                                    onClick={handleUnfollow}
+                                    disabled={isFollowLoading}
+                                    className="px-6 py-2 border border-blue-500 text-blue-500 bg-transparent rounded-lg font-medium hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                >
+                                    {isFollowLoading ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                            <span>Unfollowing...</span>
+                                        </>
+                                    ) : (
+                                        'Unfollow'
+                                    )}
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={handleFollow}
+                                    disabled={isFollowLoading}
+                                    className="px-6 py-2 border border-blue-500 text-blue-500 bg-transparent rounded-lg font-medium hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                >
+                                    {isFollowLoading ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                            <span>Following...</span>
+                                        </>
+                                    ) : (
+                                        'Follow'
+                                    )}
+                                </button>
+                            )}
+                            
+                            {/* Friend Request/Unfriend Button */}
+                            {userData?.user_data?.is_friend === 1 || userData?.user_data?.is_friend === true ? (
+                                <button
+                                    onClick={handleUnfriend}
+                                    disabled={isFriendLoading}
+                                    className="px-6 py-2 border border-blue-500 text-blue-500 bg-transparent rounded-lg font-medium hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                >
+                                    {isFriendLoading ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                            <span>Unfriending...</span>
+                                        </>
+                                    ) : (
+                                        'Unfriend'
+                                    )}
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={handleSendFriendRequest}
+                                    disabled={isFriendLoading}
+                                    className="px-6 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                >
+                                    {isFriendLoading ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                            <span>Sending...</span>
+                                        </>
+                                    ) : (
+                                        'Add Friend'
+                                    )}
+                                </button>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {/* Desktop Layout */}
@@ -881,42 +1025,6 @@ const Profile = () => {
                         </div>
                     </div>
                     <div className="flex items-center justify-between gap-3 lg:gap-5">
-                        {/* Follow Button - Desktop */}
-                        {!isOwnProfile && (
-                            <div className="mr-4">
-                                {userData?.user_data?.is_following ? (
-                                    <button
-                                        onClick={handleUnfollow}
-                                        disabled={isFollowLoading}
-                                        className="px-6 py-2 border border-blue-500 text-blue-500 bg-transparent rounded-lg font-medium hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                                    >
-                                        {isFollowLoading ? (
-                                            <>
-                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                                                <span>Unfollowing...</span>
-                                            </>
-                                        ) : (
-                                            'Unfollow'
-                                        )}
-                                    </button>
-                                ) : (
-                                    <button
-                                        onClick={handleFollow}
-                                        disabled={isFollowLoading}
-                                        className="px-6 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                                    >
-                                        {isFollowLoading ? (
-                                            <>
-                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                                <span>Following...</span>
-                                            </>
-                                        ) : (
-                                            'Follow'
-                                        )}
-                                    </button>
-                                )}
-                            </div>
-                        )}
                         <div 
                             className="flex flex-col gap-2 text-center items-center justify-between cursor-pointer hover:opacity-70 transition-opacity"
                             onClick={() => handleOpenModal('posts')}
@@ -951,6 +1059,77 @@ const Profile = () => {
                         </div>
                     </div>
                 </div>
+
+                {/* Action Buttons - Below Stats (Desktop) */}
+                {!isOwnProfile && (
+                    <div className="hidden sm:flex items-center gap-3 mt-4 justify-end">
+                        {/* Follow/Unfollow Button */}
+                        {userData?.user_data?.is_following ? (
+                            <button
+                                onClick={handleUnfollow}
+                                disabled={isFollowLoading}
+                                className="px-6 py-2 border border-blue-500 text-blue-500 bg-transparent rounded-lg font-medium hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            >
+                                {isFollowLoading ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                        <span>Unfollowing...</span>
+                                    </>
+                                ) : (
+                                    'Unfollow'
+                                )}
+                            </button>
+                        ) : (
+                            <button
+                                onClick={handleFollow}
+                                disabled={isFollowLoading}
+                                className="px-6 py-2 border border-blue-500 text-blue-500 bg-transparent rounded-lg font-medium hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            >
+                                {isFollowLoading ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                        <span>Following...</span>
+                                    </>
+                                ) : (
+                                    'Follow'
+                                )}
+                            </button>
+                        )}
+                        
+                        {/* Friend Request/Unfriend Button */}
+                        {userData?.user_data?.is_friend === 1 || userData?.user_data?.is_friend === true ? (
+                            <button
+                                onClick={handleUnfriend}
+                                disabled={isFriendLoading}
+                                className="px-6 py-2 border border-blue-500 text-blue-500 bg-transparent rounded-lg font-medium hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            >
+                                {isFriendLoading ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                        <span>Unfriending...</span>
+                                    </>
+                                ) : (
+                                    'Unfriend'
+                                )}
+                            </button>
+                        ) : (
+                            <button
+                                onClick={handleSendFriendRequest}
+                                disabled={isFriendLoading}
+                                className="px-6 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            >
+                                {isFriendLoading ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                        <span>Sending...</span>
+                                    </>
+                                ) : (
+                                    'Add Friend'
+                                )}
+                            </button>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
         {/* Only show CreatePostSection on own profile */}
@@ -1004,7 +1183,7 @@ const Profile = () => {
                                             
                                             if (username) {
                                                 const response = await axios.get(
-                                                    `${import.meta.env.VITE_API_URL}/api/v1/timeline?u=${username}&limit=20&before_post_id=`,
+                                                    `${import.meta.env.VITE_API_URL}/api/v1/timeline?u=${username}&limit=20`,
                                                     {
                                                         headers: {
                                                             "Authorization": "Bearer " + localStorage.getItem('access_token'),
