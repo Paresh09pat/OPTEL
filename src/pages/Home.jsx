@@ -520,13 +520,13 @@ const Home = () => {
           prev.map(post =>
             post.id === postId
               ? {
-                ...post,
-                reactions_count: totalReactions,
-                is_liked: !isRemoved,
-                reaction_counts: data.data.reaction_counts,
-                current_reaction: isRemoved ? null : data.data.user_reaction,
-                user_reaction: isRemoved ? null : data.data.user_reaction
-              }
+                  ...post,
+                  reactions_count: totalReactions,
+                  is_liked: !isRemoved,
+                  reaction_counts: data.data.reaction_counts,
+                  current_reaction: isRemoved ? null : data.data.user_reaction,
+                  user_reaction: isRemoved ? null : data.data.user_reaction
+                }
               : post
           )
         );
@@ -544,6 +544,9 @@ const Home = () => {
             : `${data.data.reaction_name} reaction added!`;
           showNotification(message, 'success');
         }
+
+        // Refetch the news feed to get updated data
+        await getNewFeeds();
       }
     } catch (error) {
       console.error('Error adding reaction:', error);
@@ -579,6 +582,85 @@ const Home = () => {
       }
     } catch (error) {
       const errorMsg = error?.response?.data?.message || 'Error hiding post';
+      toast.error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const handlePollVote = async (postId, optionId) => {
+    setLoading(true);
+    try {
+      const accessToken = localStorage.getItem("access_token");
+
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/v1/polls/vote`,
+        { 
+          id: optionId 
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+            "Accept": "application/json"
+          },
+        }
+      );
+
+      const data = await response.data;
+      if (data?.ok === true || data?.api_status === 200) {
+        // Update the poll data in newFeeds
+        setNewFeeds(prev =>
+          prev.map(post => {
+            if (post.id === postId) {
+              // Use updated poll options from API if available
+              const updatedOptions = data?.data?.poll_options || data?.poll_options;
+              
+              if (updatedOptions && Array.isArray(updatedOptions)) {
+                // Calculate percentages for all options
+                const totalVotes = updatedOptions.reduce((sum, opt) => sum + (opt.votes || 0), 0);
+                const optionsWithPercentages = updatedOptions.map(opt => ({
+                  ...opt,
+                  percentage: totalVotes > 0 ? ((opt.votes || 0) / totalVotes) * 100 : 0
+                }));
+                
+                return {
+                  ...post,
+                  poll_options: optionsWithPercentages
+                };
+              } else {
+                // Fallback: manually update the selected option and recalculate
+                const updatedPollOptions = post.poll_options?.map(opt => {
+                  if (opt.id === optionId) {
+                    return { ...opt, is_voted: true, votes: (opt.votes || 0) + 1 };
+                  }
+                  return opt;
+                });
+                
+                // Recalculate percentages
+                if (updatedPollOptions) {
+                  const totalVotes = updatedPollOptions.reduce((sum, opt) => sum + (opt.votes || 0), 0);
+                  const optionsWithPercentages = updatedPollOptions.map(opt => ({
+                    ...opt,
+                    percentage: totalVotes > 0 ? ((opt.votes || 0) / totalVotes) * 100 : 0
+                  }));
+                  
+                  return {
+                    ...post,
+                    poll_options: optionsWithPercentages
+                  };
+                }
+              }
+            }
+            return post;
+          })
+        );
+        toast.success('Vote submitted successfully');
+      } else {
+        toast.error(data?.message || 'Failed to submit vote');
+      }
+    } catch (error) {
+      const errorMsg = error?.response?.data?.message || 'Error submitting vote';
       toast.error(errorMsg);
     } finally {
       setLoading(false);
@@ -999,6 +1081,10 @@ const Home = () => {
                     postReactionCounts={post?.reaction_counts}
                     currentReaction={post?.current_reaction || post?.user_reaction}
                     userReaction={post?.user_reaction}
+                    postType={post?.post_type}
+                    pollOptions={post?.poll_options}
+                    handlePollVote={(optionId) => handlePollVote(postId, optionId)}
+                    isPollLoading={loading}
                   />
                 );
               })}

@@ -90,13 +90,25 @@ const Profile = () => {
         fetchUserData();
     }, [userId]);
 
-    // Fetch user posts
+    // Fetch user posts using timeline API for all profiles
     useEffect(() => {
         const fetchUserPosts = async () => {
             try {
                 setPostsLoading(true);
+                
+                // Get username from userData - works for both own profile and other users
+                const username = userData?.user_data?.username;
+                
+                if (!username) {
+                    console.error('Username not available');
+                    setPosts([]);
+                    setPostsLoading(false);
+                    return;
+                }
+
+                // Use timeline API for all profiles (own and others)
                 const response = await axios.get(
-                    `${import.meta.env.VITE_API_URL}/api/v1/posts/user-posts?user_id=${userId}`,
+                    `${import.meta.env.VITE_API_URL}/api/v1/timeline?u=${username}&limit=20&before_post_id=`,
                     {
                         headers: {
                             "Authorization": "Bearer " + localStorage.getItem('access_token'),
@@ -104,67 +116,59 @@ const Profile = () => {
                         }
                     }
                 );
-
-                const data = response.data;
-                console.log('Posts API Response:', data);
                 
-                if (data.ok && data.data) {
-                    // Transform API response to match PostCard component format
-                    const transformedPosts = Array.isArray(data.data) ? data.data : [data.data];
-                    const formattedPosts = transformedPosts.map(post => ({
-                        id: post.post_id,
-                        user: {
-                            name: post.author?.username || post.author?.name || 'Unknown',
-                            avatar: post.author?.avatar_url,
-                            fullName: post.author?.name || 'Unknown User',
-                            email: post.author?.email,
-                            user_id: post.author?.user_id || post.author?.id || post.author?.userId
+                const data = response.data;
+                console.log('Timeline API Response:', data);
+                
+                if (data.api_status === '200' && Array.isArray(data.posts)) {
+                    // Map timeline API response to PostCard format
+                    const formattedPosts = data.posts.map(post => ({
+                        id: post.id || post.post_id,
+                        author: post.author || {
+                            user_id: post.user_id || userData.user_data.user_id,
+                            username: post.username || username,
+                            name: post.name || `${userData.user_data.first_name || ''} ${userData.user_data.last_name || ''}`.trim() || userData.user_data.name,
+                            avatar_url: post.avatar_url || userData.user_data.avatar_url
                         },
-                        content: post.post_text || '',
-                        image: post.post_photo_url || null,
-                        likes: post.likes_count || '0',
-                        comments: post.comments_count || '0',
-                        shares: post.shares_count || '0',
-                        saves: post.saves_count || '0',
-                        timeAgo: post.created_at_human || 'Unknown',
+                        post_text: post.post_text || post.text || '',
                         post_type: post.post_type,
-                        post_privacy: post.post_privacy_text,
-                        created_at: post.created_at
+                        poll_id: post.poll_id,
+                        poll_options: post.poll_options,
+                        reactions_count: post.reactions_count || post.likes_count || 0,
+                        comments_count: post.comments_count || 0,
+                        shares_count: post.shares_count || 0,
+                        is_liked: post.is_liked || false,
+                        is_post_saved: post.is_post_saved || false,
+                        created_at_human: post.created_at_human || post.time_ago || 'Unknown',
+                        created_at: post.created_at,
+                        post_photo_url: post.post_photo_url,
+                        post_file_url: post.post_file_url,
+                        post_file: post.post_file,
+                        postFileName: post.postFileName,
+                        post_youtube: post.post_youtube,
+                        album_images: post.album_images,
+                        multi_image_post: post.multi_image_post,
+                        reaction_counts: post.reaction_counts,
+                        user_reaction: post.user_reaction,
+                        current_reaction: post.current_reaction,
+                        blog: post.blog
                     }));
                     setPosts(formattedPosts);
                 } else {
-                    throw new Error('Failed to fetch posts');
+                    setPosts([]);
                 }
             } catch (err) {
                 console.error('Error fetching user posts:', err);
-                // Set fallback posts
-                setPosts([
-                    {
-                        id: 1,
-                        user: {
-                            name: userData?.user_data?.username || 'feeliummagic',
-                            avatar: userData?.user_data?.avatar_url,
-                            fullName: `${userData?.user_data?.first_name || 'Feelium'} ${userData?.user_data?.last_name || 'Magic'}`,
-                            email: userData?.user_data?.email
-                        },
-                        content: 'Explore new horizons... Follow us for design inspiration, Check out our latest graphic design and branding content. @feeliummagic...more',
-                        image: '/mobile.jpg',
-                        likes: '2k+',
-                        comments: '100+',
-                        shares: '250+',
-                        saves: '50+',
-                        timeAgo: '2h ago'
-                    }
-                ]);
+                setPosts([]);
             } finally {
                 setPostsLoading(false);
             }
         };
 
-        if (userData) {
+        if (userData?.user_data?.username) {
             fetchUserPosts();
         }
-    }, [userId, userData]);
+    }, [userData]);
 
     const handleEditProfile = () => {
         navigate('/profile-settings');
@@ -272,6 +276,400 @@ const Profile = () => {
     };
 
     // Get counts directly from user_data
+    // Add handlers for posts (similar to Home.jsx)
+    const [likedPosts, setLikedPosts] = useState(() => {
+        const saved = localStorage.getItem("liked_posts");
+        return saved ? new Set(JSON.parse(saved)) : new Set();
+    });
+    const [savedPosts, setSavedPosts] = useState(() => {
+        const saved = localStorage.getItem("saved_posts");
+        return saved ? new Set(JSON.parse(saved)) : new Set();
+    });
+    const [postComments, setPostComments] = useState({});
+    const [imagePopup, setImagePopup] = useState({ show: false, images: [], currentIndex: 0 });
+
+    const handleLike = async (post_id) => {
+        const post = posts.find(p => p.id === post_id);
+        if (post) {
+            const wasLiked = post.is_liked || likedPosts.has(post_id);
+            
+            setLikedPosts(prev => {
+                const newLikedPosts = new Set(prev);
+                if (wasLiked) {
+                    newLikedPosts.delete(post_id);
+                } else {
+                    newLikedPosts.add(post_id);
+                }
+                localStorage.setItem("liked_posts", JSON.stringify([...newLikedPosts]));
+                return newLikedPosts;
+            });
+
+            setPosts(prev =>
+                prev.map(p =>
+                    p.id === post_id
+                        ? {
+                            ...p,
+                            reactions_count: wasLiked
+                                ? Math.max(0, parseInt(p.reactions_count || 0) - 1)
+                                : parseInt(p.reactions_count || 0) + 1,
+                            is_liked: !wasLiked
+                        }
+                        : p
+                )
+            );
+        }
+    };
+
+    const handleReaction = async (postId, reactionType) => {
+        setLoading(true);
+        try {
+            const accessToken = localStorage.getItem("access_token");
+
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_URL}/api/v1/posts/${postId}/reactions`,
+                { reaction: reactionType.toString() },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}`,
+                    },
+                }
+            );
+            const data = await response.data;
+            if (data?.ok === true) {
+                const isRemoved = data.data.action === 'removed';
+                const totalReactions = Object.values(data.data.reaction_counts).reduce((sum, count) => sum + count, 0);
+
+                setPosts(prev =>
+                    prev.map(post =>
+                        post.id === postId
+                            ? {
+                                ...post,
+                                reactions_count: totalReactions,
+                                is_liked: !isRemoved,
+                                reaction_counts: data.data.reaction_counts,
+                                current_reaction: isRemoved ? null : data.data.user_reaction,
+                                user_reaction: isRemoved ? null : data.data.user_reaction
+                            }
+                            : post
+                    )
+                );
+            }
+        } catch (error) {
+            console.error('Error adding reaction:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handlePollVote = async (postId, optionId) => {
+        setLoading(true);
+        try {
+            const accessToken = localStorage.getItem("access_token");
+
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_URL}/api/v1/polls/vote`,
+                { id: optionId },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}`,
+                        "Accept": "application/json"
+                    },
+                }
+            );
+
+            const data = await response.data;
+            if (data?.ok === true || data?.api_status === 200) {
+                setPosts(prev =>
+                    prev.map(post => {
+                        if (post.id === postId) {
+                            const updatedOptions = data?.data?.poll_options || data?.poll_options;
+                            
+                            if (updatedOptions && Array.isArray(updatedOptions)) {
+                                const totalVotes = updatedOptions.reduce((sum, opt) => sum + (opt.votes || 0), 0);
+                                const optionsWithPercentages = updatedOptions.map(opt => ({
+                                    ...opt,
+                                    percentage: totalVotes > 0 ? ((opt.votes || 0) / totalVotes) * 100 : 0
+                                }));
+                                
+                                return {
+                                    ...post,
+                                    poll_options: optionsWithPercentages
+                                };
+                            }
+                        }
+                        return post;
+                    })
+                );
+                toast.success('Vote submitted successfully');
+            } else {
+                toast.error(data?.message || 'Failed to submit vote');
+            }
+        } catch (error) {
+            const errorMsg = error?.response?.data?.message || 'Error submitting vote';
+            toast.error(errorMsg);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const savePost = async (post_id) => {
+        setLoading(true);
+        try {
+            const accessToken = localStorage.getItem("access_token");
+            const wasSaved = savedPosts.has(post_id);
+
+            const response = wasSaved
+                ? await axios.delete(`${import.meta.env.VITE_API_URL}/api/v1/posts/${post_id}/save`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}`,
+                        "Accept": "application/json"
+                    },
+                })
+                : await axios.post(`${import.meta.env.VITE_API_URL}/api/v1/posts/${post_id}/save`, {}, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}`,
+                        "Accept": "application/json"
+                    },
+                });
+
+            const data = await response.data;
+            if (data?.ok === true) {
+                setSavedPosts(prev => {
+                    const newSavedPosts = new Set(prev);
+                    if (wasSaved) {
+                        newSavedPosts.delete(post_id);
+                    } else {
+                        newSavedPosts.add(post_id);
+                    }
+                    localStorage.setItem("saved_posts", JSON.stringify([...newSavedPosts]));
+                    return newSavedPosts;
+                });
+
+                setPosts(prev =>
+                    prev.map(post =>
+                        post.id === post_id
+                            ? { ...post, is_post_saved: !wasSaved }
+                            : post
+                    )
+                );
+            }
+        } catch (error) {
+            console.error('Error saving post:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const reportPost = async (post_id) => {
+        setLoading(true);
+        try {
+            const accessToken = localStorage.getItem("access_token");
+            const formData = new URLSearchParams();
+            formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
+            formData.append('action', 'report');
+            formData.append('post_id', post_id);
+            const response = await fetch(`https://ouptel.com/api/post-actions?access_token=${accessToken}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    "Accept": "application/json"
+                },
+                body: formData.toString(),
+            });
+            const data = await response.json();
+            if (data?.api_status === 200) {
+                toast.success('Post reported successfully');
+            }
+        } catch (error) {
+            console.error('Error reporting post:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const hidePost = async (post_id) => {
+        setLoading(true);
+        try {
+            const accessToken = localStorage.getItem("access_token");
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_URL}/api/v1/posts/hide`,
+                { post_id: post_id },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}`,
+                        "Accept": "application/json"
+                    },
+                }
+            );
+            const data = await response.data;
+            if (data?.ok === true) {
+                setPosts(prev => prev.filter(post => post.id !== post_id));
+                toast.success('Post hidden successfully');
+            } else {
+                toast.error(data?.message || 'Failed to hide post');
+            }
+        } catch (error) {
+            const errorMsg = error?.response?.data?.message || 'Error hiding post';
+            toast.error(errorMsg);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchComments = async (post_id) => {
+        try {
+            const accessToken = localStorage.getItem("access_token");
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/v1/posts/${post_id}/comments`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`,
+                    "Accept": "application/json"
+                },
+            });
+            const data = await response.data;
+            if (data?.ok === true) {
+                setPostComments(prev => {
+                    const newState = {
+                        ...prev,
+                        [post_id]: data.data.comments
+                    };
+                    return newState;
+                });
+                return data.data.comments;
+            } else {
+                setPostComments(prev => ({
+                    ...prev,
+                    [post_id]: []
+                }));
+                return [];
+            }
+        } catch (error) {
+            return [];
+        }
+    };
+
+    const commentPost = async (post_id, comment = '') => {
+        setLoading(true);
+        try {
+            const accessToken = localStorage.getItem("access_token");
+            const requestBody = { text: comment };
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_URL}/api/v1/posts/${post_id}/comments`,
+                requestBody,
+                {
+                    headers: {
+                        "Authorization": `Bearer ${accessToken}`,
+                    }
+                }
+            );
+            const data = response.data;
+            if (data?.ok === true) {
+                const newComment = {
+                    id: Date.now(),
+                    text: comment,
+                    Orginaltext: comment,
+                    time: Math.floor(Date.now() / 1000),
+                    publisher: {
+                        first_name: 'You',
+                        last_name: '',
+                        avatar: '/perimg.png'
+                    }
+                };
+                setPostComments(prev => {
+                    const currentComments = prev[post_id] || [];
+                    return { ...prev, [post_id]: [newComment, ...currentComments] };
+                });
+                setPosts(prev =>
+                    prev.map(post =>
+                        post.id === post_id
+                            ? { ...post, comments_count: Number(post.comments_count || 0) + 1 }
+                            : post
+                    )
+                );
+                return { success: true, comment: newComment };
+            } else {
+                return { success: false, error: data };
+            }
+        } catch (error) {
+            toast.error(error.message);
+            return { success: false, error: error.message };
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getFileTypeProps = (post) => {
+        const ensureFullUrl = (url) => {
+            if (!url) return null;
+            if (url.startsWith('http://') || url.startsWith('https://')) {
+                return url;
+            }
+            return `https://ouptel.com/${url.replace(/^\//, '')}`;
+        };
+
+        if (post?.post_record_url) {
+            const isAudio = post?.post_type === 'audio' || 
+                            post?.post_record_url.includes('/audio/') ||
+                            post?.post_record_url.includes('/sounds/') ||
+                            /\.(mp3|wav|ogg|aac|flac|wma|m4a)/i.test(post.post_record_url);
+            if (isAudio) {
+                return { audio: ensureFullUrl(post.post_record_url) };
+            }
+        }
+
+        if (post?.album_images && Array.isArray(post.album_images) && post.album_images.length > 0) {
+            const processedImages = post.album_images.map(img => ({
+                id: img.id,
+                image: ensureFullUrl(img.image_url),
+                image_org: ensureFullUrl(img.image_url)
+            }));
+            return {
+                image: processedImages[0]?.image || processedImages[0]?.image_org,
+                multipleImages: processedImages,
+                hasMultipleImages: processedImages.length > 1
+            };
+        }
+
+        if (post?.post_photo_url) {
+            return { image: ensureFullUrl(post.post_photo_url) };
+        }
+
+        if (post?.postFile_full) {
+            const url = ensureFullUrl(post.postFile_full);
+            const fileName = post.postFileName || '';
+            const ext = fileName.split('.').pop()?.toLowerCase() || '';
+            const imageExtensions = ["jpg", "jpeg", "png", "gif", "webp", "bmp", "svg", "tiff", "tif"];
+            const videoExtensions = ["mp4", "mov", "avi", "mkv", "webm", "flv", "wmv", "m4v"];
+            const audioExtensions = ["mp3", "wav", "ogg", "aac", "flac", "wma", "m4a"];
+
+            if (imageExtensions.includes(ext)) {
+                return { image: url };
+            } else if (videoExtensions.includes(ext)) {
+                return { video: url };
+            } else if (audioExtensions.includes(ext)) {
+                return { audio: url };
+            } else {
+                return { file: url };
+            }
+        }
+
+        return {};
+    };
+
+    const openImagePopup = (images, currentIndex = 0) => {
+        setImagePopup({ show: true, images, currentIndex });
+    };
+
+    const closeImagePopup = () => {
+        setImagePopup({ show: false, images: [], currentIndex: 0 });
+    };
+
     const getCounts = () => {
         return {
             post_count: userData?.user_data?.post_count || 0,
@@ -370,7 +768,7 @@ const Profile = () => {
                                 <h3 className='text-lg font-medium'>
                                     {loading ? 'Loading...' : `${userData?.user_data?.first_name || 'Aman'} ${userData?.user_data?.last_name || 'Shaikh'}`}
                                 </h3>
-                                {!isOwnProfile && userData?.user_data?.is_following_me && (
+                                {!isOwnProfile && (userData?.user_data?.is_following_me === 1 || userData?.user_data?.is_following_me === true) && (
                                     <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
                                         Follows you
                                     </span>
@@ -379,7 +777,7 @@ const Profile = () => {
                             <p className='text-sm font-medium'>
                                 @{userData?.user_data?.username || 'aman.shaikh'}
                             </p>
-                            {/* Follow Button - Mobile */}
+                         
                             {!isOwnProfile && (
                                 <div className="mt-2">
                                     {userData?.user_data?.is_following ? (
@@ -466,12 +864,12 @@ const Profile = () => {
                             size="2xl"
                             className='mt-[-5rem] z-10 border border-[#d3d1d1] shadow-lg' 
                         />
-                        <div className="flex flex-col gap-2 text-[#212121]">
+                        <div className="flex flex-col gap-2 text-[#212121]"> 
                             <div className="flex items-center gap-2">
                                 <h3 className='text-lg lg:text-xl font-medium'>
                                     {loading ? 'Loading...' : `${userData?.user_data?.first_name || 'Aman'} ${userData?.user_data?.last_name || 'Shaikh'}`}
                                 </h3>
-                                {!isOwnProfile && userData?.user_data?.is_following_me && (
+                                {!isOwnProfile && (userData?.user_data?.is_following_me === 1 || userData?.user_data?.is_following_me === true) && (
                                     <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
                                         Follows you
                                     </span>
@@ -568,20 +966,110 @@ const Profile = () => {
             {postsLoading ? (
                 <Loader />
             ) : posts.length > 0 ? (
-                posts.map((post) => (
-                    <div key={post.id} className="mb-4">
-                        <PostCard
-                            user={post.user}
-                            content={post.content}
-                            image={post.image}
-                            likes={post.likes}
-                            comments={post.comments}
-                            shares={post.shares}
-                            saves={post.saves}
-                            timeAgo={post.timeAgo}
-                        />
-                    </div>
-                ))
+                posts.map((post) => {
+                    const postId = post?.id;
+                    const commentsForPost = postComments[postId] || [];
+
+                    return (
+                        <div key={postId} className="mb-4">
+                            <PostCard
+                                post_id={postId}
+                                user={post?.author || post?.publisher}
+                                content={post?.post_text || post?.postText}
+                                blog={post?.blog}
+                                iframelink={post?.post_youtube || post?.postYoutube}
+                                postfile={post?.post_file_url || post?.post_file || post?.postFile}
+                                postFileName={post?.postFileName}
+                                {...getFileTypeProps(post)}
+                                likes={post?.reactions_count || post?.post_likes}
+                                comments={post?.comments_count || post?.post_comments}
+                                shares={post?.shares_count || post?.post_shares}
+                                saves={post?.is_post_saved}
+                                timeAgo={post?.created_at_human || post?.post_created_at}
+                                handleLike={handleLike}
+                                isLiked={post?.is_liked || likedPosts.has(postId)}
+                                isSaved={savedPosts.has(postId)}
+                                fetchComments={fetchComments}
+                                commentsData={commentsForPost}
+                                savePost={savePost}
+                                reportPost={reportPost}
+                                hidePost={hidePost}
+                                commentPost={commentPost}
+                                getNewsFeed={() => {
+                                    // Refetch posts when needed using timeline API
+                                    const fetchUserPosts = async () => {
+                                        try {
+                                            setPostsLoading(true);
+                                            const username = userData?.user_data?.username;
+                                            
+                                            if (username) {
+                                                const response = await axios.get(
+                                                    `${import.meta.env.VITE_API_URL}/api/v1/timeline?u=${username}&limit=20&before_post_id=`,
+                                                    {
+                                                        headers: {
+                                                            "Authorization": "Bearer " + localStorage.getItem('access_token'),
+                                                            "Content-Type": "application/json",
+                                                        }
+                                                    }
+                                                );
+                                                const data = response.data;
+                                                if (data.api_status === '200' && Array.isArray(data.posts)) {
+                                                    const formattedPosts = data.posts.map(post => ({
+                                                        id: post.id || post.post_id,
+                                                        author: post.author || {
+                                                            user_id: post.user_id || userData.user_data.user_id,
+                                                            username: post.username || username,
+                                                            name: post.name || `${userData.user_data.first_name || ''} ${userData.user_data.last_name || ''}`.trim() || userData.user_data.name,
+                                                            avatar_url: post.avatar_url || userData.user_data.avatar_url
+                                                        },
+                                                        post_text: post.post_text || post.text || '',
+                                                        post_type: post.post_type,
+                                                        poll_id: post.poll_id,
+                                                        poll_options: post.poll_options,
+                                                        reactions_count: post.reactions_count || post.likes_count || 0,
+                                                        comments_count: post.comments_count || 0,
+                                                        shares_count: post.shares_count || 0,
+                                                        is_liked: post.is_liked || false,
+                                                        is_post_saved: post.is_post_saved || false,
+                                                        created_at_human: post.created_at_human || post.time_ago || 'Unknown',
+                                                        created_at: post.created_at,
+                                                        post_photo_url: post.post_photo_url,
+                                                        post_file_url: post.post_file_url,
+                                                        post_file: post.post_file,
+                                                        postFileName: post.postFileName,
+                                                        post_youtube: post.post_youtube,
+                                                        album_images: post.album_images,
+                                                        multi_image_post: post.multi_image_post,
+                                                        reaction_counts: post.reaction_counts,
+                                                        user_reaction: post.user_reaction,
+                                                        current_reaction: post.current_reaction,
+                                                        blog: post.blog
+                                                    }));
+                                                    setPosts(formattedPosts);
+                                                }
+                                            }
+                                        } catch (err) {
+                                            console.error('Error refetching posts:', err);
+                                        } finally {
+                                            setPostsLoading(false);
+                                        }
+                                    };
+                                    fetchUserPosts();
+                                }}
+                                openImagePopup={openImagePopup}
+                                handleReaction={handleReaction}
+                                postReaction={post?.user_reaction || post?.current_reaction}
+                                postReactionCounts={post?.reaction_counts}
+                                currentReaction={post?.current_reaction || post?.user_reaction}
+                                userReaction={post?.user_reaction}
+                                postType={post?.post_type}
+                                pollOptions={post?.poll_options}
+                                handlePollVote={(optionId) => handlePollVote(postId, optionId)}
+                                isPollLoading={loading}
+                            />
+                        </div>
+                    );
+                })
             ) : (
                 <div className="text-center py-8">
                     <p className="text-gray-500">No posts yet</p>
@@ -598,6 +1086,66 @@ const Profile = () => {
             users={getModalUsers()}
             loading={loading}
         />
+
+        {/* Image Popup/Modal */}
+        {imagePopup.show && (
+            <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
+                <div className="relative max-w-4xl max-h-full w-full h-full flex items-center justify-center">
+                    {/* Close button */}
+                    <button
+                        onClick={closeImagePopup}
+                        className="absolute top-4 right-4 z-10 text-white hover:text-gray-300 text-2xl font-bold bg-black/50 rounded-full w-10 h-10 flex items-center justify-center"
+                    >
+                        ×
+                    </button>
+
+                    {/* Previous button */}
+                    {imagePopup.images.length > 1 && (
+                        <button
+                            onClick={() => {
+                                setImagePopup(prev => ({
+                                    ...prev,
+                                    currentIndex: prev.currentIndex === 0 ? prev.images.length - 1 : prev.currentIndex - 1
+                                }));
+                            }}
+                            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 text-white hover:text-gray-300 text-2xl font-bold bg-black/50 rounded-full w-10 h-10 flex items-center justify-center"
+                        >
+                            ‹
+                        </button>
+                    )}
+
+                    {/* Next button */}
+                    {imagePopup.images.length > 1 && (
+                        <button
+                            onClick={() => {
+                                setImagePopup(prev => ({
+                                    ...prev,
+                                    currentIndex: (prev.currentIndex + 1) % prev.images.length
+                                }));
+                            }}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 text-white hover:text-gray-300 text-2xl font-bold bg-black/50 rounded-full w-10 h-10 flex items-center justify-center"
+                        >
+                            ›
+                        </button>
+                    )}
+
+                    {/* Image */}
+                    <img
+                        src={imagePopup.images[imagePopup.currentIndex]?.image || imagePopup.images[imagePopup.currentIndex]?.image_org}
+                        alt={`Image ${imagePopup.currentIndex + 1}`}
+                        className="max-w-full max-h-full object-contain"
+                        style={{ maxHeight: '90vh' }}
+                    />
+
+                    {/* Image counter */}
+                    {imagePopup.images.length > 1 && (
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white bg-black/50 px-3 py-1 rounded-full text-sm">
+                            {imagePopup.currentIndex + 1} / {imagePopup.images.length}
+                        </div>
+                    )}
+                </div>
+            </div>
+        )}
     </div>
   )
 }

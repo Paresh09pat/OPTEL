@@ -9,7 +9,8 @@ import { useUser } from '../../../context/UserContext';
 import { baseUrl } from '../../../utils/constant';
 import Avatar from '../../Avatar';
 import SharePopup from './SharePopup';
-const PostCard = ({ user, content, image, video, audio, file, likes, comments, shares, saves, timeAgo, post_id, handleLike, handleDislike, isLiked, commentsData, savePost, isSaved, blog, multipleImages, hasMultipleImages, reportPost, hidePost, iframelink, postfile, postFileName, getNewsFeed, openImagePopup, handleReaction, postReaction, postReactionCounts, currentReaction, userReaction }) => {
+import Poll from './Poll';
+const PostCard = ({ user, content, image, video, audio, file, likes, comments, shares, saves, timeAgo, post_id, handleLike, handleDislike, isLiked, commentsData, savePost, isSaved, blog, multipleImages, hasMultipleImages, reportPost, hidePost, iframelink, postfile, postFileName, getNewsFeed, openImagePopup, handleReaction, postReaction, postReactionCounts, currentReaction, userReaction, postType, pollOptions, handlePollVote, isPollLoading }) => {
   const navigate = useNavigate();
   const { userData } = useUser();
   const [clickedComments, setClickedComments] = useState(false);
@@ -937,6 +938,16 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
           )}
 
         </>
+      )}
+
+      {/* Handle Poll */}
+      {postType === 'poll' && pollOptions && Array.isArray(pollOptions) && pollOptions.length > 0 && (
+        <Poll
+          pollOptions={pollOptions}
+          onVote={handlePollVote}
+          hasVoted={pollOptions.some(opt => opt.is_voted)}
+          isLoading={isPollLoading}
+        />
       )}
 
 

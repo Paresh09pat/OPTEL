@@ -162,6 +162,129 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
         return 'text';
     };
 
+    // Function to create a poll using the dedicated poll API
+    const createPoll = async (pollQuestion, pollOptions, postText = '') => {
+        setLoading(true);
+
+        try {
+            const accessToken = localStorage.getItem("access_token");
+
+            // Validate poll data
+            if (!pollQuestion || !pollQuestion.trim()) {
+                const errorMessage = "Please enter a poll question.";
+                if (showNotification) {
+                    showNotification(errorMessage, 'error');
+                } else {
+                    toast.error(errorMessage);
+                }
+                setLoading(false);
+                return;
+            }
+
+            // Filter out empty options
+            const validOptions = pollOptions.filter(opt => opt && opt.trim().length > 0);
+            if (validOptions.length < 2) {
+                const errorMessage = "Please provide at least 2 poll options.";
+                if (showNotification) {
+                    showNotification(errorMessage, 'error');
+                } else {
+                    toast.error(errorMessage);
+                }
+                setLoading(false);
+                return;
+            }
+
+            // Use postText if provided, otherwise use pollQuestion as postText
+            // The API expects postText to be the main content (poll question)
+            const pollPostText = postText.trim() || pollQuestion.trim();
+
+            // Prepare request data
+            const requestData = {
+                postText: pollPostText,
+                postPrivacy: postPrivacy,
+                answer: validOptions.map(opt => opt.trim())
+            };
+
+            console.log("Creating poll with data:", requestData);
+
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_URL}/api/v1/polls/create`,
+                requestData,
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}`,
+                    },
+                }
+            );
+
+            const data = await response.data;
+            console.log("Create poll response:", data);
+
+            // Check for api_status === 200 (success)
+            if (data.api_status === 200) {
+                // Show success message
+                console.log("Poll created successfully:", {
+                    post_id: data.post_id,
+                    poll_id: data.poll_id,
+                    post_data: data.post_data,
+                    poll_options: data.poll_options
+                });
+                
+                if (showNotification) {
+                    showNotification("Poll created successfully!", 'success');
+                } else {
+                    toast.success("Poll created successfully!");
+                }
+
+                // Refresh the feed to show the new poll
+                if (fetchNewFeeds) {
+                    fetchNewFeeds();
+                }
+
+                // Reset form state
+                setPostText("");
+                setSelectedFiles([]);
+                setShowPopup(false);
+
+                // Reset additional features
+                setPostLink("");
+                setPostLinkTitle("");
+                setPostLinkContent("");
+                setYoutubeLink("");
+                setLocation("");
+                setFeeling("");
+                setSelectedGif(null);
+                setBackgroundColor("");
+                setAlbumName("");
+                setGroupId("");
+                setPostType("text");
+                setPostPrivacy("0");
+
+                // Reset poll state
+                resetPoll();
+            } else {
+                const errorMessage = data.message || "Failed to create poll";
+                console.error("Failed to create poll:", errorMessage);
+                if (showNotification) {
+                    showNotification(errorMessage, 'error');
+                } else {
+                    toast.error(errorMessage);
+                }
+            }
+        } catch (error) {
+            console.error("Error creating poll:", error);
+            const errorMessage = error.response?.data?.message || error.message || "Error creating poll. Please try again.";
+            if (showNotification) {
+                showNotification(errorMessage, 'error');
+            } else {
+                toast.error(errorMessage);
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
 
 
     const createNewPost = async (postText, selectedFiles, pollData = null) => {
@@ -188,6 +311,12 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
             } else {
                 toast.error(errorMessage);
             }
+            return;
+        }
+
+        // If there's a valid poll and no files/media, use the dedicated poll API
+        if (hasValidPoll && !hasFiles && !hasLink && !hasYoutubeLink && !hasAlbumName) {
+            await createPoll(pollData.pollQuestion, pollData.pollOptions, postText);
             return;
         }
 

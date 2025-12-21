@@ -25,6 +25,10 @@ const Chatbox = ({ onClose, isMobile = false }) => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState({ users: [], groups: [], pages: [], channels: [] });
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState(null);
+  const searchTimeoutRef = useRef(null);
   const [storyModalOpen, setStoryModalOpen] = useState(false);
   const [storyViewerOpen, setStoryViewerOpen] = useState(false);
   const [userStories, setUserStories] = useState([]);
@@ -57,6 +61,12 @@ const Chatbox = ({ onClose, isMobile = false }) => {
     setSearchOpen(!searchOpen);
     setNotificationsOpen(false);
     setMoreOptionsOpen(false);
+    // Reset search when closing
+    if (searchOpen) {
+      setSearchQuery('');
+      setSearchResults({ users: [], groups: [], pages: [], channels: [] });
+      setSearchError(null);
+    }
   };
 
   const toggleNotifications = () => {
@@ -241,6 +251,132 @@ const Chatbox = ({ onClose, isMobile = false }) => {
     }
   };
 
+  // Debounced global search function
+  const performGlobalSearch = async (query) => {
+    if (!query || query.trim().length === 0) {
+      setSearchResults({ users: [], groups: [], pages: [], channels: [] });
+      setSearchLoading(false);
+      return;
+    }
+
+    setSearchLoading(true);
+    setSearchError(null);
+
+    try {
+      const accessToken = localStorage.getItem('access_token');
+      const requestBody = {
+        search_key: query.trim(),
+        limit: 35,
+        gender: "",
+        status: "",
+        image: "",
+        country: "",
+        verified: "",
+        filterbyage: "",
+        age_from: 0,
+        age_to: 0,
+        user_offset: 0,
+        page_offset: 0,
+        group_offset: 0,
+        channels_offset: 0
+      };
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/search`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken || ''}`,
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      const data = await response.json();
+
+      if (data?.api_status === 200 || response.ok) {
+        // Response structure: users, pages, groups, channels at root level
+        setSearchResults({
+          users: data.users || [],
+          groups: data.groups || [],
+          pages: data.pages || [],
+          channels: data.channels || [],
+        });
+      } else {
+        setSearchResults({ users: [], groups: [], pages: [], channels: [] });
+        setSearchError('No results found');
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      setSearchError('Failed to search. Please try again.');
+      setSearchResults({ users: [], groups: [], pages: [], channels: [] });
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  // Debounce search input
+  useEffect(() => {
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // If search query is empty, clear results immediately
+    if (!searchQuery || searchQuery.trim().length === 0) {
+      setSearchResults({ users: [], groups: [], pages: [], channels: [] });
+      setSearchLoading(false);
+      setSearchError(null);
+      return;
+    }
+
+    // Set loading state immediately
+    setSearchLoading(true);
+
+    // Debounce the search API call
+    searchTimeoutRef.current = setTimeout(() => {
+      performGlobalSearch(searchQuery);
+    }, 500); // 500ms debounce delay
+
+    // Cleanup function
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery]);
+
+  // Handle search result click - navigate to user/group/page
+  const handleSearchResultClick = (item, type) => {
+    if (type === 'user') {
+      // Navigate to user profile page
+      const userId = item?.user_id || item?.id;
+      navigate(`/profile/${userId}`);
+      setSearchOpen(false);
+      setSearchQuery('');
+    } else if (type === 'group') {
+      const groupData = {
+        name: item?.name || item?.group_name,
+        avatar: item?.avatar_url || item?.avatar,
+        avatar_url: item?.avatar_url || item?.avatar,
+        isOnline: true,
+        type: 'group'
+      };
+      setCurrentChat(item?.group_id || item?.id, groupData);
+      localStorage.setItem(`chat_user_${item?.group_id || item?.id}`, JSON.stringify(groupData));
+      navigate(`/chat-detailed/${item?.group_id || item?.id}`);
+      setSearchOpen(false);
+      setSearchQuery('');
+    } else if (type === 'page') {
+      navigate(`/page/${item?.page_id || item?.id}`);
+      setSearchOpen(false);
+      setSearchQuery('');
+    } else if (type === 'channel') {
+      // Handle channel navigation - adjust route as needed
+      navigate(`/channel/${item?.channel_id || item?.id}`);
+      setSearchOpen(false);
+      setSearchQuery('');
+    }
+  };
+
   useEffect(() => {
   }, [activeSection]);
 
@@ -293,15 +429,23 @@ const Chatbox = ({ onClose, isMobile = false }) => {
       }
     };
 
-    // Close search when clicking outside the search input
+    // Don't close search modal when clicking inside it
     const handleSearchClickOutside = (event) => {
-      if (searchOpen && !event.target.closest('.search-container')) {
-        setSearchOpen(false);
+      // Only handle if search modal is open and click is outside the modal
+      if (searchOpen) {
+        const modalContent = event.target.closest('.search-modal-content');
+        if (!modalContent) {
+          // Click is outside the modal, close it
+          setSearchOpen(false);
+        }
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('mousedown', handleSearchClickOutside);
+    // Only add search click handler when search is open
+    if (searchOpen) {
+      document.addEventListener('mousedown', handleSearchClickOutside);
+    }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
@@ -474,14 +618,20 @@ const Chatbox = ({ onClose, isMobile = false }) => {
       {searchOpen && (
         <div
           className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-start justify-center pt-24 px-4"
-          onClick={toggleSearch}
+          onClick={(e) => {
+            // Only close if clicking directly on the backdrop, not on child elements
+            if (e.target === e.currentTarget) {
+              toggleSearch();
+            }
+          }}
         >
           <div
-            className="w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-[#d3d1d1] p-6 space-y-4"
+            className="search-modal-content w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-[#d3d1d1] p-6 space-y-4 max-h-[80vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <p className="text-lg font-semibold text-gray-900">Search</p>
+              <p className="text-lg font-semibold text-gray-900">Global Search</p>
               <button
                 onClick={toggleSearch}
                 className="p-2 rounded-full hover:bg-gray-100 transition-colors"
@@ -507,15 +657,212 @@ const Chatbox = ({ onClose, isMobile = false }) => {
               </svg>
               <input
                 type="text"
-                placeholder="Search by name or message..."
+                placeholder="Search users, groups, pages..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
                 className="w-full text-gray-800 text-base outline-none border-none bg-transparent"
                 autoFocus
               />
+              {searchLoading && (
+                <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              )}
             </div>
-            <div className="text-sm text-gray-500">
-              Start typing to filter your chats. Press `Esc` or click outside to close.
+
+            {/* Search Results */}
+            <div className="space-y-4">
+              {searchError && (
+                <div className="text-sm text-red-500 text-center py-2">{searchError}</div>
+              )}
+
+              {!searchQuery || searchQuery.trim().length === 0 ? (
+                <div className="text-sm text-gray-500 text-center py-4">
+                  Start typing to search for users, groups, and pages. Press `Esc` or click outside to close.
+                </div>
+              ) : searchLoading ? (
+                <div className="flex flex-col items-center justify-center py-8">
+                  <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                  <p className="text-sm text-gray-500">Searching...</p>
+                </div>
+              ) : (
+                <>
+                  {/* Users Results */}
+                  {searchResults.users && searchResults.users.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                        <FaUser className="size-4" />
+                        Users ({searchResults.users.length})
+                      </h3>
+                      <div className="space-y-2">
+                        {searchResults.users.map((user) => (
+                          <div
+                            key={user.user_id || user.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSearchResultClick(user, 'user');
+                            }}
+                            className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                          >
+                            <img
+                              src={user.avatar_url || user.avatar || "/perimg.png"}
+                              alt={user.name || user.username || user.full_name || "User"}
+                              className="w-10 h-10 rounded-full object-cover"
+                              onError={(e) => {
+                                e.target.src = "/perimg.png";
+                              }}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {user.name || user.username || user.full_name || 'Unknown User'}
+                              </p>
+                              {user.username && user.username !== (user.name || user.full_name) && (
+                                <p className="text-xs text-gray-500 truncate">@{user.username}</p>
+                              )}
+                            </div>
+                            <div
+                              className={`size-2 rounded-full ${user.isOnline ? "bg-[#4CAF50]" : "bg-gray-400"}`}
+                            ></div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Groups Results */}
+                  {searchResults.groups && searchResults.groups.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                        <FaUsers className="size-4" />
+                        Groups ({searchResults.groups.length})
+                      </h3>
+                      <div className="space-y-2">
+                        {searchResults.groups.map((group) => (
+                          <div
+                            key={group.group_id || group.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSearchResultClick(group, 'group');
+                            }}
+                            className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                          >
+                            <img
+                              src={group.avatar_url || group.avatar || "/icons/group.png"}
+                              alt={group.name || group.group_name || "Group"}
+                              className="w-10 h-10 rounded-full object-cover"
+                              onError={(e) => {
+                                e.target.src = "/icons/group.png";
+                              }}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {group.name || group.group_name || 'Unknown Group'}
+                              </p>
+                              {group.members_count !== undefined && (
+                                <p className="text-xs text-gray-500">{group.members_count} members</p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Pages Results */}
+                  {searchResults.pages && searchResults.pages.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                        <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Pages ({searchResults.pages.length})
+                      </h3>
+                      <div className="space-y-2">
+                        {searchResults.pages.map((page) => (
+                          <div
+                            key={page.page_id || page.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSearchResultClick(page, 'page');
+                            }}
+                            className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                          >
+                            <img
+                              src={page.avatar_url || page.avatar || page.page_picture || "/icons/group.png"}
+                              alt={page.page_title || page.name || "Page"}
+                              className="w-10 h-10 rounded-full object-cover"
+                              onError={(e) => {
+                                e.target.src = "/icons/group.png";
+                              }}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {page.page_title || page.name || 'Unknown Page'}
+                              </p>
+                              {page.likes_count !== undefined && (
+                                <p className="text-xs text-gray-500">{page.likes_count} likes</p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Channels Results */}
+                  {searchResults.channels && searchResults.channels.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                        <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        Channels ({searchResults.channels.length})
+                      </h3>
+                      <div className="space-y-2">
+                        {searchResults.channels.map((channel) => (
+                          <div
+                            key={channel.channel_id || channel.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSearchResultClick(channel, 'channel');
+                            }}
+                            className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                          >
+                            <img
+                              src={channel.avatar_url || channel.avatar || "/icons/group.png"}
+                              alt={channel.name || channel.channel_name || "Channel"}
+                              className="w-10 h-10 rounded-full object-cover"
+                              onError={(e) => {
+                                e.target.src = "/icons/group.png";
+                              }}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {channel.name || channel.channel_name || 'Unknown Channel'}
+                              </p>
+                              {channel.members_count !== undefined && (
+                                <p className="text-xs text-gray-500">{channel.members_count} members</p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* No Results */}
+                  {searchQuery.trim().length > 0 &&
+                    !searchLoading &&
+                    searchResults.users.length === 0 &&
+                    searchResults.groups.length === 0 &&
+                    searchResults.pages.length === 0 &&
+                    searchResults.channels.length === 0 && (
+                      <div className="text-center py-8">
+                        <p className="text-sm text-gray-500">No results found for "{searchQuery}"</p>
+                      </div>
+                    )}
+                </>
+              )}
             </div>
           </div>
         </div>
