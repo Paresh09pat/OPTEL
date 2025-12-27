@@ -488,14 +488,16 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
         <FaTimes className="w-6 h-6" />
       </button>
 
-      {/* Delete Button */}
-      <button
-        onClick={handleDeleteClick}
-        className="absolute top-4 right-16 z-10 text-white hover:text-red-400 transition-colors bg-black/30 hover:bg-black/50 rounded-full p-2"
-        aria-label="Delete story"
-      >
-        <FaTrash className="w-5 h-5" />
-      </button>
+      {/* Delete Button - Only shown for own stories */}
+      {isCurrentUserStories && (
+        <button
+          onClick={handleDeleteClick}
+          className="absolute top-4 right-16 z-10 text-white hover:text-red-400 transition-colors bg-black/30 hover:bg-black/50 rounded-full p-2"
+          aria-label="Delete story"
+        >
+          <FaTrash className="w-5 h-5" />
+        </button>
+      )}
 
       {/* Story Content */}
       <div className="relative w-full h-full flex items-center justify-center">

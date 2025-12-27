@@ -100,7 +100,7 @@ const Home = () => {
 
       // Check if permission was already requested
       const locationPermissionRequested = localStorage.getItem('location_permission_requested');
-      
+
       if (locationPermissionRequested) {
         // Permission was already requested, just get location if granted
         navigator.geolocation.getCurrentPosition(
@@ -161,13 +161,13 @@ const Home = () => {
 
     // Request location access after a short delay to ensure page is loaded
     const timer = setTimeout(requestLocationAccess, 2000);
-    
+
     return () => clearTimeout(timer);
   }, []);
 
   const getNewFeeds = useCallback(async (type) => {
     const now = Date.now();
-    
+
     // Prevent multiple simultaneous API calls
     if (isFetchingRef.current) {
       return;
@@ -194,10 +194,10 @@ const Home = () => {
       // Build query parameters
       const params = new URLSearchParams();
       params.append('per_page', '10');
-      
+
       // Valid filter types: image, file, video, audio, blogs, articles, jobs
       const validFilters = ['image', 'file', 'video', 'audio', 'blogs', 'articles', 'jobs'];
-      
+
       if (type && validFilters.includes(type)) {
         params.append('filter', type);
       }
@@ -208,7 +208,7 @@ const Home = () => {
           'Authorization': `Bearer ${accessToken}`,
         },
       });
-      
+
       const data = await response.data;
 
 
@@ -292,7 +292,7 @@ const Home = () => {
     const post = newFeeds.find(p => p.id === post_id);
     if (post) {
       const wasLiked = post.is_liked || likedPosts.has(post_id);
-      
+
       setLikedPosts(prev => {
         const newLikedPosts = new Set(prev);
         if (wasLiked) {
@@ -372,19 +372,19 @@ const Home = () => {
       // Use DELETE method to unsave, POST method to save
       const response = wasSaved
         ? await axios.delete(`${import.meta.env.VITE_API_URL}/api/v1/posts/${post_id}/save`, {
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${accessToken}`,
-              "Accept": "application/json"
-            },
-          })
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+            "Accept": "application/json"
+          },
+        })
         : await axios.post(`${import.meta.env.VITE_API_URL}/api/v1/posts/${post_id}/save`, {}, {
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${accessToken}`,
-              "Accept": "application/json"
-            },
-          });
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+            "Accept": "application/json"
+          },
+        });
 
       const data = await response.data;
       if (data?.ok === true) {
@@ -521,13 +521,13 @@ const Home = () => {
           prev.map(post =>
             post.id === postId
               ? {
-                  ...post,
-                  reactions_count: totalReactions,
-                  is_liked: !isRemoved,
-                  reaction_counts: data.data.reaction_counts,
-                  current_reaction: isRemoved ? null : data.data.user_reaction,
-                  user_reaction: isRemoved ? null : data.data.user_reaction
-                }
+                ...post,
+                reactions_count: totalReactions,
+                is_liked: !isRemoved,
+                reaction_counts: data.data.reaction_counts,
+                current_reaction: isRemoved ? null : data.data.user_reaction,
+                user_reaction: isRemoved ? null : data.data.user_reaction
+              }
               : post
           )
         );
@@ -596,8 +596,8 @@ const Home = () => {
 
       const response = await axios.post(
         `${import.meta.env.VITE_API_URL}/api/v1/polls/vote`,
-        { 
-          id: optionId 
+        {
+          id: optionId
         },
         {
           headers: {
@@ -616,7 +616,7 @@ const Home = () => {
             if (post.id === postId) {
               // Use updated poll options from API if available
               const updatedOptions = data?.data?.poll_options || data?.poll_options;
-              
+
               if (updatedOptions && Array.isArray(updatedOptions)) {
                 // Calculate percentages for all options
                 const totalVotes = updatedOptions.reduce((sum, opt) => sum + (opt.votes || 0), 0);
@@ -624,7 +624,7 @@ const Home = () => {
                   ...opt,
                   percentage: totalVotes > 0 ? ((opt.votes || 0) / totalVotes) * 100 : 0
                 }));
-                
+
                 return {
                   ...post,
                   poll_options: optionsWithPercentages
@@ -637,7 +637,7 @@ const Home = () => {
                   }
                   return opt;
                 });
-                
+
                 // Recalculate percentages
                 if (updatedPollOptions) {
                   const totalVotes = updatedPollOptions.reduce((sum, opt) => sum + (opt.votes || 0), 0);
@@ -645,7 +645,7 @@ const Home = () => {
                     ...opt,
                     percentage: totalVotes > 0 ? ((opt.votes || 0) / totalVotes) * 100 : 0
                   }));
-                  
+
                   return {
                     ...post,
                     poll_options: optionsWithPercentages
@@ -682,11 +682,11 @@ const Home = () => {
     // Handle audio posts with post_record_url (HIGHEST PRIORITY for audio)
     if (post?.post_record_url) {
       // Check if it's an audio file by URL pattern or post_type
-      const isAudio = post?.post_type === 'audio' || 
-                      post?.post_record_url.includes('/audio/') ||
-                      post?.post_record_url.includes('/sounds/') ||
-                      /\.(mp3|wav|ogg|aac|flac|wma|m4a)/i.test(post.post_record_url);
-      
+      const isAudio = post?.post_type === 'audio' ||
+        post?.post_record_url.includes('/audio/') ||
+        post?.post_record_url.includes('/sounds/') ||
+        /\.(mp3|wav|ogg|aac|flac|wma|m4a)/i.test(post.post_record_url);
+
       if (isAudio) {
         return { audio: ensureFullUrl(post.post_record_url) };
       }
@@ -695,11 +695,11 @@ const Home = () => {
     // Handle audio posts with post_record (fallback)
     if (post?.post_record) {
       // Check if it's an audio file by URL pattern or post_type
-      const isAudio = post?.post_type === 'audio' || 
-                      post?.post_record.includes('/audio/') ||
-                      post?.post_record.includes('/sounds/') ||
-                      /\.(mp3|wav|ogg|aac|flac|wma|m4a)/i.test(post.post_record);
-      
+      const isAudio = post?.post_type === 'audio' ||
+        post?.post_record.includes('/audio/') ||
+        post?.post_record.includes('/sounds/') ||
+        /\.(mp3|wav|ogg|aac|flac|wma|m4a)/i.test(post.post_record);
+
       if (isAudio) {
         return { audio: ensureFullUrl(post.post_record) };
       }
@@ -923,7 +923,7 @@ const Home = () => {
         }
       }
 
-      
+
     } catch (error) {
       // Use dummy data as fallback on error
       setFriendSuggestions(dummyFriendSuggestions);
@@ -987,19 +987,19 @@ const Home = () => {
       if (data?.api_status === 200 && data?.stories && Array.isArray(data.stories)) {
         // Get current timestamp
         const now = Math.floor(Date.now() / 1000);
-        
+
         // Group stories by user_id and filter out expired stories
         const storiesByUser = {};
-        
+
         data.stories.forEach(story => {
           // Check if story is expired
           const expireTimestamp = typeof story.expire === 'string' ? parseInt(story.expire, 10) : story.expire;
           if (expireTimestamp && expireTimestamp < now) {
             return; // Skip expired stories
           }
-          
+
           const userId = story.user_id;
-          
+
           if (!storiesByUser[userId]) {
             storiesByUser[userId] = {
               user_id: userId,
@@ -1013,7 +1013,7 @@ const Home = () => {
               stories: []
             };
           }
-          
+
           // Transform story data to match StoryViewer expectations
           const postedTimestamp = typeof story.posted === 'string' ? parseInt(story.posted, 10) : story.posted;
           const transformedStory = {
@@ -1026,10 +1026,10 @@ const Home = () => {
             time_text: formatTimeAgo(postedTimestamp),
             user_reaction: null // Will be fetched when viewing if needed
           };
-          
+
           storiesByUser[userId].stories.push(transformedStory);
         });
-        
+
         // Convert object to array, filter out users with no stories, and sort stories by posted time (newest first)
         const groupedStories = Object.values(storiesByUser)
           .filter(user => user.stories.length > 0) // Only include users with active stories
@@ -1037,7 +1037,7 @@ const Home = () => {
             ...user,
             stories: user.stories.sort((a, b) => (b.posted || 0) - (a.posted || 0))
           }));
-        
+
         setAllUsersStories(groupedStories);
       } else {
         setAllUsersStories([]);
@@ -1053,15 +1053,15 @@ const Home = () => {
   // Helper function to format timestamp to time ago
   const formatTimeAgo = (timestamp) => {
     if (!timestamp) return '';
-    
+
     const now = Math.floor(Date.now() / 1000);
     const diff = now - timestamp;
-    
+
     if (diff < 60) return 'Just now';
     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
     if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
     if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
-    
+
     const date = new Date(timestamp * 1000);
     return date.toLocaleDateString();
   };
@@ -1234,7 +1234,7 @@ const Home = () => {
             username: selectedUserForStories.username,
             avatar_url: selectedUserForStories.avatar_url || selectedUserForStories.avatar
           }}
-          isCurrentUserStories={selectedUserForStories.user_id?.toString() === localStorage.getItem('user_id')?.toString()}
+          isCurrentUserStories={(selectedUserForStories.user_id || selectedUserForStories.id)?.toString() === localStorage.getItem('user_id')?.toString()}
           onStoryDeleted={() => {
             // Refresh stories after deletion
             getuserStories();

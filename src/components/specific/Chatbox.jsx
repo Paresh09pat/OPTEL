@@ -1133,6 +1133,7 @@ const Chatbox = ({ onClose, isMobile = false }) => {
           onClose={() => setStoryViewerOpen(false)}
           stories={userStories}
           currentUser={userData}
+          isCurrentUserStories={true}
           onStoryDeleted={fetchUserStories}
         />
       )}
