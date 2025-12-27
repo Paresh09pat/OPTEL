@@ -23,6 +23,7 @@ const Chatbox = ({ onClose, isMobile = false }) => {
   const [activeSection, setActiveSection] = useState('individual'); // 'individual' or 'groups'
   const [searchOpen, setSearchOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
   const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState({ users: [], groups: [], pages: [], channels: [] });
@@ -48,10 +49,10 @@ const Chatbox = ({ onClose, isMobile = false }) => {
     localStorage.removeItem('isVerified');
     localStorage.removeItem('membership');
     localStorage.removeItem('signup_user_data');
-    
+
     // Close the popup
     setMoreOptionsOpen(false);
-    
+
     // Navigate to login page
     navigate('/login');
   };
@@ -149,7 +150,7 @@ const Chatbox = ({ onClose, isMobile = false }) => {
       });
       const data = await response.json();
       if (data?.api_status === 200) {
-            setConversations(data?.data);
+        setConversations(data?.data);
       } else {
         setConversations(sampleConversations);
       }
@@ -195,7 +196,37 @@ const Chatbox = ({ onClose, isMobile = false }) => {
     getalluserchats();
     getallgroupchats();
     fetchUserStories();
+    fetchNotificationCount();
+
+    // Poll for notifications every 30 seconds
+    const interval = setInterval(fetchNotificationCount, 30000);
+    return () => clearInterval(interval);
   }, []);
+
+  const fetchNotificationCount = async () => {
+    try {
+      const accessToken = localStorage.getItem("access_token");
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/notifications/get`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+          'X-Requested-With': 'XMLHttpRequest',
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({
+          seen: 1 // This matches the body in Notifications.jsx
+        }),
+      });
+
+      const data = await response.json();
+      if (data?.api_status === 200) {
+        setUnreadNotificationsCount(data.count_notifications || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching notification count:', error);
+    }
+  };
 
   // Fetch user stories
   const fetchUserStories = async () => {
@@ -453,7 +484,7 @@ const Chatbox = ({ onClose, isMobile = false }) => {
     };
   }, [searchOpen]);
 
- 
+
 
   return (
     <div ref={containerRef} className={`relative bg-[#EDF6F9] px-6 py-8 h-full overflow-y-auto scrollbar-hide smooth-scroll pt-0  ${isMobile ? 'w-full' : 'w-full'
@@ -478,7 +509,7 @@ const Chatbox = ({ onClose, isMobile = false }) => {
             <div className="relative">
               {/* Story indicator border - Instagram style gradient ring with click animation */}
               {userStories && userStories.length > 0 && (
-                <div 
+                <div
                   className="absolute inset-[-3px] rounded-full z-[-1]"
                   style={{
                     background: 'conic-gradient(from 0deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%, #f09433 100%)',
@@ -486,14 +517,14 @@ const Chatbox = ({ onClose, isMobile = false }) => {
                   }}
                 />
               )}
-              <div 
+              <div
                 className="relative w-[58px] h-[58px] rounded-full bg-[#EDF6F9] border-[4px] border-inset border-[#ffffff] shadow-md shadow-fuchsia-400 cursor-pointer hover:opacity-90 transition-opacity z-10"
                 onClick={handleProfileImageClick}
               >
                 {userData?.avatar_url ? (
-                  <img 
-                    src={userData.avatar_url || "https://img.freepik.com/premium-vector/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4866.jpg?semt=ais_hybrid&w=740&q=80"} 
-                    alt="Profile" 
+                  <img
+                    src={userData.avatar_url || "https://img.freepik.com/premium-vector/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4866.jpg?semt=ais_hybrid&w=740&q=80"}
+                    alt="Profile"
                     className="w-full h-full object-cover rounded-full"
                     onError={(e) => {
                       e.target.src = "https://img.freepik.com/premium-vector/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4866.jpg?semt=ais_hybrid&w=740&q=80";
@@ -504,7 +535,7 @@ const Chatbox = ({ onClose, isMobile = false }) => {
                     <FaUser className="text-gray-600 text-xl" />
                   </div>
                 )}
-                <div 
+                <div
                   className="grid place-items-center absolute -right-1 -bottom-1 bg-black w-5 h-5 rounded-full border-inset border-[2px] shadow-2xl shadow-fuchsia-400 border-white cursor-pointer hover:bg-gray-800 transition-colors z-10"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -540,6 +571,11 @@ const Chatbox = ({ onClose, isMobile = false }) => {
                   className={`text-gray-500 size-[25px] cursor-pointer transition-colors hover:text-blue-500 ${notificationsOpen ? 'text-blue-500' : ''}`}
                   onClick={toggleNotifications}
                 />
+                {unreadNotificationsCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white shadow-sm">
+                    {unreadNotificationsCount > 99 ? '99+' : unreadNotificationsCount}
+                  </span>
+                )}
               </div>
 
               {/* More Options Icon */}
@@ -606,10 +642,11 @@ const Chatbox = ({ onClose, isMobile = false }) => {
             </div>
           </div>
           {/* Full width notifications drawer */}
-          <Notifications 
+          <Notifications
             isOpen={notificationsOpen}
             onClose={toggleNotifications}
             containerRect={containerRect}
+            refreshCount={fetchNotificationCount}
           />
         </div>
       </div>
@@ -869,7 +906,7 @@ const Chatbox = ({ onClose, isMobile = false }) => {
       )}
 
       {/* Individual/Groups Toggle */}
-             <div className="flex flex-col p-2 mt-2 bg-white rounded-lg border border-[#d3d1d1]">
+      <div className="flex flex-col p-2 mt-2 bg-white rounded-lg border border-[#d3d1d1]">
         <div className="flex w-full items-center justify-around">
           <div className="flex items-center gap-4">
             <button
@@ -930,7 +967,7 @@ const Chatbox = ({ onClose, isMobile = false }) => {
               </div>
             ) : conversations && conversations.length > 0 ? (
               conversations.map((conversation) => (
-                  <div key={conversation.id} className="mt-4 w-full flex items-center xl:gap-4 lg:gap-2 cursor-pointer" onClick={() => {
+                <div key={conversation.id} className="mt-4 w-full flex items-center xl:gap-4 lg:gap-2 cursor-pointer" onClick={() => {
                   const userData = {
                     name: conversation?.name,
                     avatar: conversation?.avatar_url || conversation?.avatar,
@@ -1083,8 +1120,8 @@ const Chatbox = ({ onClose, isMobile = false }) => {
       </div>
 
       {/* Story Create Modal */}
-      <StoryCreateModal 
-        isOpen={storyModalOpen} 
+      <StoryCreateModal
+        isOpen={storyModalOpen}
         onClose={() => setStoryModalOpen(false)}
         onStoryCreated={fetchUserStories}
       />

@@ -10,6 +10,7 @@ import { baseUrl } from '../../../utils/constant';
 import Avatar from '../../Avatar';
 import SharePopup from './SharePopup';
 import Poll from './Poll';
+import ReactionDetailsModal from './ReactionDetailsModal';
 const PostCard = ({ user, content, image, video, audio, file, likes, comments, shares, saves, timeAgo, post_id, handleLike, handleDislike, isLiked, commentsData, savePost, isSaved, blog, multipleImages, hasMultipleImages, reportPost, hidePost, iframelink, postfile, postFileName, getNewsFeed, openImagePopup, handleReaction, postReaction, postReactionCounts, currentReaction, userReaction, postType, pollOptions, handlePollVote, isPollLoading }) => {
   const navigate = useNavigate();
   const { userData } = useUser();
@@ -37,6 +38,11 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
   const [editReplyText, setEditReplyText] = useState('');
   const [hoverTimeout, setHoverTimeout] = useState(null);
   const [showReactionPopup, setShowReactionPopup] = useState(false);
+
+  // New states for reaction details modal
+  const [showReactionDetailsModal, setShowReactionDetailsModal] = useState(false);
+  const [reactionDetails, setReactionDetails] = useState(null);
+  const [isLoadingReactionDetails, setIsLoadingReactionDetails] = useState(false);
   const buildAuthHeaders = useCallback(() => {
     const accessToken = localStorage.getItem("access_token");
     const headers = {
@@ -192,6 +198,32 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
     return [];
   }, [post_id, buildAuthHeaders]);
 
+  const fetchReactionDetails = useCallback(async () => {
+    setIsLoadingReactionDetails(true);
+    setShowReactionDetailsModal(true);
+    try {
+      const response = await axios.get(
+        `${baseUrl}/api/v1/posts/${post_id}/reactions`,
+        {
+          params: { per_page: 20 },
+          headers: buildAuthHeaders()
+        }
+      );
+      const data = response.data;
+      if (data?.ok === true) {
+        setReactionDetails(data.data);
+      } else {
+        console.error('Failed to fetch reaction details:', data);
+        toast.error('Failed to load reaction details');
+      }
+    } catch (error) {
+      console.error('Error fetching reaction details:', error);
+      toast.error('Error loading reaction details');
+    } finally {
+      setIsLoadingReactionDetails(false);
+    }
+  }, [post_id, buildAuthHeaders]);
+
   const handleClickComments = useCallback(async () => {
     try {
       if (!clickedComments) {
@@ -259,7 +291,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
     if (hoverTimeout) {
       clearTimeout(hoverTimeout);
     }
-    
+
     const timeout = setTimeout(() => {
       setShowReactionPopup(true);
     }, 300); // Increased delay to prevent accidental showing
@@ -712,9 +744,9 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
 
 
   return (
-                    <div className="bg-white rounded-xl overflow-hidden border border-[#d3d1d1] smooth-content-transition max-w-full" key={post_id}>
+    <div className="bg-white rounded-xl overflow-hidden border border-[#d3d1d1] smooth-content-transition max-w-full" key={post_id}>
       <div className="p-4 flex items-center justify-between">
-        <div 
+        <div
           className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity"
           onClick={() => {
             const userIdToNavigate = user?.user_id || user?.id || user?.userId;
@@ -748,7 +780,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
           {showOptionsMenu && (
             <div
               data-options-menu
-                                className="absolute right-0 top-0 z-50 bg-white rounded-lg shadow-xl border border-[#d3d1d1] py-2 min-w-[160px] md:min-w-[200px] max-w-[250px] animate-in slide-in-from-top-2 duration-200"
+              className="absolute right-0 top-0 z-50 bg-white rounded-lg shadow-xl border border-[#d3d1d1] py-2 min-w-[160px] md:min-w-[200px] max-w-[250px] animate-in slide-in-from-top-2 duration-200"
             >
               <button
                 onClick={handleSavePost}
@@ -868,9 +900,9 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
       {/* Handle audio */}
       {audio && (
         <div className="w-full bg-gray-50 rounded-lg p-4">
-          <audio 
-            src={audio} 
-            controls 
+          <audio
+            src={audio}
+            controls
             className="w-full"
             onPlay={(e) => {
               // Pause all other audio elements when this one plays
@@ -954,14 +986,19 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
 
       <div className="p-4">
         <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
-          <span>{getTotalReactionCount() || 0} Reactions</span>
+          <span
+            className="cursor-pointer hover:text-blue-600 transition-colors font-medium flex items-center gap-1"
+            onClick={fetchReactionDetails}
+          >
+            {getTotalReactionCount() || 0} Reactions
+          </span>
           <div className="flex space-x-4">
             <span>{comments || 0} Comments</span>
             <span>{shares || 0} Shares</span>
           </div>
         </div>
 
-                        <div className="flex items-center justify-between pt-3 border-t border-[#d3d1d1] relative">
+        <div className="flex items-center justify-between pt-3 border-t border-[#d3d1d1] relative">
           <button
             className={`inline-block items-center space-x-2 transition-all duration-200 hover:scale-105 cursor-pointer ${(userReaction || currentReaction || postReaction) ? 'text-blue-500' : 'text-gray-600 hover:text-blue-500'
               }`}
@@ -973,7 +1010,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
               <>
                 <span className="text-xl">{getReactionEmoji(userReaction || currentReaction || postReaction)}</span>
                 <span className="text-sm font-medium">{getReactionLabel(userReaction || currentReaction || postReaction)}</span>
-              
+
               </>
             ) : (
               <>
@@ -985,7 +1022,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
 
           {/* Reaction Popup */}
           {showReactionPopup && (
-            <div 
+            <div
               className="absolute bottom-full left-0 mb-2 z-20"
               data-reaction-popup
               onMouseEnter={handlePopupMouseEnter}
@@ -1006,11 +1043,10 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                     <button
                       key={reaction.type}
                       onClick={() => handleReactionClick(reaction.type)}
-                      className={`w-10 h-10 flex items-center justify-center text-2xl hover:scale-125 transition-all duration-200 rounded-full relative ${
-                        isCurrentReaction 
-                          ? 'bg-blue-100 ring-2 ring-blue-500' 
-                          : 'hover:bg-gray-100'
-                      }`}
+                      className={`w-10 h-10 flex items-center justify-center text-2xl hover:scale-125 transition-all duration-200 rounded-full relative ${isCurrentReaction
+                        ? 'bg-blue-100 ring-2 ring-blue-500'
+                        : 'hover:bg-gray-100'
+                        }`}
                       title={`${reaction.label}${count > 0 ? ` (${count})` : ''}${isCurrentReaction ? ' - Current' : ''}`}
                     >
                       {reaction.emoji}
@@ -1088,7 +1124,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                       <div className="flex-1 min-w-0 max-w-full overflow-hidden">
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1 min-w-0 overflow-hidden">
-                            <span 
+                            <span
                               className="font-medium text-sm text-gray-900 block truncate cursor-pointer hover:text-blue-600 transition-colors"
                               onClick={() => {
                                 const userIdToNavigate = comment.publisher?.user_id || comment.publisher?.id || comment.publisher?.userId;
@@ -1186,8 +1222,8 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                             {/* Like Button - Toggles between liked/disliked */}
                             <button
                               className={`flex items-center space-x-1 cursor-pointer transition-colors ${comment.is_comment_liked
-                                  ? 'text-blue-600 hover:text-blue-700'
-                                  : 'text-gray-400 hover:text-gray-600'
+                                ? 'text-blue-600 hover:text-blue-700'
+                                : 'text-gray-400 hover:text-gray-600'
                                 }`}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -1370,7 +1406,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between mb-1">
                                   <div className="flex items-center space-x-2">
-                                    <span 
+                                    <span
                                       className="font-medium text-xs text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
                                       onClick={() => {
                                         const userIdToNavigate = reply.publisher?.user_id || reply.publisher?.id || reply.publisher?.userId;
@@ -1467,8 +1503,8 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                                     {/* Like Button for Reply - Uses new reply_like API */}
                                     <button
                                       className={`flex items-center space-x-1 cursor-pointer transition-colors ${reply.is_comment_liked
-                                          ? 'text-blue-600 hover:text-blue-700'
-                                          : 'text-gray-400 hover:text-gray-600'
+                                        ? 'text-blue-600 hover:text-blue-700'
+                                        : 'text-gray-400 hover:text-gray-600'
                                         }`}
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -1505,25 +1541,25 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                                       <span className="text-xs">Reply</span>
                                     </button>
 
-                                                                         {/* Edit Reply Button - Only show for current user's replies */}
-                                     {reply.publisher?.user_id == ownerid && (
-                                       <button 
-                                         className="flex items-center space-x-1 text-gray-400 hover:text-blue-600 cursor-pointer transition-colors"
-                                         onClick={(e) => {
-                                           e.stopPropagation();
-                                           handleStartEditReply(reply.id, reply.Orginaltext || reply.text || '');
-                                         }}
-                                       >
-                                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                         </svg>
-                                         <span className="text-xs">Edit</span>
-                                       </button>
-                                     )}
-                                    
+                                    {/* Edit Reply Button - Only show for current user's replies */}
+                                    {reply.publisher?.user_id == ownerid && (
+                                      <button
+                                        className="flex items-center space-x-1 text-gray-400 hover:text-blue-600 cursor-pointer transition-colors"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleStartEditReply(reply.id, reply.Orginaltext || reply.text || '');
+                                        }}
+                                      >
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                        <span className="text-xs">Edit</span>
+                                      </button>
+                                    )}
+
                                     {/* Delete Reply Button - Only show for current user's replies */}
                                     {reply.publisher?.user_id == ownerid && (
-                                      <button 
+                                      <button
                                         className="flex items-center space-x-1 text-gray-400 hover:text-red-600 cursor-pointer transition-colors"
                                         onClick={(e) => {
                                           e.stopPropagation();
@@ -1637,6 +1673,13 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
         onSocialShare={handleSocialShare}
         setLoading={setLoading}
         loading={loading}
+      />
+
+      <ReactionDetailsModal
+        isOpen={showReactionDetailsModal}
+        onClose={() => setShowReactionDetailsModal(false)}
+        data={reactionDetails}
+        isLoading={isLoadingReactionDetails}
       />
 
     </div>

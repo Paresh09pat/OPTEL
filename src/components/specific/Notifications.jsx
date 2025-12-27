@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { baseUrl } from '../../utils/constant';
+import { FaUserPlus, FaBell, FaComment, FaHeart, FaUserFriends, FaExclamationCircle } from 'react-icons/fa';
+import { BiMessageDetail } from 'react-icons/bi';
+import { HiOutlineTrash } from 'react-icons/hi';
 
-const Notifications = ({ isOpen, onClose, containerRect }) => {
+const Notifications = ({ isOpen, onClose, containerRect, refreshCount }) => {
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -66,6 +69,7 @@ const Notifications = ({ isOpen, onClose, containerRect }) => {
             if (data?.api_status === 200) {
                 // Refresh notifications after marking as read
                 fetchNotifications();
+                if (refreshCount) refreshCount();
             }
         } catch (error) {
             console.error('Error marking notifications as read:', error);
@@ -79,17 +83,25 @@ const Notifications = ({ isOpen, onClose, containerRect }) => {
         }
     }, [isOpen]);
 
-    // Get notification indicator color based on type
-    const getNotificationColor = (type) => {
-        const colorMap = {
-            'admin_notification': 'bg-blue-500',
-            'friend_request': 'bg-green-500',
-            'message': 'bg-purple-500',
-            'like': 'bg-red-500',
-            'comment': 'bg-yellow-500',
-            'follow': 'bg-indigo-500',
-        };
-        return colorMap[type] || 'bg-gray-400';
+    // Get notification icon and color based on type
+    const getNotificationUI = (type) => {
+        switch (type) {
+            case 'admin_notification':
+                return { icon: <FaExclamationCircle className="text-white" />, color: 'bg-blue-500' };
+            case 'friend_request':
+                return { icon: <FaUserFriends className="text-white" />, color: 'bg-green-500' };
+            case 'message':
+                return { icon: <BiMessageDetail className="text-white" />, color: 'bg-purple-500' };
+            case 'like':
+                return { icon: <FaHeart className="text-white" />, color: 'bg-red-500' };
+            case 'comment':
+                return { icon: <FaComment className="text-white" />, color: 'bg-yellow-500' };
+            case 'follow':
+            case 'following':
+                return { icon: <FaUserPlus className="text-white" />, color: 'bg-indigo-500' };
+            default:
+                return { icon: <FaBell className="text-white" />, color: 'bg-gray-400' };
+        }
     };
 
     // Delete notification
@@ -116,6 +128,7 @@ const Notifications = ({ isOpen, onClose, containerRect }) => {
             if (data?.api_status === 200) {
                 // Remove notification from local state
                 setNotifications(prev => prev.filter(notif => notif.id !== notificationId));
+                if (refreshCount) refreshCount();
             } else {
                 console.error('Failed to delete notification:', data);
             }
@@ -167,67 +180,72 @@ const Notifications = ({ isOpen, onClose, containerRect }) => {
                         <p className="text-red-500">{error}</p>
                     </div>
                 ) : notifications && notifications.length > 0 ? (
-                    notifications.map((notification) => (
-                        <div
-                            key={notification.id}
-                            className={`flex items-start gap-3 p-3 rounded-xl border transition-colors ${notification.seen === 0
-                                    ? 'border-[#EEF2F7] hover:border-blue-100 hover:bg-blue-50/40 bg-blue-50/20'
-                                    : 'border-[#EEF2F7] hover:border-gray-200 hover:bg-gray-50'
-                                }`}
-                        >
-                            {/* Notification indicator */}
-                            <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${getNotificationColor(notification.type)} ${notification.seen === 0 ? 'opacity-100' : 'opacity-50'}`}></div>
-
-                            {/* Notifier avatar */}
-                            <div className="flex-shrink-0">
-                                {notification.notifier?.avatar_url ? (
-                                    <img
-                                        src={notification.notifier.avatar_url}
-                                        alt={notification.notifier.name || 'User'}
-                                        className="w-10 h-10 rounded-full object-cover"
-                                        onError={(e) => {
-                                            e.target.src = "https://img.freepik.com/premium-vector/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4866.jpg?semt=ais_hybrid&w=740&q=80";
-                                        }}
-                                    />
-                                ) : (
-                                    <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
-                                        <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                        </svg>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Notification content */}
-                            <div className="flex-1 min-w-0">
-                                <p className={`text-sm ${notification.seen === 0 ? 'font-semibold' : 'font-medium'} text-gray-800`}>
-                                    {notification.text || notification.type_text}
-                                </p>
-                                {notification.type_text && notification.text && (
-                                    <p className="text-xs text-gray-600 mt-1">{notification.type_text}</p>
-                                )}
-                                <p className="text-xs text-gray-500 mt-1">
-                                    {notification.time_text_string || notification.time_text || 'Just now'}
-                                </p>
-                            </div>
-
-                            {/* Delete button */}
-                            <button
-                                onClick={(e) => deleteNotification(notification.id, e)}
-                                className="flex-shrink-0 p-1 rounded-full hover:bg-red-50 transition-colors group"
-                                aria-label="Delete notification"
+                    notifications.map((notification) => {
+                        const { icon, color } = getNotificationUI(notification.type);
+                        return (
+                            <div
+                                key={notification.id}
+                                className={`group flex items-start gap-3 p-4 rounded-2xl border transition-all duration-300 hover:shadow-md ${notification.seen === 0
+                                    ? 'border-blue-100 bg-blue-50/30 hover:bg-blue-50/50'
+                                    : 'border-gray-100 bg-white hover:border-gray-200'
+                                    }`}
                             >
-                                <svg 
-                                    className="w-5 h-5 text-gray-400 group-hover:text-red-500 transition-colors" 
-                                    fill="none" 
-                                    stroke="currentColor" 
-                                    viewBox="0 0 24 24"
+                                {/* Notifier avatar with type icon badge */}
+                                <div className="relative flex-shrink-0">
+                                    {notification.notifier?.avatar_url ? (
+                                        <img
+                                            src={notification.notifier.avatar_url}
+                                            alt={notification.notifier.name || 'User'}
+                                            className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
+                                            onError={(e) => {
+                                                e.target.src = "https://img.freepik.com/premium-vector/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4866.jpg?semt=ais_hybrid&w=740&q=80";
+                                            }}
+                                        />
+                                    ) : (
+                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center border-2 border-white shadow-sm">
+                                            <FaBell className="w-6 h-6 text-gray-400" />
+                                        </div>
+                                    )}
+                                    <div className={`absolute -right-1 -bottom-1 w-5 h-5 rounded-full ${color} flex items-center justify-center border-2 border-white shadow-sm`}>
+                                        <span className="text-[10px]">{icon}</span>
+                                    </div>
+                                </div>
+
+                                {/* Notification content */}
+                                <div className="flex-1 min-w-0 pt-0.5">
+                                    <div className="flex justify-between items-start">
+                                        <p className={`text-sm ${notification.seen === 0 ? 'font-bold' : 'font-medium'} text-gray-900 leading-tight`}>
+                                            <span className="hover:text-blue-600 transition-colors cursor-pointer">
+                                                {notification.notifier?.name || notification.notifier?.username || 'Someone'}
+                                            </span>
+                                            {" "}
+                                            <span className="text-gray-600 font-normal">
+                                                {notification.type_text || 'performed an action'}
+                                            </span>
+                                            {notification.text && (
+                                                <span className="block mt-1 text-gray-800 font-normal italic bg-gray-50 p-2 rounded-lg border border-gray-100">
+                                                    "{notification.text}"
+                                                </span>
+                                            )}
+                                        </p>
+                                    </div>
+                                    <p className="text-[11px] text-gray-400 mt-2 flex items-center gap-1">
+                                        <span className={`w-1.5 h-1.5 rounded-full ${notification.seen === 0 ? 'bg-blue-500 animate-pulse' : 'bg-transparent'}`}></span>
+                                        {notification.time_text_string || notification.time_text || 'Just now'}
+                                    </p>
+                                </div>
+
+                                {/* Delete button - visible on group hover or always mobile */}
+                                <button
+                                    onClick={(e) => deleteNotification(notification.id, e)}
+                                    className="flex-shrink-0 p-2 rounded-xl hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"
+                                    aria-label="Delete notification"
                                 >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                            </button>
-                        </div>
-                    ))
+                                    <HiOutlineTrash className="w-5 h-5 text-gray-400 hover:text-red-500 transition-colors" />
+                                </button>
+                            </div>
+                        );
+                    })
                 ) : (
                     <div className="flex items-center justify-center py-8">
                         <p className="text-gray-500">No notifications found</p>
