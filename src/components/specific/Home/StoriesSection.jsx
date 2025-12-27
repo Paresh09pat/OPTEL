@@ -192,6 +192,7 @@ const StoriesSection = ({
           onClose={() => setStoryViewerOpen(false)}
           stories={currentUserStories}
           currentUser={userData}
+          isCurrentUserStories={true}
           onStoryDeleted={handleStoryDeleted}
         />
       )}

@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { FaTimes, FaChevronLeft, FaChevronRight, FaTrash } from 'react-icons/fa';
 import { toast } from 'react-toastify';
-import { ThumbsUp } from 'lucide-react';
+import { ThumbsUp, Eye } from 'lucide-react';
 import DeleteStoryModal from './DeleteStoryModal';
 import { baseUrl } from '../../utils/constant';
 import axios from 'axios';
 
-const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted }) => {
+const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, isCurrentUserStories = false }) => {
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const progressIntervalRef = useRef(null);
@@ -19,6 +19,12 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted }) 
   const [hoverTimeout, setHoverTimeout] = useState(null);
   const [storyReactions, setStoryReactions] = useState({}); // Store reactions for each story
   const [reacting, setReacting] = useState(false);
+  const [viewedStories, setViewedStories] = useState(new Set()); // Track which stories have been marked as seen
+  // Story views states
+  const [showViewsModal, setShowViewsModal] = useState(false);
+  const [storyViews, setStoryViews] = useState([]);
+  const [loadingViews, setLoadingViews] = useState(false);
+  const [viewsCount, setViewsCount] = useState(0);
 
   // Keep refs in sync
   useEffect(() => {
@@ -40,7 +46,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted }) 
     stopProgress();
     const currentIdx = currentStoryIndexRef.current;
     const storiesLength = storiesRef.current?.length || 0;
-    
+
     if (currentIdx < storiesLength - 1) {
       setProgress(0);
       setCurrentStoryIndex(prev => prev + 1);
@@ -52,7 +58,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted }) 
   const prevStory = useCallback(() => {
     stopProgress();
     const currentIdx = currentStoryIndexRef.current;
-    
+
     if (currentIdx > 0) {
       setProgress(0);
       setCurrentStoryIndex(prev => prev - 1);
@@ -93,6 +99,67 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted }) 
     return headers;
   }, []);
 
+  // Mark story as seen
+  const markStoryAsSeen = useCallback(async (storyId) => {
+    // Don't mark current user's own stories as seen
+    if (isCurrentUserStories || !storyId || viewedStories.has(storyId)) {
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        `${baseUrl}/api/v1/stories/mark-seen`,
+        { story_id: storyId },
+        {
+          headers: buildAuthHeaders()
+        }
+      );
+
+      const data = response.data;
+      if (data?.ok === true || data?.api_status === 200) {
+        // Mark this story as viewed to avoid duplicate API calls
+        setViewedStories(prev => new Set([...prev, storyId]));
+      }
+    } catch (error) {
+      // Silently handle errors - don't show toast for mark-seen failures
+      console.error('Error marking story as seen:', error);
+    }
+  }, [isCurrentUserStories, viewedStories, buildAuthHeaders]);
+
+  // Fetch story views
+  const fetchStoryViews = useCallback(async (storyId) => {
+    if (!storyId) return;
+
+    setLoadingViews(true);
+    try {
+      const response = await axios.post(
+        `${baseUrl}/api/v1/stories/views`,
+        {
+          story_id: storyId,
+          limit: 20,
+          offset: 0
+        },
+        {
+          headers: buildAuthHeaders()
+        }
+      );
+
+      const data = response.data;
+      if (data?.ok === true || data?.api_status === 200) {
+        setStoryViews(data?.data?.views || []);
+        setViewsCount(data?.data?.total || data?.data?.views?.length || 0);
+      } else {
+        toast.error(data?.message || 'Failed to fetch story views');
+      }
+    } catch (error) {
+      console.error('Error fetching story views:', error);
+      toast.error(error?.response?.data?.message || 'Failed to fetch story views');
+    } finally {
+      setLoadingViews(false);
+    }
+  }, [buildAuthHeaders]);
+
+
   // Get reaction emoji based on reaction type
   const getReactionEmoji = (reactionType) => {
     const reactions = {
@@ -122,7 +189,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted }) 
   // React to story
   const handleStoryReaction = useCallback(async (storyId, reactionType) => {
     if (!storyId || reacting) return;
-    
+
     setReacting(true);
     try {
       const response = await axios.post(
@@ -182,51 +249,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted }) 
     }
   }, [buildAuthHeaders, reacting, isOpen, stories, startProgress]);
 
-  // Handle hover with delay to prevent glitch
-  const handleReactionButtonMouseEnter = () => {
-    // Pause story when hovering over reaction button
-    setIsPaused(true);
-    stopProgress();
-    
-    if (hoverTimeout) {
-      clearTimeout(hoverTimeout);
-    }
-    
-    const timeout = setTimeout(() => {
-      setShowReactionPopup(true);
-    }, 300);
-    setHoverTimeout(timeout);
-  };
-
-  const handleReactionButtonMouseLeave = () => {
-    if (hoverTimeout) {
-      clearTimeout(hoverTimeout);
-      setHoverTimeout(null);
-    }
-    // Only resume story if popup is not shown (user moved away before popup appeared)
-    // If popup is shown, story stays paused until user leaves popup area
-    setTimeout(() => {
-      if (!showReactionPopup) {
-        // Resume story when leaving reaction button and popup never appeared
-        setIsPaused(false);
-        if (isOpen && stories && stories.length > 0) {
-          startProgress();
-        }
-      }
-    }, 100);
-  };
-
-  const handlePopupMouseEnter = () => {
-    // Keep story paused when hovering over popup
-    setIsPaused(true);
-    stopProgress();
-    
-    if (hoverTimeout) {
-      clearTimeout(hoverTimeout);
-      setHoverTimeout(null);
-    }
-  };
-
+  // Handle popup close
   const handlePopupMouseLeave = () => {
     setShowReactionPopup(false);
     // Resume story when leaving popup
@@ -296,17 +319,34 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted }) 
     };
   }, [isOpen, stories, stopProgress]);
 
-  // Restart progress when story index changes
+  // Restart progress when story index changes and mark story as seen
   useEffect(() => {
+
     if (isOpen && stories && stories.length > 0 && !isPaused) {
       setProgress(0);
       setShowReactionPopup(false); // Close reaction popup when story changes
-      // Small delay to ensure state is updated
-      const timer = setTimeout(() => {
+
+      let markSeenTimer = null;
+      let progressTimer = null;
+
+      // Mark current story as seen (only for other users' stories)
+      const currentStory = stories[currentStoryIndex];
+      if (currentStory?.id) {
+        // Mark as seen after a short delay to ensure story is actually displayed
+        markSeenTimer = setTimeout(() => {
+          markStoryAsSeen(currentStory.id);
+        }, 500); // 500ms delay to ensure story is displayed
+      }
+
+      // Small delay to ensure state is updated, then start progress
+      progressTimer = setTimeout(() => {
         startProgress();
       }, 50);
+
+      // Return cleanup function that clears both timers
       return () => {
-        clearTimeout(timer);
+        if (markSeenTimer) clearTimeout(markSeenTimer);
+        if (progressTimer) clearTimeout(progressTimer);
         stopProgress();
       };
     }
@@ -314,7 +354,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted }) 
     return () => {
       stopProgress();
     };
-  }, [currentStoryIndex, isOpen, isPaused, startProgress, stopProgress]);
+  }, [currentStoryIndex, isOpen, isPaused, startProgress, stopProgress, stories, markStoryAsSeen]);
 
   const handleMouseDown = () => {
     setIsPaused(true);
@@ -338,7 +378,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted }) 
   // Delete story function
   const deleteStory = async () => {
     if (!currentStory?.id) return;
-    
+
     setDeleteModalOpen(false);
 
     try {
@@ -359,11 +399,11 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted }) 
 
       if (response.ok && data?.api_status === 200) {
         toast.success('Story deleted successfully!');
-        
+
         // Handle navigation before refreshing
         const currentIdx = currentStoryIndex;
         const willBeLastStory = currentIdx === stories.length - 1;
-        
+
         // Call callback to refresh stories (this will update the stories prop)
         if (onStoryDeleted) {
           await onStoryDeleted();
@@ -470,13 +510,69 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted }) 
           </button>
         )}
 
+
         {/* Story Image */}
         <div className="relative w-full max-w-md h-full max-h-[90vh] flex items-center justify-center">
+          {/* Progress Bars - Instagram Style */}
+          <div className="absolute top-0 left-0 right-0 flex gap-2 z-50 p-3">
+            {stories.map((story, index) => (
+              <div
+                key={story.id}
+                className="flex-1 h-2 bg-gray-800/60 rounded-sm overflow-hidden border border-white/20"
+              >
+                <div
+                  className="h-full bg-white rounded-sm"
+                  style={{
+                    width: index < currentStoryIndex
+                      ? '100%'
+                      : index === currentStoryIndex
+                        ? `${progress}%`
+                        : '0%',
+                    transition: index === currentStoryIndex && !isPaused
+                      ? 'width 0.05s linear'
+                      : index < currentStoryIndex
+                        ? 'width 0.3s ease-out'
+                        : 'none',
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+
+
+
+          {/* Story Counter */}
+          <div className="absolute top-14 left-3 text-white text-xs font-semibold z-50 drop-shadow-lg">
+            {currentStoryIndex + 1} / {stories.length}
+          </div>
+
+          {/* Views Button - Only for current user's stories */}
+          {isCurrentUserStories && currentStory?.id && (
+            <button
+              onClick={() => {
+                setIsPaused(true);
+                stopProgress();
+                fetchStoryViews(currentStory.id);
+                setShowViewsModal(true);
+              }}
+              className="absolute top-14 right-3 flex items-center gap-1.5 text-white text-xs font-semibold z-50 bg-black/40 hover:bg-black/60 px-2.5 py-1.5 rounded-full transition-colors backdrop-blur-sm"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span>{currentStory?.views || viewsCount || 0}</span>
+            </button>
+          )}
+
+
+          {/* Top gradient overlay for better progress bar visibility */}
+          <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-black/60 via-black/30 to-transparent pointer-events-none z-40" />
+
+
           <img
             src={currentStory?.thumbnail}
             alt={currentStory?.title || 'Story'}
             className="w-full h-full object-contain"
           />
+
 
           {/* Story Info Overlay */}
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6">
@@ -504,26 +600,18 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted }) 
             <div className="relative mt-4 flex items-center gap-2">
               <button
                 data-story-reaction-button
-                className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-black/30 hover:bg-black/50 transition-all duration-200 cursor-pointer ${
-                  storyReactions[currentStory?.id] ? 'text-blue-400' : 'text-white'
-                }`}
-                 onClick={(e) => {
-                   e.stopPropagation(); // Prevent triggering story pause/play
-                   // Pause story when clicking reaction button
-                   setIsPaused(true);
-                   stopProgress();
-                   if (storyReactions[currentStory?.id]) {
-                     // If already reacted, show popup to change reaction
-                     setShowReactionPopup(true);
-                   } else {
-                     // If not reacted, show popup to select reaction
-                     setShowReactionPopup(true);
-                   }
-                 }}
+                className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-black/30 hover:bg-black/50 transition-all duration-200 cursor-pointer ${storyReactions[currentStory?.id] ? 'text-blue-400' : 'text-white'
+                  }`}
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent triggering story pause/play
+                  // Pause story when clicking reaction button
+                  setIsPaused(true);
+                  stopProgress();
+                  // Toggle popup visibility
+                  setShowReactionPopup(!showReactionPopup);
+                }}
                 onMouseDown={(e) => e.stopPropagation()} // Prevent triggering story pause
                 onMouseUp={(e) => e.stopPropagation()} // Prevent triggering story play
-                onMouseEnter={handleReactionButtonMouseEnter}
-                onMouseLeave={handleReactionButtonMouseLeave}
                 disabled={reacting}
               >
                 {storyReactions[currentStory?.id] ? (
@@ -541,10 +629,9 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted }) 
 
               {/* Reaction Popup */}
               {showReactionPopup && (
-                <div 
+                <div
                   className="absolute bottom-full left-0 mb-2 z-20"
                   data-story-reaction-popup
-                  onMouseEnter={handlePopupMouseEnter}
                   onMouseLeave={handlePopupMouseLeave}
                   onMouseDown={(e) => e.stopPropagation()} // Prevent triggering story pause
                   onMouseUp={(e) => e.stopPropagation()} // Prevent triggering story play
@@ -568,11 +655,10 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted }) 
                           }}
                           onMouseDown={(e) => e.stopPropagation()} // Prevent triggering story pause
                           onMouseUp={(e) => e.stopPropagation()} // Prevent triggering story play
-                          className={`w-10 h-10 flex items-center justify-center text-2xl hover:scale-125 transition-all duration-200 rounded-full relative ${
-                            isCurrentReaction 
-                              ? 'bg-blue-100 ring-2 ring-blue-500' 
-                              : 'hover:bg-gray-100'
-                          }`}
+                          className={`w-10 h-10 flex items-center justify-center text-2xl hover:scale-125 transition-all duration-200 rounded-full relative ${isCurrentReaction
+                            ? 'bg-blue-100 ring-2 ring-blue-500'
+                            : 'hover:bg-gray-100'
+                            }`}
                           title={`${reaction.label}${isCurrentReaction ? ' - Current' : ''}`}
                           disabled={reacting}
                         >
@@ -599,36 +685,6 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted }) 
         )}
       </div>
 
-      {/* Progress Bars */}
-      <div className="absolute top-4 left-4 right-4 flex gap-1 z-10 px-4">
-        {stories.map((story, index) => (
-          <div
-            key={story.id}
-            className="flex-1 h-0.5 bg-white/30 rounded-full overflow-hidden"
-          >
-            <div
-              className="h-full bg-white rounded-full"
-              style={{
-                width: index < currentStoryIndex 
-                  ? '100%' 
-                  : index === currentStoryIndex 
-                    ? `${progress}%` 
-                    : '0%',
-                transition: index === currentStoryIndex && !isPaused 
-                  ? 'width 0.05s linear' 
-                  : index < currentStoryIndex 
-                    ? 'width 0.3s ease-out'
-                    : 'none',
-              }}
-            />
-          </div>
-        ))}
-      </div>
-
-      {/* Story Counter */}
-      <div className="absolute top-16 left-4 text-white/70 text-sm z-10">
-        {currentStoryIndex + 1} / {stories.length}
-      </div>
 
       {/* Delete Confirmation Modal */}
       <DeleteStoryModal
@@ -643,6 +699,84 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted }) 
         onConfirm={deleteStory}
         storyTitle={currentStory?.title}
       />
+
+      {/* Story Views Modal */}
+      {showViewsModal && (
+        <div
+          className="fixed inset-0 z-[70] bg-black/50 flex items-center justify-center p-4"
+          onClick={() => {
+            setShowViewsModal(false);
+            setIsPaused(false);
+            if (isOpen && stories && stories.length > 0) {
+              startProgress();
+            }
+          }}
+        >
+          <div
+            className="bg-white rounded-2xl w-full max-w-md max-h-[80vh] overflow-hidden shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Story Views ({viewsCount})
+              </h3>
+              <button
+                onClick={() => {
+                  setShowViewsModal(false);
+                  setIsPaused(false);
+                  if (isOpen && stories && stories.length > 0) {
+                    startProgress();
+                  }
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <FaTimes className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="overflow-y-auto max-h-[calc(80vh-80px)]">
+              {loadingViews ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                </div>
+              ) : storyViews.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+                  <Eye className="w-12 h-12 mb-3 opacity-50" />
+                  <p className="text-sm">No views yet</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {storyViews.map((view, index) => (
+                    <div key={index} className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors">
+                      <img
+                        src={view.avatar || view.avatar_url || '/default-avatar.png'}
+                        alt={view.name || view.username}
+                        className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
+                        onError={(e) => {
+                          e.target.src = '/default-avatar.png';
+                        }}
+                      />
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900 text-sm">
+                          {view.name || view.username || 'Unknown User'}
+                        </h4>
+                        {view.username && view.name && (
+                          <p className="text-xs text-gray-500">@{view.username}</p>
+                        )}
+                        {view.time_text && (
+                          <p className="text-xs text-gray-400 mt-0.5">{view.time_text}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -64,6 +64,7 @@ const Home = () => {
   const [error, setError] = useState(null);
   const [followedUsers, setFollowedUsers] = useState(new Set());
   const [userStories, setUserStories] = useState([]);
+  const [allUsersStories, setAllUsersStories] = useState([]); // All users' stories grouped by user
   const [selectedUserForStories, setSelectedUserForStories] = useState(null);
   const [showStoriesPreview, setShowStoriesPreview] = useState(false);
   const [friendSuggestions, setFriendSuggestions] = useState(dummyFriendSuggestions);
@@ -967,6 +968,104 @@ const Home = () => {
     }
   }
 
+  // Fetch all users' stories for the Vibe section
+  const getAllUsersStories = async () => {
+    setLoading(true);
+    try {
+      const accessToken = localStorage.getItem("access_token");
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/stories/view-all`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+          "Accept": "application/json"
+        },
+      });
+
+      const data = await response.json();
+
+      if (data?.api_status === 200 && data?.stories && Array.isArray(data.stories)) {
+        // Get current timestamp
+        const now = Math.floor(Date.now() / 1000);
+        
+        // Group stories by user_id and filter out expired stories
+        const storiesByUser = {};
+        
+        data.stories.forEach(story => {
+          // Check if story is expired
+          const expireTimestamp = typeof story.expire === 'string' ? parseInt(story.expire, 10) : story.expire;
+          if (expireTimestamp && expireTimestamp < now) {
+            return; // Skip expired stories
+          }
+          
+          const userId = story.user_id;
+          
+          if (!storiesByUser[userId]) {
+            storiesByUser[userId] = {
+              user_id: userId,
+              id: userId,
+              username: story.user_data?.username || story.user_data?.name || 'User',
+              first_name: story.user_data?.name || story.user_data?.username || 'User',
+              last_name: '',
+              avatar: story.user_data?.avatar || '',
+              avatar_url: story.user_data?.avatar_url || story.user_data?.avatar || '/perimg.png',
+              verified: story.user_data?.verified || false,
+              stories: []
+            };
+          }
+          
+          // Transform story data to match StoryViewer expectations
+          const postedTimestamp = typeof story.posted === 'string' ? parseInt(story.posted, 10) : story.posted;
+          const transformedStory = {
+            id: story.id,
+            thumbnail: story.thumbnail,
+            title: story.title || '',
+            description: story.description || '',
+            posted: postedTimestamp,
+            expire: expireTimestamp,
+            time_text: formatTimeAgo(postedTimestamp),
+            user_reaction: null // Will be fetched when viewing if needed
+          };
+          
+          storiesByUser[userId].stories.push(transformedStory);
+        });
+        
+        // Convert object to array, filter out users with no stories, and sort stories by posted time (newest first)
+        const groupedStories = Object.values(storiesByUser)
+          .filter(user => user.stories.length > 0) // Only include users with active stories
+          .map(user => ({
+            ...user,
+            stories: user.stories.sort((a, b) => (b.posted || 0) - (a.posted || 0))
+          }));
+        
+        setAllUsersStories(groupedStories);
+      } else {
+        setAllUsersStories([]);
+      }
+    } catch (error) {
+      console.error('Error fetching all users stories:', error);
+      setAllUsersStories([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Helper function to format timestamp to time ago
+  const formatTimeAgo = (timestamp) => {
+    if (!timestamp) return '';
+    
+    const now = Math.floor(Date.now() / 1000);
+    const diff = now - timestamp;
+    
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+    
+    const date = new Date(timestamp * 1000);
+    return date.toLocaleDateString();
+  };
+
 
 
   const handleStoryClick = (user) => {
@@ -979,6 +1078,7 @@ const Home = () => {
     getSession();
     getFriendSuggestions();
     getuserStories();
+    getAllUsersStories();
   }, []);
 
   // Show loader while user data is loading
@@ -1006,10 +1106,11 @@ const Home = () => {
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 md:mb-6 px-2 md:px-4">Vibe</h2>
             <div className="px-2 md:px-4">
               <StoriesSection
-                userStories={userStories}
+                userStories={allUsersStories}
                 onStoryClick={handleStoryClick}
                 onStoryCreated={() => {
                   getuserStories();
+                  getAllUsersStories();
                 }}
                 currentUserId={localStorage.getItem('user_id')}
               />
@@ -1091,8 +1192,6 @@ const Home = () => {
 
             </div>
 
-
-
             <div className="space-y-4 md:mb-6 bg-white rounded-xl ">
               {posts.slice(1).map(post => (
                 <PostCard
@@ -1135,9 +1234,11 @@ const Home = () => {
             username: selectedUserForStories.username,
             avatar_url: selectedUserForStories.avatar_url || selectedUserForStories.avatar
           }}
+          isCurrentUserStories={selectedUserForStories.user_id?.toString() === localStorage.getItem('user_id')?.toString()}
           onStoryDeleted={() => {
             // Refresh stories after deletion
             getuserStories();
+            getAllUsersStories();
           }}
         />
       )}
