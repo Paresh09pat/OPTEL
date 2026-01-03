@@ -1,10 +1,12 @@
 import axios from 'axios';
-import { Bookmark, ChevronDown, ChevronUp, MessageCircle, MoreHorizontal, Share, Smile, ThumbsUp, X } from 'lucide-react';
-import { memo, useCallback, useEffect, useState } from 'react';
+import { Bookmark, ChevronDown, ChevronUp, MessageCircle, MoreHorizontal, Smile, ThumbsUp, X } from 'lucide-react';
+import { memo, useCallback, useEffect, useState, useRef } from 'react';
 import { FaFilePdf, FaPaperPlane } from 'react-icons/fa';
 import { IoBookmark } from "react-icons/io5";
+import { IoMdShare } from "react-icons/io";
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import EmojiPicker from 'emoji-picker-react';
 import { useUser } from '../../../context/UserContext';
 import { baseUrl } from '../../../utils/constant';
 import Avatar from '../../Avatar';
@@ -43,6 +45,12 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
   const [showReactionDetailsModal, setShowReactionDetailsModal] = useState(false);
   const [reactionDetails, setReactionDetails] = useState(null);
   const [isLoadingReactionDetails, setIsLoadingReactionDetails] = useState(false);
+  // Add state for emoji picker
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showReplyEmojiPicker, setShowReplyEmojiPicker] = useState({});
+  const [showEditCommentEmojiPicker, setShowEditCommentEmojiPicker] = useState({});
+  const [showEditReplyEmojiPicker, setShowEditReplyEmojiPicker] = useState({});
+  const emojiPickerRef = useRef(null);
   const buildAuthHeaders = useCallback(() => {
     const accessToken = localStorage.getItem("access_token");
     const headers = {
@@ -161,6 +169,30 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
       };
     }
   }, [showSharePopup]);
+
+  // Close emoji picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const emojiButton = event.target.closest('[data-emoji-button]');
+      const emojiPicker = event.target.closest('[data-emoji-picker]');
+
+      if (!emojiButton && !emojiPicker) {
+        setShowEmojiPicker(false);
+        setShowReplyEmojiPicker({});
+        setShowEditCommentEmojiPicker({});
+        setShowEditReplyEmojiPicker({});
+      }
+    };
+
+    if (showEmojiPicker || Object.keys(showReplyEmojiPicker).length > 0 || 
+        Object.keys(showEditCommentEmojiPicker).length > 0 || 
+        Object.keys(showEditReplyEmojiPicker).length > 0) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showEmojiPicker, showReplyEmojiPicker, showEditCommentEmojiPicker, showEditReplyEmojiPicker]);
 
   const fetchPostComments = useCallback(async (showLoader = true) => {
     if (showLoader) {
@@ -359,10 +391,32 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
     setShowOptionsMenu(false);
   }, [post_id]);
 
-  const handleHidePost = useCallback(() => {
-    hidePost(post_id);
+  const handleHidePost = useCallback(async () => {
     setShowOptionsMenu(false);
-  }, [post_id]);
+    try {
+      const response = await axios.post(
+        `${baseUrl}/api/v1/posts/hide`,
+        { post_id: post_id },
+        {
+          headers: buildAuthHeaders()
+        }
+      );
+      const data = response.data;
+      if (data?.api_status === 200 || data?.ok === true) {
+        toast.success(data?.message || 'Post hidden successfully');
+        // Refetch the news feed to update the UI
+        if (getNewsFeed && typeof getNewsFeed === 'function') {
+          getNewsFeed();
+        }
+      } else {
+        toast.error(data?.message || 'Failed to hide post');
+      }
+    } catch (error) {
+      console.error('Error hiding post:', error);
+      const errorMsg = error?.response?.data?.message || 'Error hiding post';
+      toast.error(errorMsg);
+    }
+  }, [post_id, buildAuthHeaders, getNewsFeed]);
 
   const handleShareToTimeline = useCallback(() => {
     console.log('Share to timeline:', post_id);
@@ -423,6 +477,8 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
       if (data?.ok === true) {
         setCommentInput('');
         setShowOptionsMenu(false);
+        setShowEmojiPicker(false);
+        toast.success(data?.message || 'Comment posted successfully');
         await fetchPostComments(false);
       } else {
         toast.error(data?.message || 'Unable to post comment. Please try again.');
@@ -432,6 +488,58 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
       toast.error(error?.response?.data?.message || error?.message || 'Something went wrong while posting your comment.');
     }
   }, [post_id, commentInput, buildAuthHeaders, fetchPostComments]);
+
+  // Handle emoji selection for main comment input
+  const onEmojiClick = useCallback((emojiData) => {
+    setCommentInput(prev => prev + emojiData.emoji);
+  }, []);
+
+  // Handle emoji selection for reply input
+  const onReplyEmojiClick = useCallback((emojiData, commentId) => {
+    setReplyInput(prev => prev + emojiData.emoji);
+    setShowReplyEmojiPicker(prev => ({ ...prev, [commentId]: false }));
+  }, []);
+
+  // Handle emoji selection for edit comment input
+  const onEditCommentEmojiClick = useCallback((emojiData, commentId) => {
+    setEditText(prev => prev + emojiData.emoji);
+    setShowEditCommentEmojiPicker(prev => ({ ...prev, [commentId]: false }));
+  }, []);
+
+  // Handle emoji selection for edit reply input
+  const onEditReplyEmojiClick = useCallback((emojiData, replyId) => {
+    setEditReplyText(prev => prev + emojiData.emoji);
+    setShowEditReplyEmojiPicker(prev => ({ ...prev, [replyId]: false }));
+  }, []);
+
+  // Toggle emoji picker for main comment
+  const toggleEmojiPicker = useCallback(() => {
+    setShowEmojiPicker(prev => !prev);
+  }, []);
+
+  // Toggle emoji picker for reply
+  const toggleReplyEmojiPicker = useCallback((commentId) => {
+    setShowReplyEmojiPicker(prev => ({
+      ...prev,
+      [commentId]: !prev[commentId]
+    }));
+  }, []);
+
+  // Toggle emoji picker for edit comment
+  const toggleEditCommentEmojiPicker = useCallback((commentId) => {
+    setShowEditCommentEmojiPicker(prev => ({
+      ...prev,
+      [commentId]: !prev[commentId]
+    }));
+  }, []);
+
+  // Toggle emoji picker for edit reply
+  const toggleEditReplyEmojiPicker = useCallback((replyId) => {
+    setShowEditReplyEmojiPicker(prev => ({
+      ...prev,
+      [replyId]: !prev[replyId]
+    }));
+  }, []);
 
   // Add reply handlers
   const handleStartReply = useCallback((commentId, commenterName) => {
@@ -528,6 +636,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
       );
       const data = response.data;
       if (data?.ok === true) {
+        toast.success(data?.message || 'Comment updated successfully');
         if (clickedComments) {
           await fetchPostComments(false);
         }
@@ -535,6 +644,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
           fetchReply(comment_id);
         }
       } else {
+        toast.error(data?.message || 'Failed to update comment. Please try again.');
         console.log('Failed to edit comment:', data);
       }
     } catch (error) {
@@ -566,11 +676,13 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
       );
       const data = response.data;
       if (data?.ok === true) {
+        toast.success(data?.message || 'Reply updated successfully');
         const parentCommentId = findParentCommentId(reply_id);
         if (parentCommentId) {
           fetchReply(parentCommentId);
         }
       } else {
+        toast.error(data?.message || 'Failed to update reply. Please try again.');
         console.log('Failed to edit reply:', data);
       }
     } catch (error) {
@@ -672,9 +784,11 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
       if (data?.ok === true) {
         setReplyInput('');
         setReplyingTo(null);
+        toast.success(data?.message || 'Reply posted successfully');
         await fetchPostComments(false);
         fetchReply(comment_id);
       } else {
+        toast.error(data?.message || 'Failed to post reply. Please try again.');
         console.log('Failed to create reply:', data);
       }
     } catch (error) {
@@ -1079,7 +1193,8 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
             className="flex items-center space-x-2 text-gray-600 hover:text-green-500 transition-colors cursor-pointer"
             onClick={toggleSharePopup}
           >
-            <Share className="w-5 h-5" />
+            <IoMdShare className="w-6 h-6 font-light" />
+            <span className="text-sm font-medium">Share</span>
           </button>
 
           {/* change the color of bookmark button when saved like we see like button */}
@@ -1165,7 +1280,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                                 alt="Your avatar"
                                 size="sm"
                               />
-                              <div className="flex-1 flex items-center bg-white rounded-lg px-3 py-2 min-w-0 border border-blue-200">
+                              <div className="flex-1 flex items-center bg-white rounded-lg px-3 py-2 min-w-0 border border-blue-200 relative">
                                 <input
                                   type="text"
                                   placeholder="Edit your comment..."
@@ -1180,6 +1295,30 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                                     }
                                   }}
                                 />
+                                <button
+                                  data-emoji-button
+                                  className="text-gray-400 hover:text-gray-600 cursor-pointer mr-2"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleEditCommentEmojiPicker(comment.id);
+                                  }}
+                                >
+                                  <Smile className="w-4 h-4" />
+                                </button>
+                                {showEditCommentEmojiPicker[comment.id] && (
+                                  <div 
+                                    data-emoji-picker
+                                    className="absolute bottom-full right-0 mb-2 z-50"
+                                  >
+                                    <EmojiPicker
+                                      onEmojiClick={(emojiData) => onEditCommentEmojiClick(emojiData, comment.id)}
+                                      autoFocusSearch={false}
+                                      theme="light"
+                                      width={350}
+                                      height={400}
+                                    />
+                                  </div>
+                                )}
                               </div>
                               <div className="flex items-center space-x-2">
                                 <button
@@ -1351,7 +1490,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                             alt="Your avatar"
                             size="sm"
                           />
-                          <div className="flex-1 flex items-center bg-white rounded-full px-3 py-2 min-w-0 border border-blue-200">
+                          <div className="flex-1 flex items-center bg-white rounded-full px-3 py-2 min-w-0 border border-blue-200 relative">
                             <input
                               type="text"
                               placeholder={`Reply to ${replyingTo.name}...`}
@@ -1366,6 +1505,30 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                                 }
                               }}
                             />
+                            <button
+                              data-emoji-button
+                              className="text-gray-400 hover:text-gray-600 cursor-pointer mr-2"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleReplyEmojiPicker(replyingTo.id);
+                              }}
+                            >
+                              <Smile className="w-4 h-4" />
+                            </button>
+                            {showReplyEmojiPicker[replyingTo.id] && (
+                              <div 
+                                data-emoji-picker
+                                className="absolute bottom-full right-0 mb-2 z-50"
+                              >
+                                <EmojiPicker
+                                  onEmojiClick={(emojiData) => onReplyEmojiClick(emojiData, replyingTo.id)}
+                                  autoFocusSearch={false}
+                                  theme="light"
+                                  width={350}
+                                  height={400}
+                                />
+                              </div>
+                            )}
                             <button
                               className="text-blue-500 hover:text-blue-600 cursor-pointer ml-2"
                               onClick={(e) => {
@@ -1446,7 +1609,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                                         alt="Your avatar"
                                         size="sm"
                                       />
-                                      <div className="flex-1 flex items-center bg-white rounded-lg px-2 py-1 min-w-0 border border-blue-200">
+                                      <div className="flex-1 flex items-center bg-white rounded-lg px-2 py-1 min-w-0 border border-blue-200 relative">
                                         <input
                                           type="text"
                                           placeholder="Edit your reply..."
@@ -1461,6 +1624,30 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                                             }
                                           }}
                                         />
+                                        <button
+                                          data-emoji-button
+                                          className="text-gray-400 hover:text-gray-600 cursor-pointer mr-1"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            toggleEditReplyEmojiPicker(reply.id);
+                                          }}
+                                        >
+                                          <Smile className="w-3 h-3" />
+                                        </button>
+                                        {showEditReplyEmojiPicker[reply.id] && (
+                                          <div 
+                                            data-emoji-picker
+                                            className="absolute bottom-full right-0 mb-2 z-50"
+                                          >
+                                            <EmojiPicker
+                                              onEmojiClick={(emojiData) => onEditReplyEmojiClick(emojiData, reply.id)}
+                                              autoFocusSearch={false}
+                                              theme="light"
+                                              width={350}
+                                              height={400}
+                                            />
+                                          </div>
+                                        )}
                                       </div>
                                       <div className="flex items-center space-x-1">
                                         <button
@@ -1642,13 +1829,29 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                 }
               }}
             />
-            <div className="flex items-center space-x-6 ml-2 flex-shrink-0">
-              <button className="text-gray-400 hover:text-gray-600 cursor-pointer">
-                <Share className="w-6 h-6" />
-              </button>
-              <button className="text-gray-400 hover:text-gray-600 cursor-pointer">
+            <div className="flex items-center space-x-6 ml-2 flex-shrink-0 relative">
+              <button 
+                data-emoji-button
+                className="text-gray-400 hover:text-gray-600 cursor-pointer"
+                onClick={toggleEmojiPicker}
+              >
                 <Smile className="w-6 h-6" />
               </button>
+              {showEmojiPicker && (
+                <div 
+                  data-emoji-picker
+                  className="absolute bottom-full right-0 mb-2 z-50"
+                  ref={emojiPickerRef}
+                >
+                  <EmojiPicker
+                    onEmojiClick={onEmojiClick}
+                    autoFocusSearch={false}
+                    theme="light"
+                    width={350}
+                    height={400}
+                  />
+                </div>
+              )}
               <button
                 className="text-blue-500 hover:text-blue-600 cursor-pointer"
                 onClick={handleCommentPost}

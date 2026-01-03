@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react'
-import { FaSearch, FaUsers, FaComments, FaLock, FaLockOpen, FaUser } from 'react-icons/fa'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { FaSearch, FaUsers, FaComments, FaLock, FaLockOpen } from 'react-icons/fa'
 import axios from 'axios'
 import { toast } from 'react-toastify'
 import { baseUrl } from '../utils/constant'
@@ -7,6 +8,7 @@ import Loader from '../components/loading/Loader'
 import Avatar from '../components/Avatar'
 
 const Forum = () => {
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('Browse Forum')
   const [selectedLetter, setSelectedLetter] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
@@ -16,6 +18,7 @@ const Forum = () => {
   const [pagination, setPagination] = useState(null)
   const [forumType, setForumType] = useState('all')
   const [forumSearchQuery, setForumSearchQuery] = useState('')
+  const searchTimeoutRef = useRef(null)
 
   // Sample member data matching the image
   const members = [
@@ -41,18 +44,32 @@ const Forum = () => {
   })
 
   // Fetch forums
-  const fetchForums = useCallback(async (page = 1, type = 'all') => {
+  const fetchForums = useCallback(async (page = 1, type = 'all', searchQuery = '') => {
     setForumsLoading(true)
     try {
       const accessToken = localStorage.getItem("access_token")
-      const response = await axios.get(
-        `${baseUrl}/api/v1/forums`,
-        {
-          params: {
+      
+      // Use search endpoint if there's a search query, otherwise use regular forums endpoint
+      const endpoint = searchQuery.trim() 
+        ? `${baseUrl}/api/v1/forums/search`
+        : `${baseUrl}/api/v1/forums`
+      
+      const params = searchQuery.trim()
+        ? {
+            q: searchQuery.trim(),
+            per_page: 12,
+            page: page
+          }
+        : {
             type: type,
             per_page: 12,
             page: page
-          },
+          }
+
+      const response = await axios.get(
+        endpoint,
+        {
+          params: params,
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${accessToken}`,
@@ -88,12 +105,45 @@ const Forum = () => {
     }
   }, [])
 
-  // Load forums when Browse Forum tab is active
+  // Load forums when Browse Forum tab is active or forum type changes
   useEffect(() => {
-    if (activeTab === 'Browse Forum') {
-      fetchForums(1, forumType)
+    if (activeTab === 'Browse Forum' && !forumSearchQuery.trim()) {
+      fetchForums(1, forumType, '')
     }
   }, [activeTab, forumType, fetchForums])
+
+  // Debounced search effect
+  useEffect(() => {
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current)
+    }
+
+    // If search query is empty, fetch regular forums
+    if (!forumSearchQuery.trim()) {
+      if (activeTab === 'Browse Forum') {
+        fetchForums(1, forumType, '')
+      }
+      return
+    }
+
+    // Set loading state immediately
+    setForumsLoading(true)
+
+    // Debounce the search API call
+    searchTimeoutRef.current = setTimeout(() => {
+      if (activeTab === 'Browse Forum') {
+        fetchForums(1, forumType, forumSearchQuery)
+      }
+    }, 500) // 500ms debounce delay
+
+    // Cleanup function
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current)
+      }
+    }
+  }, [forumSearchQuery, activeTab, forumType, fetchForums])
 
   // Handle join/leave forum
   const handleJoinForum = async (forumId, isJoined) => {
@@ -147,20 +197,9 @@ const Forum = () => {
   // Load more forums
   const loadMoreForums = () => {
     if (pagination && pagination.current_page < pagination.last_page && !forumsLoading) {
-      fetchForums(pagination.current_page + 1, forumType)
+      fetchForums(pagination.current_page + 1, forumType, forumSearchQuery)
     }
   }
-
-  // Filter forums by search query
-  const filteredForums = forums.filter(forum => {
-    if (!forumSearchQuery.trim()) return true
-    const query = forumSearchQuery.toLowerCase()
-    return (
-      forum.name?.toLowerCase().includes(query) ||
-      forum.description?.toLowerCase().includes(query) ||
-      forum.owner?.username?.toLowerCase().includes(query)
-    )
-  })
 
   return (
     <div className="min-h-screen bg-[#EDF6F9] p-4 sm:p-6 lg:p-8">
@@ -168,11 +207,12 @@ const Forum = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-lg sm:text-xl lg:text-2xl font-medium text-gray-900">Forum</h1>
-          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm border">
-            <div className="w-8 h-8 bg-pink-200 rounded-full flex items-center justify-center">
-              <span className="text-pink-600 text-sm font-semibold">👤</span>
-            </div>
-          </div>
+          <button
+            onClick={() => navigate('/forum/create')}
+            className="border border-[#808080] py-1.5 px-4 rounded-2xl flex items-center gap-2 text-[#808080] text-base font-medium cursor-pointer hover:bg-gray-100 transition"
+          >
+            Create Forum
+          </button>
         </div>
 
         {/* Navigation Tabs */}
@@ -277,6 +317,7 @@ const Forum = () => {
                     value={forumType}
                     onChange={(e) => {
                       setForumType(e.target.value)
+                      setForumSearchQuery('') // Clear search when changing filter
                       setForums([])
                     }}
                     className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
@@ -293,7 +334,10 @@ const Forum = () => {
                       type="text"
                       placeholder="Search forums..."
                       value={forumSearchQuery}
-                      onChange={(e) => setForumSearchQuery(e.target.value)}
+                      onChange={(e) => {
+                        setForumSearchQuery(e.target.value)
+                        setForums([]) // Clear forums while typing
+                      }}
                       className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm w-full sm:w-64"
                     />
                     <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -305,7 +349,7 @@ const Forum = () => {
                 <div className="flex justify-center items-center py-12">
                   <Loader />
                 </div>
-              ) : filteredForums.length === 0 ? (
+              ) : forums.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-gray-500 text-lg">
                     {forumSearchQuery ? 'No forums match your search' : 'No forums available'}
@@ -317,7 +361,7 @@ const Forum = () => {
               ) : (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                    {filteredForums.map((forum) => (
+                    {forums.map((forum) => (
                       <div
                         key={forum.id}
                         className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-300 hover:border-blue-300"

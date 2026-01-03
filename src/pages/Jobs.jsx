@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import { FiSearch, FiFilter, FiMapPin, FiClock, FiDollarSign } from 'react-icons/fi';
+import JobApplicationModal from '../components/specific/JobApplicationModal';
 
 const Jobs = () => {
+  const navigate = useNavigate();
   const token = localStorage.getItem("access_token")
   const [jobs, setJobs] = useState([]);
   const [selectedJob, setSelectedJob] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false);
 
   useEffect(() => {
     axios.get(`${import.meta.env.VITE_API_URL}/api/v1/jobs?type=all`, {
@@ -45,7 +49,22 @@ const Jobs = () => {
         
           {/* Header */}
           <div className="mb-6 md:mb-8">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 md:mb-6 px-2 md:px-4">Jobs</h2>
+            <div className="flex items-center justify-between mb-4 md:mb-6 px-2 md:px-4">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Jobs</h2>
+              <button
+                onClick={() => navigate('/jobs/create')}
+                className="border border-[#d3d1d1] cursor-pointer py-1.5 px-3.5 rounded-2xl flex items-center gap-1.5 hover:bg-gray-100 transition"
+              >
+                <img
+                  src="/icons/gridicons_create.svg"
+                  alt="create"
+                  className="size-[15px]"
+                />
+                <span className="text-[#808080] text-base font-medium">
+                  Create Job
+                </span>
+              </button>
+            </div>
           </div>
 
           {/* Search Bar */}
@@ -118,11 +137,11 @@ const Jobs = () => {
               </div>
 
               {/* Right Side - Job Details */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-full">
                 {selectedJobData && (
                   <>
                     {/* Job Header */}
-                    <div className="p-6 border-b border-gray-200 bg-gray-50">
+                    <div className="p-6 border-b border-gray-200 bg-gray-50 flex-shrink-0">
                       <div className="flex items-start space-x-4">
                         <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-2xl font-bold flex-shrink-0">
                           {selectedJobData.logo}
@@ -138,8 +157,8 @@ const Jobs = () => {
                       </div>
                     </div>
 
-                    {/* Job Overview */}
-                    <div className="p-6">
+                    {/* Job Overview - Scrollable Content */}
+                    <div className="p-6 overflow-y-auto flex-1">
                       <h2 className="text-xl font-bold text-gray-900 mb-4">Job Overview</h2>
                       <div className="space-y-4">
                         <p className="text-gray-700 leading-relaxed">
@@ -200,19 +219,38 @@ const Jobs = () => {
                       </div>
 
                       {/* Apply Button */}
-                      <div className="mt-6">
-                        <button className="w-full bg-blue-500 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-600 transition-colors duration-200 shadow-sm">
+                      <div className="mt-6 pb-2">
+                        <button 
+                          onClick={() => setIsApplicationModalOpen(true)}
+                          className="w-full bg-blue-500 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-600 transition-colors duration-200 shadow-sm"
+                        >
                           Apply Now
                         </button>
                       </div>
                     </div>
                   </>
                 )}
+                {(!selectedJobData || Object.keys(selectedJobData).length === 0) && (
+                  <div className="flex items-center justify-center h-full p-6">
+                    <p className="text-gray-500 text-center">Select a job to view details</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Job Application Modal */}
+      {selectedJobData && selectedJobData.id && (
+        <JobApplicationModal
+          isOpen={isApplicationModalOpen}
+          onClose={() => setIsApplicationModalOpen(false)}
+          jobId={selectedJobData.id}
+          jobTitle={selectedJobData.title}
+          companyName={selectedJobData.company}
+        />
+      )}
     </>
   );
 };
