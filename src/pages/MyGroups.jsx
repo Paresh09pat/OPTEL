@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { FiPlus, FiCheck } from "react-icons/fi";
 import { IoIosArrowDropdown } from "react-icons/io";
 import { IoIosArrowDropup } from "react-icons/io";
@@ -7,6 +8,7 @@ import { HiUsers } from "react-icons/hi";
 import axios from "axios";
 
 const MyGroups = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("myGroups");
   const [createGroupModal, setCreateGroupModal] = useState(false);
   const [suggestedGroups, setSuggestedGroups] = useState([]);
@@ -327,7 +329,8 @@ const MyGroups = () => {
                 getCurrentGroups().map((group) => (
                   <div
                     key={group.id}
-                    className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 border border-[#808080] overflow-hidden"
+                    onClick={() => navigate(`/group/${group.id}`)}
+                    className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 border border-[#808080] overflow-hidden cursor-pointer"
                   >
                     <div className="py-3.5 pl-6 pr-3.5">
                       <div className="flex items-center justify-between">
@@ -358,7 +361,10 @@ const MyGroups = () => {
 
                         {/* Dropdown Arrow */}
                         <button
-                          onClick={() => handleDropdownToggle(group.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDropdownToggle(group.id);
+                          }}
                           className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                         >
                           {expandedGroup === group.id ? (
@@ -461,7 +467,8 @@ const MyGroups = () => {
                 getCurrentGroups().map((group) => (
                   <div
                     key={group.id}
-                    className="bg-white rounded-3xl shadow-md hover:shadow-xl transition-all duration-300 border border-[#000000] overflow-hidden"
+                    onClick={() => navigate(`/group/${group.id}`)}
+                    className="bg-white rounded-3xl shadow-md hover:shadow-xl transition-all duration-300 border border-[#000000] overflow-hidden cursor-pointer"
                   >
                     {/* Header with Logo and Title */}
                     <div className="p-4 sm:p-5 flex items-center gap-3">
@@ -521,7 +528,10 @@ const MyGroups = () => {
                         </span>
                       </div>
                       <button
-                        onClick={() => handleJoinGroup(group.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleJoinGroup(group.id);
+                        }}
                         disabled={group.is_joined || loading}
                         className={`flex items-center cursor-pointer gap-2 px-3 py-2 rounded-full border-2 transition-all duration-200 font-semibold ${
                           group.is_joined
@@ -558,7 +568,8 @@ const MyGroups = () => {
                 getCurrentGroups().map((group) => (
                   <div
                     key={group.id}
-                    className="bg-white rounded-3xl shadow-md hover:shadow-xl transition-all duration-300 border border-[#000000] overflow-hidden"
+                    onClick={() => navigate(`/group/${group.id}`)}
+                    className="bg-white rounded-3xl shadow-md hover:shadow-xl transition-all duration-300 border border-[#000000] overflow-hidden cursor-pointer"
                   >
                     {/* Header with Logo and Title */}
                     <div className="p-4 sm:p-5 flex items-center gap-3">

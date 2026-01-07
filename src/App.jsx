@@ -40,6 +40,9 @@ import PostDetail from "./pages/PostDetail";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound404 from "./pages/NotFound404";
+import GroupDetailed from "./pages/GroupDetailed";
+import ForumDetailed from "./pages/ForumDetailed";
+import JobDetailed from "./pages/JobDetailed";
 import { ToastContainer } from "react-toastify";
 
 function App() {
@@ -69,9 +72,11 @@ function App() {
             <Route path="/saved-posts" element={<SavedPosts />} />
             <Route path="/events" element={<Events />} />
             <Route path="/forum" element={<Forum />} />
+            <Route path="/forum/:forumId" element={<ForumDetailed />} />
             <Route path="/forum/create" element={<CreateForum />} />
             <Route path="/PagesComp/MainPages" element={<MainPages />} />
             <Route path="/my-groups" element={<MyGroups />} />
+            <Route path="/group/:groupId" element={<GroupDetailed />} />
             <Route path="/my-pages" element={<MyPages />} />
             <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:blogId" element={<BlogDetailed />} />
@@ -79,6 +84,7 @@ function App() {
             <Route path="/post/:postId" element={<PostDetail />} />
             <Route path="/article" element={<Article />} />
             <Route path="/jobs" element={<Jobs />} />
+            <Route path="/jobs/:jobId" element={<JobDetailed />} />
             <Route path="/jobs/create" element={<CreateJob />} />
             <Route path="/more" element={<More />} />
             <Route path="/chat-detailed/:chatId" element={<ChatDetailed />} />

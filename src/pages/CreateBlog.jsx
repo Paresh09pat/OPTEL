@@ -20,8 +20,8 @@ const CreateBlog = () => {
     const getCategories = async () => {
         try {
             setFetchingCategories(true);
-            // Try to fetch blog categories from meta endpoint
-            const res = await axios.get(`${baseUrl}/api/v1/blogs/meta`, {
+            // Fetch blog categories from categories endpoint
+            const res = await axios.get(`${baseUrl}/api/v1/blogs/categories`, {
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
@@ -30,7 +30,7 @@ const CreateBlog = () => {
             });
 
             if (res.data?.ok === true || res.data?.api_status === 200) {
-                const categoriesData = res.data?.data?.categories || res.data?.categories || [];
+                const categoriesData = res.data?.data || res.data?.categories || [];
                 setCategories(categoriesData);
             }
         } catch (error) {

@@ -6,6 +6,7 @@ import { toast } from 'react-toastify'
 import { baseUrl } from '../utils/constant'
 import Loader from '../components/loading/Loader'
 import Avatar from '../components/Avatar'
+import SuggestedForums from '../components/SuggestedForums'
 
 const Forum = () => {
   const navigate = useNavigate()
@@ -34,7 +35,7 @@ const Forum = () => {
     { id: 10, name: 'Тимур Степанов', joined: '41 m', lastVisit: '40 m', posts: 0, referrals: 0, avatar: '/perimg.png' },
   ]
 
-  const tabs = ['Browse Forum', 'Members', 'My Threads', 'My Messages']
+  const tabs = ['Browse Forum', 'Suggested Forums', 'Members', 'My Threads', 'My Messages']
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
 
   const filteredMembers = members.filter(member => {
@@ -243,6 +244,10 @@ const Forum = () => {
 
         {/* Main Content */}
         <div className="flex-1">
+          {activeTab === 'Suggested Forums' && (
+            <SuggestedForums />
+          )}
+
           {activeTab === 'Members' && (
             <div className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 border border-[#808080] p-4 sm:p-6 lg:p-8">
               <h2 className="text-2xl font-bold text-black mb-6">List of users</h2>
@@ -364,7 +369,8 @@ const Forum = () => {
                     {forums.map((forum) => (
                       <div
                         key={forum.id}
-                        className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-300 hover:border-blue-300"
+                        onClick={() => navigate(`/forum/${forum.id}`)}
+                        className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-300 hover:border-blue-300 cursor-pointer"
                       >
                         {/* Forum Header */}
                         <div className="flex items-start justify-between mb-4">
@@ -415,7 +421,10 @@ const Forum = () => {
 
                         {/* Join/Leave Button */}
                         <button
-                          onClick={() => handleJoinForum(forum.id, forum.is_joined)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleJoinForum(forum.id, forum.is_joined);
+                          }}
                           disabled={loading}
                           className={`w-full py-2.5 px-4 rounded-lg font-medium transition-all duration-200 ${
                             forum.is_joined

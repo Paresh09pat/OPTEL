@@ -1,21 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { FiSearch, FiFilter, FiMapPin, FiClock, FiDollarSign } from 'react-icons/fi';
-import JobApplicationModal from '../components/specific/JobApplicationModal';
+import { FiSearch, FiFilter, FiDollarSign } from 'react-icons/fi';
+import { baseUrl } from '../utils/constant';
+import Loader from '../components/loading/Loader';
 
 const Jobs = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("access_token")
   const [jobs, setJobs] = useState([]);
-  const [selectedJob, setSelectedJob] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false);
 
   useEffect(() => {
-    axios.get(`${import.meta.env.VITE_API_URL}/api/v1/jobs?type=all`, {
+    setLoading(true);
+    axios.get(`${baseUrl}/api/v1/jobs?type=all`, {
       headers: {
-        Authorization: `Bearer ${token}`, // 🔑 attach token
+        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json"
       }
     })
@@ -32,15 +33,16 @@ const Jobs = () => {
           currency: '$',
           location: job.location,
           type: job.type,
-          whatsapp: null,
         }));
         setJobs(formattedJobs);
       })
-      .catch((err) => console.error(err));
+      .catch((err) => {
+        console.error('Error fetching jobs:', err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
-  
-
-  const selectedJobData = jobs[selectedJob] || {};
 
   return (
     <>
@@ -88,169 +90,68 @@ const Jobs = () => {
             </div>
           </div>
 
-          {/* Layout */}
+          {/* Jobs List */}
           <div className="px-2 md:px-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-200px)]">
-              {/* Left Sidebar - Job List */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="p-4 border-b border-gray-200 bg-gray-50">
-                  <h3 className="text-lg font-semibold text-gray-900">Available Jobs</h3>
-                </div>
-                <div className="p-4 space-y-3 max-h-[calc(100vh-300px)] overflow-y-auto">
-                  {jobs.map((job, index) => (
-                    <div
-                      key={job.id}
-                      onClick={() => setSelectedJob(index)}
-                      className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
-                        selectedJob === index
-                          ? 'border-blue-500 bg-blue-50 shadow-sm'
-                          : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm'
-                      }`}
-                    >
-                      <div className="flex items-start space-x-3">
-                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-xl font-bold flex-shrink-0">
-                          {job.logo}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-gray-900 text-sm mb-1">
-                            {job.company}
-                          </h3>
-                          <p className="text-gray-700 text-sm mb-2 line-clamp-2">
-                            {job.title}
-                          </p>
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded-full">
-                              {job.category}
-                            </span>
-                            <div className="flex items-center text-gray-600 text-sm">
-                              <FiDollarSign className="w-4 h-4 mr-1" />
-                              <span>
-                                {job.currency}{job.minSalary} - {job.currency}{job.maxSalary}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+            {loading ? (
+              <div className="flex justify-center items-center py-12">
+                <Loader />
               </div>
-
-              {/* Right Side - Job Details */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-full">
-                {selectedJobData && (
-                  <>
-                    {/* Job Header */}
-                    <div className="p-6 border-b border-gray-200 bg-gray-50 flex-shrink-0">
-                      <div className="flex items-start space-x-4">
-                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-2xl font-bold flex-shrink-0">
-                          {selectedJobData.logo}
-                        </div>
-                        <div className="flex-1">
-                          <h1 className="text-xl font-bold text-gray-900 mb-1">
-                            {selectedJobData.company}
-                          </h1>
-                          <p className="text-lg text-gray-700 font-medium">
-                            {selectedJobData.title}
-                          </p>
-                        </div>
+            ) : jobs.length === 0 ? (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+                <p className="text-gray-500 text-lg">No jobs available</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                {jobs.map((job) => (
+                  <div
+                    key={job.id}
+                    onClick={() => navigate(`/jobs/${job.id}`)}
+                    className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md hover:border-blue-300 transition-all duration-200"
+                  >
+                    <div className="flex items-start space-x-4 mb-4">
+                      <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-2xl font-bold flex-shrink-0">
+                        {job.logo}
                       </div>
-                    </div>
-
-                    {/* Job Overview - Scrollable Content */}
-                    <div className="p-6 overflow-y-auto flex-1">
-                      <h2 className="text-xl font-bold text-gray-900 mb-4">Job Overview</h2>
-                      <div className="space-y-4">
-                        <p className="text-gray-700 leading-relaxed">
-                          {selectedJobData.title}
-                        </p>
-                        <p className="text-gray-700 leading-relaxed">
-                          {selectedJobData.description}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-gray-900 text-base mb-1 truncate">
+                          {job.company}
+                        </h3>
+                        <p className="text-gray-700 text-sm mb-2 line-clamp-2">
+                          {job.title}
                         </p>
                       </div>
-
-                      {/* Category */}
-                      <div className="mt-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-3">Category</h3>
-                        <span className="inline-block bg-blue-100 text-blue-700 px-3 py-2 rounded-full text-sm font-medium">
-                          {selectedJobData.category}
-                        </span>
-                      </div>
-
-                      {/* Job Details */}
-                      <div className="mt-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Job Details</h3>
-                        <div className="space-y-4">
-                          {/* Salary */}
-                          <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-                            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                              <FiDollarSign className="w-5 h-5 text-green-600" />
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-600">Salary Range</p>
-                              <p className="text-sm text-gray-900 font-medium">
-                                {selectedJobData.currency}{selectedJobData.minSalary} - {selectedJobData.currency}{selectedJobData.maxSalary}
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Location */}
-                          <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                              <FiMapPin className="w-5 h-5 text-blue-600" />
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-600">Location</p>
-                              <p className="text-sm text-gray-900 font-medium">{selectedJobData.location}</p>
-                            </div>
-                          </div>
-
-                          {/* Job Type */}
-                          <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg">
-                            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                              <FiClock className="w-5 h-5 text-purple-600" />
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-600">Job Type</p>
-                              <p className="text-sm text-gray-900 font-medium">{selectedJobData.type}</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Apply Button */}
-                      <div className="mt-6 pb-2">
-                        <button 
-                          onClick={() => setIsApplicationModalOpen(true)}
-                          className="w-full bg-blue-500 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-600 transition-colors duration-200 shadow-sm"
-                        >
-                          Apply Now
-                        </button>
-                      </div>
                     </div>
-                  </>
-                )}
-                {(!selectedJobData || Object.keys(selectedJobData).length === 0) && (
-                  <div className="flex items-center justify-center h-full p-6">
-                    <p className="text-gray-500 text-center">Select a job to view details</p>
+                    <div className="flex flex-wrap items-center gap-2 mb-4">
+                      <span className="text-xs text-gray-600 bg-gray-100 px-3 py-1 rounded-full capitalize">
+                        {job.category}
+                      </span>
+                      {job.minSalary > 0 && (
+                        <div className="flex items-center text-gray-600 text-xs">
+                          <FiDollarSign className="w-3 h-3 mr-1" />
+                          <span>
+                            {job.currency}{job.minSalary}
+                            {job.maxSalary > job.minSalary ? ` - ${job.currency}${job.maxSalary}` : ''}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    {job.description && (
+                      <p className="text-gray-600 text-sm line-clamp-3 mb-4">
+                        {job.description}
+                      </p>
+                    )}
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                      <span className="text-xs text-gray-500 capitalize">{job.type}</span>
+                      <span className="text-xs text-blue-600 font-medium">View Details →</span>
+                    </div>
                   </div>
-                )}
+                ))}
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Job Application Modal */}
-      {selectedJobData && selectedJobData.id && (
-        <JobApplicationModal
-          isOpen={isApplicationModalOpen}
-          onClose={() => setIsApplicationModalOpen(false)}
-          jobId={selectedJobData.id}
-          jobTitle={selectedJobData.title}
-          companyName={selectedJobData.company}
-        />
-      )}
     </>
   );
 };
