@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import Loader from '../components/loading/Loader';
 import { baseUrl } from '../utils/constant';
 import { HiUsers } from 'react-icons/hi';
+import axios from 'axios';
+import { toast } from 'react-toastify';
 
 const GroupDetailed = () => {
   const { groupId } = useParams();
@@ -11,6 +13,7 @@ const GroupDetailed = () => {
   const [group, setGroup] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [joining, setJoining] = useState(false);
   const accessToken = localStorage.getItem('access_token');
 
   const getGroup = async () => {
@@ -32,6 +35,52 @@ const GroupDetailed = () => {
     } catch (err) {
       setError(err.message);
       setLoading(false);
+    }
+  };
+
+  const handleJoinGroup = async () => {
+    if (!group || joining) return;
+
+    setJoining(true);
+    try {
+      const response = await axios.post(
+        `${baseUrl}/api/v1/groups/join`,
+        {
+          group_id: parseInt(groupId)
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const responseData = response.data;
+      
+      if (responseData.ok || responseData.api_status === 200) {
+        // Update group state to reflect membership
+        setGroup(prev => ({
+          ...prev,
+          is_member: !prev.is_member,
+          members_count: prev.is_member 
+            ? Math.max(0, (prev.members_count || 0) - 1)
+            : (prev.members_count || 0) + 1
+        }));
+        
+        toast.success(
+          group.is_member 
+            ? 'Left group successfully' 
+            : 'Joined group successfully'
+        );
+      } else {
+        toast.error(responseData.message || 'Failed to join/leave group');
+      }
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to join/leave group';
+      toast.error(errorMessage);
+    } finally {
+      setJoining(false);
     }
   };
 
@@ -187,6 +236,32 @@ const GroupDetailed = () => {
                 </div>
               </div>
             </div>
+
+            {/* Join/Leave Button */}
+            {!group.is_owner && (
+              <div className="w-full md:w-auto">
+                <button
+                  onClick={handleJoinGroup}
+                  disabled={joining}
+                  className={`w-full md:w-auto px-8 py-3 rounded-lg font-semibold text-white transition-all duration-200 shadow-lg hover:shadow-xl ${
+                    group.is_member
+                      ? 'bg-gray-500 hover:bg-gray-600'
+                      : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
+                  } ${joining ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {joining ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      {group.is_member ? 'Leaving...' : 'Joining...'}
+                    </span>
+                  ) : group.is_member ? (
+                    'Leave Group'
+                  ) : (
+                    'Join Group'
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

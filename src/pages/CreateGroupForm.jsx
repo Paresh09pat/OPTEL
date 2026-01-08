@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiChevronDown, FiX } from 'react-icons/fi';
 import axios from 'axios';
+import { toast } from 'react-toastify';
 
 const CreateGroupForm = ({ onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -16,7 +17,6 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
   const [privacyOptions, setPrivacyOptions] = useState([]);
   const [joinPrivacyOptions, setJoinPrivacyOptions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
@@ -24,7 +24,6 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
   const fetchGroupMeta = async () => {
     try {
       setLoading(true);
-      setError(null);
       
       const accessToken = localStorage.getItem('access_token');
       const response = await axios.get(
@@ -66,7 +65,7 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
       }
     } catch (err) {
       console.error('Error fetching group meta:', err);
-      setError('Failed to load form options. Please try again.');
+      toast.error(err.response?.data?.message || 'Failed to load form options. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -82,18 +81,17 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
     
     // Validate required fields
     if (!formData.groupName.trim()) {
-      setError('Group name is required');
+      toast.error('Group name is required');
       return;
     }
     
     if (!formData.groupCategory) {
-      setError('Please select a category');
+      toast.error('Please select a category');
       return;
     }
 
     try {
       setSubmitting(true);
-      setError(null);
       
       const accessToken = localStorage.getItem('access_token');
       
@@ -123,6 +121,7 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
 
       if (response.data && response.data.ok === true) {
         setSubmitSuccess(true);
+        toast.success('Group created successfully!');
         console.log('Group created successfully:', response.data);
         
         // Call onSuccess callback if provided
@@ -152,7 +151,17 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
       }
     } catch (err) {
       console.error('Error creating group:', err);
-      setError(err.response?.data?.message || err.message || 'Failed to create group. Please try again.');
+      // Handle errors array from response
+      if (err.response?.data?.api_status === 400 && err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
+        // Display each error from the errors array
+        err.response.data.errors.forEach((errorMsg) => {
+          toast.error(errorMsg);
+        });
+      } else if (err.response?.data?.message) {
+        toast.error(err.response.data.message);
+      } else {
+        toast.error(err.message || 'Failed to create group. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -164,11 +173,6 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
       ...prev,
       [name]: value
     }));
-    
-    // Clear error when user starts typing
-    if (error) {
-      setError(null);
-    }
   };
 
   // Show loading state
@@ -187,26 +191,6 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
     );
   }
 
-  // Show error state
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden">
-          <div className="flex items-center justify-center py-16">
-            <div className="text-center">
-              <p className="text-red-600 mb-4">{error}</p>
-              <button 
-                onClick={fetchGroupMeta}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Try Again
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen  flex items-center justify-center relative ">
@@ -341,13 +325,6 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
               <FiChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-600 pointer-events-none" />
             </div>
           </div>
-
-          {/* Error Message */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-600 text-center">{error}</p>
-            </div>
-          )}
 
           {/* Success Message */}
           {submitSuccess && (

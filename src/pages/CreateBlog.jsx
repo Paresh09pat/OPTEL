@@ -4,6 +4,7 @@ import { baseUrl } from '../utils/constant';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import Loader from '../components/loading/Loader';
+import { getCategoryName } from '../constants/blogCategories';
 
 const CreateBlog = () => {
     const navigate = useNavigate();
@@ -29,8 +30,13 @@ const CreateBlog = () => {
                 },
             });
 
-            if (res.data?.ok === true || res.data?.api_status === 200) {
-                const categoriesData = res.data?.data || res.data?.categories || [];
+            if (res.data?.api_status === 200 && res.data?.data) {
+                // Extract categories from data.categories array
+                const categoriesData = res.data.data.categories || res.data.data || [];
+                setCategories(categoriesData);
+            } else if (res.data?.ok === true) {
+                // Fallback for alternative response format
+                const categoriesData = res.data?.data?.categories || res.data?.categories || res.data?.data || [];
                 setCategories(categoriesData);
             }
         } catch (error) {
@@ -154,15 +160,12 @@ const CreateBlog = () => {
             {/* Main Card */}
             <div className="w-[95%] md:w-[90%] max-w-6xl bg-white flex flex-col gap-6 rounded-xl my-6 shadow-md overflow-hidden">
                 {/* Hero Banner */}
-                <div
-                    className="relative w-full bg-cover bg-center bg-no-repeat"
-                    style={{ backgroundImage: "url('/pagebg.jpg')" }}
-                >
-                    <div className="relative w-full h-[12rem] md:h-[18rem] flex top-15 justify-end pr-6 md:pr-20 z-10">
-                        <h2 className="text-2xl md:text-4xl text-white font-bold text-right drop-shadow-md">
-                            Create Blog Post
-                        </h2>
-                    </div>
+                <div className="relative h-64 flex items-start justify-end px-8 md:px-16">
+                    {/* Wave SVG */}
+                    <img src="/Vectorgroup.svg" alt="vector" className='absolute bottom-0 right-0 top-0 w-full' />
+                    <h2 className="text-xl md:text-2xl font-bold text-white z-10 pt-6">
+                        Create Blog Post
+                    </h2>
                 </div>
 
                 {/* Form Section */}
@@ -244,11 +247,14 @@ const CreateBlog = () => {
                                 required
                             >
                                 <option value="">Select category</option>
-                                {categories?.map((cat, index) => (
-                                    <option key={index} value={cat.id}>
-                                        {cat.name}
-                                    </option>
-                                ))}
+                                {categories?.map((cat) => {
+                                    const displayName = getCategoryName(cat.id);
+                                    return (
+                                        <option key={cat.id} value={cat.id}>
+                                            {displayName} {cat.articles_count ? `(${cat.articles_count})` : ''}
+                                        </option>
+                                    );
+                                })}
                             </select>
                             <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
                                 <svg

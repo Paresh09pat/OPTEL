@@ -10,6 +10,7 @@ import pagesIcon from '/icons/page.png'
 import blogIcon from '/icons/blog.png'
 import articleIcon from '/icons/article.png'
 import jobsIcon from '/icons/job.png'
+import offerIcon from '/icons/job.png' // Using job icon as placeholder, can be replaced later
 import moreIcon from '/icons/more.png'
 
 export const navigationItems = [
@@ -78,6 +79,13 @@ export const navigationItems = [
     name: 'Jobs',
     path: '/jobs',
     icon: jobsIcon,
+  },
+  {
+    id: 'offers',
+    name: 'Offers',
+    path: '/offers',
+    icon: offerIcon,
+    color: 'bg-gray-100', // Default background color for icon
   },
   // {
   //   id: 'more',

@@ -70,6 +70,8 @@ const Home = () => {
   const [friendSuggestions, setFriendSuggestions] = useState(dummyFriendSuggestions);
 
   const [newFeeds, setNewFeeds] = useState([]);
+  const [pagination, setPagination] = useState(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [likedPosts, setLikedPosts] = useState(() => {
     const saved = localStorage.getItem("liked_posts");
     return saved ? new Set(JSON.parse(saved)) : new Set();
@@ -88,6 +90,7 @@ const Home = () => {
   const isFetchingRef = useRef(false); // Track if a request is in progress
   const lastFilterRef = useRef(null); // Track the last filter type
   const lastCallTimeRef = useRef(0); // Track the last API call time for debouncing
+  const currentFilterRef = useRef(null); // Track current filter for pagination
 
   // Request location access when component mounts
   useEffect(() => {
@@ -165,7 +168,7 @@ const Home = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  const getNewFeeds = useCallback(async (type) => {
+  const getNewFeeds = useCallback(async (type, page = 1) => {
     const now = Date.now();
 
     // Prevent multiple simultaneous API calls
@@ -173,27 +176,33 @@ const Home = () => {
       return;
     }
 
-    // Debounce: Prevent rapid successive calls (within 500ms)
-    if (now - lastCallTimeRef.current < 500) {
+    // Debounce: Prevent rapid successive calls (within 500ms) - only for first page
+    if (page === 1 && now - lastCallTimeRef.current < 500) {
       return;
     }
 
-    // Prevent duplicate calls with the same filter within 1 second
-    if (lastFilterRef.current === type && (now - lastCallTimeRef.current) < 1000) {
+    // Prevent duplicate calls with the same filter within 1 second - only for first page
+    if (page === 1 && lastFilterRef.current === type && (now - lastCallTimeRef.current) < 1000) {
       return;
     }
 
     try {
       isFetchingRef.current = true;
-      lastFilterRef.current = type;
-      lastCallTimeRef.current = now;
+      if (page === 1) {
+        lastFilterRef.current = type;
+        lastCallTimeRef.current = now;
+        currentFilterRef.current = type;
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
       setError(null);
       const accessToken = localStorage.getItem("access_token");
-      setLoading(true);
 
       // Build query parameters
       const params = new URLSearchParams();
       params.append('per_page', '10');
+      params.append('page', page.toString());
 
       // Valid filter types: image, file, video, audio, blogs, articles, jobs
       const validFilters = ['image', 'file', 'video', 'audio', 'blogs', 'articles', 'jobs'];
@@ -211,15 +220,31 @@ const Home = () => {
 
       const data = await response.data;
 
-
       // Handle new API response structure
       if (data?.data) {
-        setNewFeeds(data.data);
+        if (page === 1) {
+          // First page - replace all feeds
+          setNewFeeds(data.data);
+        } else {
+          // Subsequent pages - append to existing feeds
+          setNewFeeds(prev => [...prev, ...data.data]);
+        }
+
+        // Store pagination metadata
+        if (data?.meta?.pagination) {
+          setPagination(data.meta.pagination);
+        }
       } else if (Array.isArray(data)) {
         // Handle case where response is directly an array
-        setNewFeeds(data);
+        if (page === 1) {
+          setNewFeeds(data);
+        } else {
+          setNewFeeds(prev => [...prev, ...data]);
+        }
       } else {
-        setNewFeeds([]);
+        if (page === 1) {
+          setNewFeeds([]);
+        }
       }
 
       // Initialize saved posts from API data
@@ -239,9 +264,9 @@ const Home = () => {
       }
     } catch (error) {
       setError(error.message);
-
     } finally {
       setLoading(false);
+      setLoadingMore(false);
       isFetchingRef.current = false;
     }
   }, []);
@@ -251,6 +276,34 @@ const Home = () => {
     getNewFeeds();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Infinite scroll handler
+  useEffect(() => {
+    const handleScroll = () => {
+      // Check if we're near the bottom of the page
+      const scrollHeight = document.documentElement.scrollHeight;
+      const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+      const clientHeight = document.documentElement.clientHeight;
+
+      // Load more when user is within 300px of the bottom
+      if (scrollHeight - scrollTop - clientHeight < 300) {
+        // Check if there are more pages to load
+        if (
+          pagination &&
+          pagination.has_more &&
+          pagination.current_page < pagination.last_page &&
+          !loadingMore &&
+          !isFetchingRef.current
+        ) {
+          const nextPage = pagination.current_page + 1;
+          getNewFeeds(currentFilterRef.current, nextPage);
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [pagination, loadingMore, getNewFeeds]);
 
   const posts = [];
 
@@ -1190,6 +1243,22 @@ const Home = () => {
                 );
               })}
 
+              {/* Loading More Indicator */}
+              {loadingMore && (
+                <div className="flex justify-center items-center py-8">
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-gray-600 font-medium">Loading more posts...</span>
+                  </div>
+                </div>
+              )}
+
+              {/* End of Feed Message */}
+              {pagination && !pagination.has_more && newFeeds.length > 0 && (
+                <div className="text-center py-8">
+                  <p className="text-gray-500 text-sm">You've reached the end of the feed</p>
+                </div>
+              )}
             </div>
 
             <div className="space-y-4 md:mb-6 bg-white rounded-xl ">

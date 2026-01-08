@@ -15,6 +15,7 @@ import MyPages from "./pages/PagesComp/MyPages";
 import Blog from "./pages/Blog";
 import Article from "./pages/Article";
 import Jobs from "./pages/Jobs";
+import Offers from "./pages/Offers";
 import More from "./pages/More";
 import ChatDetailed from "./pages/ChatDetailed";
 import MyAlbums from "./pages/MyAlbums";
@@ -43,6 +44,7 @@ import NotFound404 from "./pages/NotFound404";
 import GroupDetailed from "./pages/GroupDetailed";
 import ForumDetailed from "./pages/ForumDetailed";
 import JobDetailed from "./pages/JobDetailed";
+import OfferDetailed from "./pages/OfferDetailed";
 import { ToastContainer } from "react-toastify";
 
 function App() {
@@ -86,6 +88,8 @@ function App() {
             <Route path="/jobs" element={<Jobs />} />
             <Route path="/jobs/:jobId" element={<JobDetailed />} />
             <Route path="/jobs/create" element={<CreateJob />} />
+            <Route path="/offers" element={<Offers />} />
+            <Route path="/offers/:offerId" element={<OfferDetailed />} />
             <Route path="/more" element={<More />} />
             <Route path="/chat-detailed/:chatId" element={<ChatDetailed />} />
             <Route path="/my-albums" element={<MyAlbums />} />

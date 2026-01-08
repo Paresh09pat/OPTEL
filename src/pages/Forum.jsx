@@ -370,24 +370,28 @@ const Forum = () => {
                       <div
                         key={forum.id}
                         onClick={() => navigate(`/forum/${forum.id}`)}
-                        className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-300 hover:border-blue-300 cursor-pointer"
+                        className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-300 hover:border-blue-300 cursor-pointer flex flex-col h-full"
                       >
                         {/* Forum Header */}
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex-1">
-                            <h3 className="text-xl font-bold text-gray-900 mb-2">{forum.name}</h3>
-                            {forum.description && (
-                              <p className="text-gray-600 text-sm line-clamp-2 mb-3">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1 min-w-0 pr-2">
+                            <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2">{forum.name}</h3>
+                            {forum.description ? (
+                              <p className="text-gray-600 text-sm line-clamp-2">
                                 {forum.description}
                               </p>
+                            ) : (
+                              <p className="text-gray-400 text-sm line-clamp-2 h-10"></p>
                             )}
                           </div>
-                          {forum.privacy === 'private' && (
-                            <FaLock className="w-5 h-5 text-gray-400 flex-shrink-0 ml-2" />
-                          )}
-                          {forum.privacy === 'public' && (
-                            <FaLockOpen className="w-5 h-5 text-gray-400 flex-shrink-0 ml-2" />
-                          )}
+                          <div className="flex-shrink-0">
+                            {forum.privacy === 'private' && (
+                              <FaLock className="w-5 h-5 text-gray-400" />
+                            )}
+                            {forum.privacy === 'public' && (
+                              <FaLockOpen className="w-5 h-5 text-gray-400" />
+                            )}
+                          </div>
                         </div>
 
                         {/* Forum Stats */}
@@ -402,47 +406,34 @@ const Forum = () => {
                           </div>
                         </div>
 
-                        {/* Forum Owner */}
-                        {forum.owner && (
-                          <div className="flex items-center gap-2 mb-4 pb-4 border-b border-gray-100">
-                            <Avatar
-                              src={forum.owner.avatar_url}
-                              name={forum.owner.username || 'Unknown'}
-                              size="sm"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs text-gray-500">Created by</p>
-                              <p className="text-sm font-medium text-gray-700 truncate">
-                                {forum.owner.username || 'Unknown'}
-                              </p>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Join/Leave Button */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleJoinForum(forum.id, forum.is_joined);
-                          }}
-                          disabled={loading}
-                          className={`w-full py-2.5 px-4 rounded-lg font-medium transition-all duration-200 ${
-                            forum.is_joined
-                              ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                              : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg'
-                          } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        >
-                          {loading ? (
-                            <span className="flex items-center justify-center">
-                              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2"></div>
-                              Processing...
-                            </span>
-                          ) : forum.is_joined ? (
-                            'Leave Forum'
+                        {/* Forum Owner - Always show to maintain consistent height */}
+                        <div className="flex items-center gap-2 mb-4 pb-4 border-b border-gray-100 min-h-[60px]">
+                          {forum.owner ? (
+                            <>
+                              <Avatar
+                                src={forum.owner.avatar_url}
+                                name={forum.owner.username || 'Unknown'}
+                                size="sm"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs text-gray-500">Created by</p>
+                                <p className="text-sm font-medium text-gray-700 truncate">
+                                  {forum.owner.username || 'Unknown'}
+                                </p>
+                              </div>
+                            </>
                           ) : (
-                            'Join Forum'
+                            <>
+                              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                                <span className="text-gray-400 text-xs">👤</span>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs text-gray-500">Created by</p>
+                                <p className="text-sm font-medium text-gray-700 truncate">Unknown</p>
+                              </div>
+                            </>
                           )}
-                        </button>
+                        </div>
 
                         {/* Privacy Badge */}
                         <div className="mt-3 flex items-center justify-between">

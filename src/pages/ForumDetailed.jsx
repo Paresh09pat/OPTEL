@@ -251,18 +251,6 @@ const ForumDetailed = () => {
             </div>
           )}
 
-          {/* Join/Leave Button */}
-          <button
-            onClick={() => handleJoinForum(forum.is_joined)}
-            className={`w-full md:w-auto px-8 py-3 rounded-lg font-medium transition-all duration-200 ${
-              forum.is_joined
-                ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg'
-            }`}
-          >
-            {forum.is_joined ? 'Leave Forum' : 'Join Forum'}
-          </button>
-
           {/* Created Date */}
           {forum.created_at && (
             <div className="mt-4 text-sm text-gray-500">
@@ -275,60 +263,7 @@ const ForumDetailed = () => {
           )}
         </div>
 
-        {/* Topics Section */}
-        <div className="bg-white rounded-2xl shadow-md p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Topics</h2>
-            <button
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-            >
-              Create Topic
-            </button>
-          </div>
-
-          {topicsLoading ? (
-            <div className="flex justify-center items-center py-12">
-              <Loader />
-            </div>
-          ) : topics.length === 0 ? (
-            <div className="text-center py-12">
-              <FaComments className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg mb-2">No topics yet</p>
-              <p className="text-gray-400 text-sm">Be the first to start a discussion!</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {topics.map((topic) => (
-                <div
-                  key={topic.id}
-                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-                >
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{topic.title}</h3>
-                  {topic.description && (
-                    <p className="text-gray-600 text-sm mb-3">{topic.description}</p>
-                  )}
-                  <div className="flex items-center gap-4 text-sm text-gray-500">
-                    <span>By {topic.author?.username || 'Unknown'}</span>
-                    {topic.created_at && (
-                      <span>{new Date(topic.created_at).toLocaleDateString()}</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Load More Topics */}
-          {pagination && pagination.current_page < pagination.last_page && (
-            <div className="text-center mt-6">
-              <button
-                className="px-6 py-3 bg-white text-gray-700 rounded-full border-2 border-gray-300 hover:bg-gray-50 transition-all duration-200 shadow-sm hover:shadow-md font-medium"
-              >
-                Load More Topics
-              </button>
-            </div>
-          )}
-        </div>
+       
       </div>
     </div>
   );

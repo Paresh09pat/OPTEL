@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MdOutlineAddPhotoAlternate } from 'react-icons/md';
 import { baseUrl } from '../../utils/constant';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
 const CreatePage = () => {
+    const navigate = useNavigate();
     const [pageName, setPageName] = useState('');
     const [pageTitle, setPageTitle] = useState('');
     const [pageDescription, setPageDescription] = useState('');
@@ -21,8 +23,19 @@ const CreatePage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        // Validate all mandatory fields
         if (!pageName.trim()) {
             toast.error('Please enter page name');
+            return;
+        }
+
+        if (!pageTitle.trim()) {
+            toast.error('Please enter page title');
+            return;
+        }
+
+        if (!pageDescription.trim()) {
+            toast.error('Please enter page description');
             return;
         }
 
@@ -31,19 +44,20 @@ const CreatePage = () => {
             return;
         }
 
-        console.log("pageCatt>>",pageCategory);
-        console.log("selectedCategoryId>>",selectedCategoryId);
-
         if (!selectedCategoryId) {
             toast.error('Please select page category');
             return;
         }
 
+        // Combine domain with user input for page URL
+        const currentDomain = window.location.origin;
+        const fullPageUrl = pageUrl.startsWith('/') ? `${currentDomain}${pageUrl}` : `${currentDomain}/${pageUrl}`;
+
         const formData = {
             page_name:pageName,
             page_title:pageTitle,
             page_description:pageDescription,
-            page_url:pageUrl,
+            page_url:fullPageUrl,
             page_category:selectedCategoryId,
         };
 
@@ -52,32 +66,63 @@ const CreatePage = () => {
 
         const accessToken = localStorage.getItem("access_token");
         setLoading(true);
-        // formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
-        // formData.append('type', 'create');
-        const response = await axios.post(`${baseUrl}/api/v1/pages`, formData, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${accessToken}`,
-          },
-        })
-        const data = await response.data;
-        console.log(data, "data");
+        
+        try {
+            const response = await axios.post(`${baseUrl}/api/v1/pages`, formData, {
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${accessToken}`,
+              },
+            })
+            const data = await response.data;
+            console.log(data, "data");
 
-        if (data.ok === true) {
-            toast.success('Page created successfully!');
-        } else {
-            toast.error('Failed to create page: ' + data.message);
+            if (data.api_status === 200) {
+                toast.success('Page created successfully!');
+                // Reset form
+                setPageName('');
+                setPageTitle('');
+                setPageDescription('');
+                setPageUrl('');
+                setPageCategory('');
+                setSelectedCategoryId('');
+                // Navigate to pages
+                navigate('/pagescomp/mainpages');
+            } else {
+                // Handle errors array from response
+                if (data.api_status === 400 && data.errors && Array.isArray(data.errors)) {
+                    // Display each error from the errors array
+                    data.errors.forEach((error) => {
+                        toast.error(error);
+                    });
+                } else if (data.message) {
+                    toast.error('Failed to create page: ' + data.message);
+                } else {
+                    toast.error('Failed to create page');
+                }
+            }
+        } catch (error) {
+            console.error('Error creating page:', error);
+            // Handle axios error response
+            if (error.response?.data) {
+                const errorData = error.response.data;
+                if (errorData.api_status === 400 && errorData.errors && Array.isArray(errorData.errors)) {
+                    // Display each error from the errors array
+                    errorData.errors.forEach((errorMsg) => {
+                        toast.error(errorMsg);
+                    });
+                } else if (errorData.message) {
+                    toast.error('Failed to create page: ' + errorData.message);
+                } else {
+                    toast.error('Failed to create page');
+                }
+            } else {
+                toast.error('Failed to create page. Please try again.');
+            }
+        } finally {
+            setLoading(false);
         }
-
-        // Reset form
-        setPageName('');
-        setPageTitle('');
-        setPageDescription('');
-        setPageUrl('');
-        setPageCategory('');
-        setSelectedCategoryId('');
-        setLoading(false);
     };
 
     const getCategories = async()=>{
@@ -119,16 +164,12 @@ const CreatePage = () => {
             {/* Main Card */}
             <div className="w-[95%] md:w-[90%] max-w-6xl bg-white flex flex-col gap-6 rounded-xl my-6 shadow-md overflow-hidden">
                 {/* Hero Banner */}
-                <div
-                    className="relative w-full bg-cover bg-center bg-no-repeat"
-                    style={{ backgroundImage: "url('/pagebg.jpg')" }}
-                >
-
-                    <div className="relative w-full h-[12rem] md:h-[18rem] flex top-15 justify-end pr-6 md:pr-20 z-10">
-                        <h2 className="text-2xl md:text-4xl text-white font-bold text-right drop-shadow-md">
-                            Create Page
-                        </h2>
-                    </div>
+                <div className="relative h-64 flex items-start justify-end px-8 md:px-16">
+                    {/* Wave SVG */}
+                    <img src="/Vectorgroup.svg" alt="vector" className='absolute bottom-0 right-0 top-0 w-full' />
+                    <h2 className="text-xl md:text-2xl font-bold text-white z-10 pt-6">
+                        Create Page
+                    </h2>
                 </div>
 
 
@@ -152,6 +193,7 @@ const CreatePage = () => {
                             placeholder="Page Name"
                             value={pageName}
                             onChange={(e) => setPageName(e.target.value)}
+                            required
                         />
                     </div>
 
@@ -169,6 +211,7 @@ const CreatePage = () => {
                             placeholder="Page Title"
                             value={pageTitle}
                             onChange={(e) => setPageTitle(e.target.value)}
+                            required
                         />
                     </div>
 
@@ -178,7 +221,7 @@ const CreatePage = () => {
                             htmlFor="page-description"
                             className="text-lg text-black flex items-center gap-2"
                         >
-                            Page Description :
+                            Page Description : <span className="text-red-500">*</span>
                         </label>
                         <textarea
                             id="page-description"
@@ -187,6 +230,7 @@ const CreatePage = () => {
                             placeholder="Page Description"
                             value={pageDescription}
                             onChange={(e) => setPageDescription(e.target.value)}
+                            required
                         />
                     </div>
 
@@ -198,14 +242,24 @@ const CreatePage = () => {
                         >
                             Page URL : <span className="text-red-500">*</span>
                         </label>
-                        <input
-                            type="url"
-                            id="page-url"
-                            className="w-full p-2 px-4 border border-[#212121] rounded-full"
-                            placeholder="https://ouptel.com/"
-                            value={pageUrl}
-                            onChange={(e) => setPageUrl(e.target.value)}
-                        />
+                        <div className="flex items-center">
+                            <span className="px-4 py-2 bg-gray-100 border border-r-0 border-[#212121] rounded-l-full text-gray-700 font-medium">
+                                {window.location.origin}/
+                            </span>
+                            <input
+                                type="text"
+                                id="page-url"
+                                className="flex-1 p-2 px-4 border border-[#212121] rounded-r-full focus:outline-none"
+                                placeholder="page-name"
+                                value={pageUrl}
+                                onChange={(e) => {
+                                    // Remove leading slash if user adds it
+                                    const value = e.target.value.replace(/^\//, '');
+                                    setPageUrl(value);
+                                }}
+                                required
+                            />
+                        </div>
                     </div>
 
                     {/* Page Category */}
@@ -227,6 +281,7 @@ const CreatePage = () => {
                                     const selectedCategory = categories.find(cat => cat.id === selectedId);
                                     setPageCategory(selectedCategory?.name || '');
                                 }}
+                                required
                             >
                                 <option value="">Select category</option>
                                 {categories?.map((category, index) => (

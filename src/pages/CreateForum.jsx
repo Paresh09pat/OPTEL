@@ -187,15 +187,12 @@ const CreateForum = () => {
             {/* Main Card */}
             <div className="w-[95%] md:w-[90%] max-w-6xl bg-white flex flex-col gap-6 rounded-xl my-6 shadow-md overflow-hidden">
                 {/* Hero Banner */}
-                <div
-                    className="relative w-full bg-cover bg-center bg-no-repeat"
-                    style={{ backgroundImage: "url('/pagebg.jpg')" }}
-                >
-                    <div className="relative w-full h-[12rem] md:h-[18rem] flex top-15 justify-end pr-6 md:pr-20 z-10">
-                        <h2 className="text-2xl md:text-4xl text-white font-bold text-right drop-shadow-md">
-                            Create New Forum
-                        </h2>
-                    </div>
+                <div className="relative h-64 flex items-start justify-end px-8 md:px-16">
+                    {/* Wave SVG */}
+                    <img src="/Vectorgroup.svg" alt="vector" className='absolute bottom-0 right-0 top-0 w-full' />
+                    <h2 className="text-xl md:text-2xl font-bold text-white z-10 pt-6">
+                        Create New Forum
+                    </h2>
                 </div>
 
                 {/* Form Section */}
