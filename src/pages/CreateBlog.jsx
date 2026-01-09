@@ -164,8 +164,8 @@ const CreateBlog = () => {
                     {/* Wave SVG */}
                     <img src="/Vectorgroup.svg" alt="vector" className='absolute bottom-0 right-0 top-0 w-full' />
                     <h2 className="text-xl md:text-2xl font-bold text-white z-10 pt-6">
-                        Create Blog Post
-                    </h2>
+                            Create Blog Post
+                        </h2>
                 </div>
 
                 {/* Form Section */}

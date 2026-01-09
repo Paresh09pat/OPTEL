@@ -189,8 +189,8 @@ const Home = () => {
     try {
       isFetchingRef.current = true;
       if (page === 1) {
-        lastFilterRef.current = type;
-        lastCallTimeRef.current = now;
+      lastFilterRef.current = type;
+      lastCallTimeRef.current = now;
         currentFilterRef.current = type;
         setLoading(true);
       } else {
@@ -224,7 +224,7 @@ const Home = () => {
       if (data?.data) {
         if (page === 1) {
           // First page - replace all feeds
-          setNewFeeds(data.data);
+        setNewFeeds(data.data);
         } else {
           // Subsequent pages - append to existing feeds
           setNewFeeds(prev => [...prev, ...data.data]);
@@ -237,13 +237,13 @@ const Home = () => {
       } else if (Array.isArray(data)) {
         // Handle case where response is directly an array
         if (page === 1) {
-          setNewFeeds(data);
-        } else {
+        setNewFeeds(data);
+      } else {
           setNewFeeds(prev => [...prev, ...data]);
         }
       } else {
         if (page === 1) {
-          setNewFeeds([]);
+        setNewFeeds([]);
         }
       }
 

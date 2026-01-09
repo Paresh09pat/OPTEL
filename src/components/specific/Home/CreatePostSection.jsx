@@ -37,6 +37,22 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
     const [pollOptions, setPollOptions] = useState(['', '']); // Start with 2 empty options
     const [pollDuration, setPollDuration] = useState('7'); // Default 7 days
 
+    // GIF search state
+    const [showGifSearch, setShowGifSearch] = useState(false);
+    const [gifSearchQuery, setGifSearchQuery] = useState('');
+    const [gifResults, setGifResults] = useState([]);
+    const [gifLoading, setGifLoading] = useState(false);
+    const [gifSearchPage, setGifSearchPage] = useState(0);
+
+    // Feeling state
+    const [showFeelingModal, setShowFeelingModal] = useState(false);
+    const [selectedFeeling, setSelectedFeeling] = useState(null);
+
+    // Activities state (traveling, listening, watching, playing, reaction)
+    const [showActivityModal, setShowActivityModal] = useState(false);
+    const [currentActivityType, setCurrentActivityType] = useState(null); // 'traveling', 'listening', 'watching', 'playing', 'reaction'
+    const [selectedActivity, setSelectedActivity] = useState(null); // { type: 'traveling', value: 'Paris', label: 'Traveling to Paris' }
+
     const handleMoreClick = () => {
         setShowPopup(true);
     };
@@ -72,6 +88,77 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
         setPollDuration('7');
         setShowPoll(false);
     };
+
+    // GIF search function using Giphy API
+    const searchGifs = async (query = '', offset = 0) => {
+        setGifLoading(true);
+        try {
+            // Using Giphy API - you can replace this with your own API key
+            // Get a free API key from https://developers.giphy.com/
+            const GIPHY_API_KEY = import.meta.env.VITE_GIPHY_API_KEY || 'GlVGYHkr3WSBnllca54iNt0yFbjz7Z65'; // Demo key - replace with your own
+            const limit = 20;
+            
+            let url;
+            if (query.trim()) {
+                url = `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(query)}&limit=${limit}&offset=${offset}&rating=g`;
+            } else {
+                // Trending GIFs when no query
+                url = `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=${limit}&offset=${offset}&rating=g`;
+            }
+
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (data.data && Array.isArray(data.data)) {
+                const gifs = data.data.map(gif => ({
+                    id: gif.id,
+                    url: gif.images.original.url,
+                    preview: gif.images.fixed_height_small.url,
+                    title: gif.title
+                }));
+
+                if (offset === 0) {
+                    setGifResults(gifs);
+                } else {
+                    setGifResults(prev => [...prev, ...gifs]);
+                }
+            }
+        } catch (error) {
+            console.error('Error searching GIFs:', error);
+            toast.error('Failed to load GIFs. Please try again.');
+        } finally {
+            setGifLoading(false);
+        }
+    };
+
+    // Handle GIF selection
+    const handleGifSelect = (gif) => {
+        setSelectedGif(gif);
+        setShowGifSearch(false);
+        setGifSearchQuery('');
+        setGifResults([]);
+    };
+
+    // Load trending GIFs on mount
+    useEffect(() => {
+        if (showGifSearch && gifResults.length === 0) {
+            searchGifs('', 0);
+        }
+    }, [showGifSearch]);
+
+    // Debounced GIF search
+    useEffect(() => {
+        if (!showGifSearch) return;
+
+        const timeoutId = setTimeout(() => {
+            if (gifSearchQuery.trim() || gifSearchQuery === '') {
+                setGifSearchPage(0);
+                searchGifs(gifSearchQuery, 0);
+            }
+        }, 500);
+
+        return () => clearTimeout(timeoutId);
+    }, [gifSearchQuery, showGifSearch]);
 
     // 👉 File selector logic
     const handleFileSelect = (type) => {
@@ -160,6 +247,241 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
         }
 
         return 'text';
+    };
+
+    // Generic function to create activity posts (feeling, traveling, listening, watching, playing, reaction)
+    const createActivityPost = async (postText, activityType, activityValue) => {
+        setLoading(true);
+
+        try {
+            const accessToken = localStorage.getItem("access_token");
+
+            // Validate activity data
+            if (!activityValue || !activityValue.trim()) {
+                const errorMessage = `Please provide ${activityType} information.`;
+                if (showNotification) {
+                    showNotification(errorMessage, 'error');
+                } else {
+                    toast.error(errorMessage);
+                }
+                setLoading(false);
+                return;
+            }
+
+            // Prepare post text - include activity label if not already in text
+            let finalPostText = postText.trim() || '';
+            const activityLabel = activityType === 'feeling' ? `Feeling ${activityValue}` :
+                                 activityType === 'traveling' ? `Traveling to ${activityValue}` :
+                                 activityType === 'listening' ? `Listening to ${activityValue}` :
+                                 activityType === 'watching' ? `Watching ${activityValue}` :
+                                 activityType === 'playing' ? `Playing ${activityValue}` :
+                                 activityType === 'reaction' ? activityValue : '';
+
+            // If post text is empty or doesn't include the activity, prepend it
+            if (!finalPostText || !finalPostText.toLowerCase().includes(activityValue.toLowerCase())) {
+                if (finalPostText) {
+                    finalPostText = `${activityLabel}\n\n${finalPostText}`;
+                } else {
+                    finalPostText = activityLabel;
+                }
+            }
+
+            // Prepare request data based on activity type
+            const requestData = {
+                postText: finalPostText,
+                postPrivacy: postPrivacy,
+            };
+
+            // Add activity-specific field
+            if (activityType === 'feeling') {
+                requestData.feeling = activityValue.trim();
+            } else if (activityType === 'traveling') {
+                requestData.traveling = activityValue.trim();
+            } else if (activityType === 'listening') {
+                requestData.listening = activityValue.trim();
+            } else if (activityType === 'watching') {
+                requestData.watching = activityValue.trim();
+            } else if (activityType === 'playing') {
+                requestData.playing = activityValue.trim();
+            } else if (activityType === 'reaction') {
+                requestData.reaction = activityValue.trim();
+            }
+
+            console.log(`Creating ${activityType} post with data:`, requestData);
+
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_URL}/api/v1/posts?type=${activityType}`,
+                requestData,
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}`,
+                    },
+                }
+            );
+
+            const data = await response.data;
+            console.log(`Create ${activityType} post response:`, data);
+
+            // Check for success
+            if (data.ok === true || data.api_status === 200) {
+                const successMessage = `${activityType.charAt(0).toUpperCase() + activityType.slice(1)} post created successfully!`;
+                if (showNotification) {
+                    showNotification(successMessage, 'success');
+                } else {
+                    toast.success(successMessage);
+                }
+
+                // Refresh the feed to show the new post
+                if (fetchNewFeeds) {
+                    fetchNewFeeds();
+                }
+
+                // Reset form state
+                setPostText("");
+                setSelectedFiles([]);
+                setShowPopup(false);
+                setSelectedGif(null);
+                setSelectedFeeling(null);
+                setSelectedActivity(null);
+                setFeeling("");
+                setShowGifSearch(false);
+                setShowFeelingModal(false);
+                setShowActivityModal(false);
+                setCurrentActivityType(null);
+
+                // Reset additional features
+                setPostLink("");
+                setPostLinkTitle("");
+                setPostLinkContent("");
+                setYoutubeLink("");
+                setLocation("");
+                setBackgroundColor("");
+                setAlbumName("");
+                setGroupId("");
+                setPostType("text");
+                setPostPrivacy("0");
+            } else {
+                const errorMessage = data.message || `Failed to create ${activityType} post`;
+                console.error(`Failed to create ${activityType} post:`, errorMessage);
+                if (showNotification) {
+                    showNotification(errorMessage, 'error');
+                } else {
+                    toast.error(errorMessage);
+                }
+            }
+        } catch (error) {
+            console.error(`Error creating ${activityType} post:`, error);
+            const errorMessage = error.response?.data?.message || error.message || `Error creating ${activityType} post. Please try again.`;
+            if (showNotification) {
+                showNotification(errorMessage, 'error');
+            } else {
+                toast.error(errorMessage);
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Function to create a feeling post using the dedicated feeling API (kept for backward compatibility)
+    const createFeelingPost = async (postText, feelingValue) => {
+        return createActivityPost(postText, 'feeling', feelingValue);
+    };
+
+    // Function to create a GIF post using the dedicated GIF API
+    const createGifPost = async (postText, gif) => {
+        setLoading(true);
+
+        try {
+            const accessToken = localStorage.getItem("access_token");
+
+            // Validate GIF data
+            if (!gif || !gif.url) {
+                const errorMessage = "Please select a GIF.";
+                if (showNotification) {
+                    showNotification(errorMessage, 'error');
+                } else {
+                    toast.error(errorMessage);
+                }
+                setLoading(false);
+                return;
+            }
+
+            // Prepare request data
+            const requestData = {
+                postText: postText.trim() || '',
+                postPrivacy: postPrivacy,
+                postGif: gif.url
+            };
+
+            console.log("Creating GIF post with data:", requestData);
+
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_URL}/api/v1/posts?type=gif`,
+                requestData,
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}`,
+                    },
+                }
+            );
+
+            const data = await response.data;
+            console.log("Create GIF post response:", data);
+
+            // Check for success
+            if (data.ok === true || data.api_status === 200) {
+                if (showNotification) {
+                    showNotification("GIF post created successfully!", 'success');
+                } else {
+                    toast.success("GIF post created successfully!");
+                }
+
+                // Refresh the feed to show the new post
+                if (fetchNewFeeds) {
+                    fetchNewFeeds();
+                }
+
+                // Reset form state
+                setPostText("");
+                setSelectedFiles([]);
+                setShowPopup(false);
+                setSelectedGif(null);
+                setShowGifSearch(false);
+
+                // Reset additional features
+                setPostLink("");
+                setPostLinkTitle("");
+                setPostLinkContent("");
+                setYoutubeLink("");
+                setLocation("");
+                setFeeling("");
+                setBackgroundColor("");
+                setAlbumName("");
+                setGroupId("");
+                setPostType("text");
+                setPostPrivacy("0");
+            } else {
+                const errorMessage = data.message || "Failed to create GIF post";
+                console.error("Failed to create GIF post:", errorMessage);
+                if (showNotification) {
+                    showNotification(errorMessage, 'error');
+                } else {
+                    toast.error(errorMessage);
+                }
+            }
+        } catch (error) {
+            console.error("Error creating GIF post:", error);
+            const errorMessage = error.response?.data?.message || error.message || "Error creating GIF post. Please try again.";
+            if (showNotification) {
+                showNotification(errorMessage, 'error');
+            } else {
+                toast.error(errorMessage);
+            }
+        } finally {
+            setLoading(false);
+        }
     };
 
     // Function to create a poll using the dedicated poll API
@@ -294,6 +616,9 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
         const hasLink = postLink && postLink.trim().length > 0;
         const hasYoutubeLink = youtubeLink && youtubeLink.trim().length > 0;
         const hasAlbumName = albumName && albumName.trim().length > 0;
+        const hasGif = selectedGif && selectedGif.url;
+        const hasFeeling = selectedFeeling && selectedFeeling.value;
+        const hasActivity = selectedActivity && selectedActivity.value;
         
         // Check if poll is valid (if showPoll is true, it must have question and at least one option)
         let hasValidPoll = false;
@@ -304,7 +629,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
         }
 
         // If nothing is provided, show error and return
-        if (!hasText && !hasFiles && !hasLink && !hasYoutubeLink && !hasAlbumName && !hasValidPoll) {
+        if (!hasText && !hasFiles && !hasLink && !hasYoutubeLink && !hasAlbumName && !hasValidPoll && !hasGif && !hasFeeling && !hasActivity) {
             const errorMessage = "Please add some content to your post.";
             if (showNotification) {
                 showNotification(errorMessage, 'error');
@@ -315,8 +640,26 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
         }
 
         // If there's a valid poll and no files/media, use the dedicated poll API
-        if (hasValidPoll && !hasFiles && !hasLink && !hasYoutubeLink && !hasAlbumName) {
+        if (hasValidPoll && !hasFiles && !hasLink && !hasYoutubeLink && !hasAlbumName && !hasGif && !hasFeeling && !hasActivity) {
             await createPoll(pollData.pollQuestion, pollData.pollOptions, postText);
+            return;
+        }
+
+        // If there's a GIF and no other media, use the GIF API endpoint
+        if (hasGif && !hasFiles && !hasLink && !hasYoutubeLink && !hasAlbumName && !hasValidPoll && !hasFeeling && !hasActivity) {
+            await createGifPost(postText, selectedGif);
+            return;
+        }
+
+        // If there's a feeling and no other media, use the feeling API endpoint
+        if (hasFeeling && !hasFiles && !hasLink && !hasYoutubeLink && !hasAlbumName && !hasValidPoll && !hasGif && !hasActivity) {
+            await createFeelingPost(postText, selectedFeeling.value);
+            return;
+        }
+
+        // If there's an activity and no other media, use the activity API endpoint
+        if (hasActivity && !hasFiles && !hasLink && !hasYoutubeLink && !hasAlbumName && !hasValidPoll && !hasGif && !hasFeeling) {
+            await createActivityPost(postText, selectedActivity.type, selectedActivity.value);
             return;
         }
 
@@ -476,11 +819,17 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
                 setLocation("");
                 setFeeling("");
                 setSelectedGif(null);
+                setSelectedFeeling(null);
+                setSelectedActivity(null);
                 setBackgroundColor("");
                 setAlbumName("");
                 setGroupId("");
                 setPostType("text");
                 setPostPrivacy("0");
+                setShowGifSearch(false);
+                setShowFeelingModal(false);
+                setShowActivityModal(false);
+                setCurrentActivityType(null);
 
                 // Reset poll state if poll was created
                 if (pollData && pollData.showPoll) {
@@ -725,6 +1074,28 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
                 setPostType={setPostType}
                 postPrivacy={postPrivacy}
                 setPostPrivacy={setPostPrivacy}
+                // GIF search props
+                showGifSearch={showGifSearch}
+                setShowGifSearch={setShowGifSearch}
+                gifSearchQuery={gifSearchQuery}
+                setGifSearchQuery={setGifSearchQuery}
+                gifResults={gifResults}
+                gifLoading={gifLoading}
+                handleGifSelect={handleGifSelect}
+                searchGifs={searchGifs}
+                // Feeling props
+                showFeelingModal={showFeelingModal}
+                setShowFeelingModal={setShowFeelingModal}
+                selectedFeeling={selectedFeeling}
+                setSelectedFeeling={setSelectedFeeling}
+                // Activity props
+                showActivityModal={showActivityModal}
+                setShowActivityModal={setShowActivityModal}
+                currentActivityType={currentActivityType}
+                setCurrentActivityType={setCurrentActivityType}
+                selectedActivity={selectedActivity}
+                setSelectedActivity={setSelectedActivity}
+                createActivityPost={createActivityPost}
             />
         </>
     );
@@ -742,7 +1113,15 @@ const CreatePostPopup = ({
     postLink, setPostLink, postLinkTitle, setPostLinkTitle, postLinkContent, setPostLinkContent,
     youtubeLink, setYoutubeLink, location, setLocation, feeling, setFeeling,
     selectedGif, setSelectedGif, backgroundColor, setBackgroundColor,
-    albumName, setAlbumName, groupId, setGroupId, postType, setPostType, postPrivacy, setPostPrivacy
+    albumName, setAlbumName, groupId, setGroupId, postType, setPostType, postPrivacy, setPostPrivacy,
+    // GIF search props
+    showGifSearch, setShowGifSearch, gifSearchQuery, setGifSearchQuery,
+    gifResults, gifLoading, handleGifSelect, searchGifs,
+    // Feeling props
+    showFeelingModal, setShowFeelingModal, selectedFeeling, setSelectedFeeling,
+    // Activity props
+    showActivityModal, setShowActivityModal, currentActivityType, setCurrentActivityType,
+    selectedActivity, setSelectedActivity, createActivityPost
 }) => {
     const { userData } = useUser();
     const [postText, setPostText] = useState('');
@@ -911,10 +1290,21 @@ const CreatePostPopup = ({
                     <textarea
                         value={postText}
                         onChange={(e) => setPostText(e.target.value)}
-                        placeholder={showPoll ? "What's on your mind? (Poll will be included)" : "What's on your mind?"}
+                        placeholder={
+                            showPoll ? "What's on your mind? (Poll will be included)" :
+                            selectedActivity ? `${selectedActivity.label}...` :
+                            selectedFeeling ? `Feeling ${selectedFeeling.label}...` :
+                            "What's on your mind?"
+                        }
                         className="w-full resize-none border-none outline-none text-lg placeholder-gray-500 min-h-[120px]"
                         rows="5"
                     />
+                    {/* Show activity in post text preview */}
+                    {selectedActivity && !postText.includes(selectedActivity.label) && (
+                        <div className="mt-2 text-sm text-gray-500 italic">
+                            Your post will include: {selectedActivity.label}
+                        </div>
+                    )}
 
                     {/* Poll Creation Section */}
                     {showPoll && (
@@ -1034,6 +1424,92 @@ const CreatePostPopup = ({
                                      Reset Poll
                                  </button>
                              </div> */}
+                        </div>
+                    )}
+
+                    {/* Selected GIF Preview */}
+                    {selectedGif && (
+                        <div className="mt-4 mb-4 p-3 bg-pink-50 rounded-lg border border-pink-200 relative">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm font-medium text-pink-800">Selected GIF</span>
+                                <button
+                                    onClick={() => setSelectedGif(null)}
+                                    className="p-1 text-pink-600 hover:text-pink-800 hover:bg-pink-100 rounded-full transition-colors"
+                                    title="Remove GIF"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <img
+                                src={selectedGif.preview || selectedGif.url}
+                                alt={selectedGif.title || 'Selected GIF'}
+                                className="w-full h-48 object-cover rounded-md border border-pink-300"
+                            />
+                        </div>
+                    )}
+
+                    {/* Selected Feeling Preview */}
+                    {selectedFeeling && (
+                        <div className="mt-4 mb-4 p-3 bg-teal-50 rounded-lg border border-teal-200 relative">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm font-medium text-teal-800">Feeling</span>
+                                <button
+                                    onClick={() => {
+                                        setSelectedFeeling(null);
+                                        setFeeling("");
+                                    }}
+                                    className="p-1 text-teal-600 hover:text-teal-800 hover:bg-teal-100 rounded-full transition-colors"
+                                    title="Remove Feeling"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <span className="text-3xl">{selectedFeeling.emoji}</span>
+                                <span className="text-gray-800 font-medium">{selectedFeeling.label}</span>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Selected Activity Preview */}
+                    {selectedActivity && (
+                        <div className={`mt-4 mb-4 p-3 rounded-lg border relative ${
+                            selectedActivity.type === 'traveling' ? 'bg-blue-50 border-blue-200' :
+                            selectedActivity.type === 'listening' ? 'bg-cyan-50 border-cyan-200' :
+                            selectedActivity.type === 'watching' ? 'bg-pink-50 border-pink-200' :
+                            selectedActivity.type === 'playing' ? 'bg-orange-50 border-orange-200' :
+                            'bg-red-50 border-red-200'
+                        }`}>
+                            <div className="flex items-center justify-between mb-2">
+                                <span className={`text-sm font-medium ${
+                                    selectedActivity.type === 'traveling' ? 'text-blue-800' :
+                                    selectedActivity.type === 'listening' ? 'text-cyan-800' :
+                                    selectedActivity.type === 'watching' ? 'text-pink-800' :
+                                    selectedActivity.type === 'playing' ? 'text-orange-800' :
+                                    'text-red-800'
+                                }`}>
+                                    {selectedActivity.type.charAt(0).toUpperCase() + selectedActivity.type.slice(1)}
+                                </span>
+                                <button
+                                    onClick={() => {
+                                        setSelectedActivity(null);
+                                    }}
+                                    className={`p-1 rounded-full transition-colors ${
+                                        selectedActivity.type === 'traveling' ? 'text-blue-600 hover:text-blue-800 hover:bg-blue-100' :
+                                        selectedActivity.type === 'listening' ? 'text-cyan-600 hover:text-cyan-800 hover:bg-cyan-100' :
+                                        selectedActivity.type === 'watching' ? 'text-pink-600 hover:text-pink-800 hover:bg-pink-100' :
+                                        selectedActivity.type === 'playing' ? 'text-orange-600 hover:text-orange-800 hover:bg-orange-100' :
+                                        'text-red-600 hover:text-red-800 hover:bg-red-100'
+                                    }`}
+                                    title={`Remove ${selectedActivity.type}`}
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <span className="text-2xl">{selectedActivity.emoji || '📍'}</span>
+                                <span className="text-gray-800 font-medium">{selectedActivity.label}</span>
+                            </div>
                         </div>
                     )}
 
@@ -1175,20 +1651,42 @@ const CreatePostPopup = ({
                                 <span className="text-gray-700 font-medium">Audio</span>
                             </button>
 
-                            {/* Feelings */}
-                            <button className="flex items-center space-x-3 p-3 cursor-pointer">
-                                <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-                                    <Smile className="w-5 h-5 text-yellow-600" />
+                            {/* Reactions/Activities - Main Button */}
+                            <button
+                                className={`flex items-center space-x-3 p-3 cursor-pointer transition-all duration-200 ${
+                                    selectedFeeling || selectedActivity ? 'bg-teal-100 rounded-lg border-2 border-teal-300' : 'hover:bg-teal-50'
+                                }`}
+                                onClick={() => setShowActivityModal(true)}
+                                title={selectedFeeling || selectedActivity ? `${selectedFeeling?.label || selectedActivity?.label} selected - click to change` : "Select reaction or activity"}
+                            >
+                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+                                    selectedFeeling || selectedActivity ? 'bg-teal-200' : 'bg-yellow-100'
+                                }`}>
+                                    <Smile className={`w-5 h-5 transition-colors ${
+                                        selectedFeeling || selectedActivity ? 'text-teal-700' : 'text-yellow-600'
+                                    }`} />
                                 </div>
-                                <span className="text-gray-700 font-medium">Feelings</span>
+                                <span className={`font-medium transition-colors ${
+                                    selectedFeeling || selectedActivity ? 'text-teal-800' : 'text-gray-700'
+                                }`}>
+                                    {selectedFeeling ? selectedFeeling.label : 
+                                     selectedActivity ? selectedActivity.label : 
+                                     'Reactions'}
+                                </span>
                             </button>
 
                             {/* GIF */}
-                            <button className="flex items-center space-x-3 p-3 cursor-pointer">
-                                <div className="w-10 h-10 bg-pink-100 rounded-lg flex items-center justify-center">
-                                    <Icon icon="mdi:gif" className="w-5 h-5 text-pink-600" />
+                            <button
+                                className={`flex items-center space-x-3 p-3 cursor-pointer transition-all duration-200 ${selectedGif ? 'bg-pink-100 rounded-lg border-2 border-pink-300' : 'hover:bg-pink-50'}`}
+                                onClick={() => setShowGifSearch(true)}
+                                title={selectedGif ? "GIF selected - click to change" : "Search and add GIF"}
+                            >
+                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${selectedGif ? 'bg-pink-200' : 'bg-pink-100'}`}>
+                                    <Icon icon="mdi:gif" className={`w-5 h-5 transition-colors ${selectedGif ? 'text-pink-700' : 'text-pink-600'}`} />
                                 </div>
-                                <span className="text-gray-700 font-medium">GIF</span>
+                                <span className={`font-medium transition-colors ${selectedGif ? 'text-pink-800' : 'text-gray-700'}`}>
+                                    {selectedGif ? 'GIF Selected' : 'GIF'}
+                                </span>
                             </button>
 
                             {/* Color */}
@@ -1263,19 +1761,30 @@ const CreatePostPopup = ({
                             />
                         </div>
 
-                        {/* Feeling Input */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Feeling/Activity
-                            </label>
-                            <input
-                                type="text"
-                                value={feeling}
-                                onChange={(e) => setFeeling(e.target.value)}
-                                placeholder="How are you feeling?"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
+                        {/* Feeling Display (if selected) */}
+                        {selectedFeeling && (
+                            <div className="p-3 bg-teal-50 rounded-lg border border-teal-200">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-2xl">{selectedFeeling.emoji}</span>
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-700">Feeling</p>
+                                            <p className="text-gray-800 font-semibold">{selectedFeeling.label}</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            setSelectedFeeling(null);
+                                            setFeeling("");
+                                        }}
+                                        className="p-1 text-teal-600 hover:text-teal-800 hover:bg-teal-100 rounded-full transition-colors"
+                                        title="Remove Feeling"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Background Color */}
                         <div>
@@ -1399,7 +1908,643 @@ const CreatePostPopup = ({
                     <X className="w-5 h-5 text-gray-600" />
                 </button>
             </div>
+
+            {/* GIF Search Modal */}
+            {showGifSearch && (
+                <GifSearchModal
+                    isOpen={showGifSearch}
+                    onClose={() => {
+                        setShowGifSearch(false);
+                        setGifSearchQuery('');
+                    }}
+                    searchQuery={gifSearchQuery}
+                    setSearchQuery={setGifSearchQuery}
+                    gifResults={gifResults}
+                    gifLoading={gifLoading}
+                    onSelectGif={handleGifSelect}
+                    onLoadMore={() => {
+                        const nextPage = Math.floor(gifResults.length / 20);
+                        searchGifs(gifSearchQuery, nextPage * 20);
+                    }}
+                />
+            )}
+
+            {/* Feeling Selection Modal */}
+            {showFeelingModal && (
+                <FeelingSelectionModal
+                    isOpen={showFeelingModal}
+                    onClose={() => setShowFeelingModal(false)}
+                    onSelectFeeling={(feeling) => {
+                        setSelectedFeeling(feeling);
+                        setFeeling(feeling.value);
+                        setShowFeelingModal(false);
+                    }}
+                    selectedFeeling={selectedFeeling}
+                />
+            )}
+
+            {/* Activity Selection Modal */}
+            {showActivityModal && currentActivityType && (
+                <ActivitySelectionModal
+                    isOpen={showActivityModal}
+                    onClose={() => {
+                        setShowActivityModal(false);
+                        setCurrentActivityType(null);
+                    }}
+                    activityType={currentActivityType}
+                    onSelectActivity={(activity) => {
+                        setSelectedActivity(activity);
+                        setShowActivityModal(false);
+                        setCurrentActivityType(null);
+                    }}
+                    selectedActivity={selectedActivity}
+                />
+            )}
+
+            {/* Reactions/Activities Main Modal */}
+            {showActivityModal && !currentActivityType && (
+                <ReactionsMainModal
+                    isOpen={showActivityModal}
+                    onClose={() => {
+                        setShowActivityModal(false);
+                        setCurrentActivityType(null);
+                    }}
+                    onSelectActivityType={(type) => {
+                        if (type === 'feeling') {
+                            setShowActivityModal(false);
+                            setShowFeelingModal(true);
+                        } else {
+                            setCurrentActivityType(type);
+                        }
+                    }}
+                    selectedFeeling={selectedFeeling}
+                    selectedActivity={selectedActivity}
+                    onClearSelection={() => {
+                        setSelectedFeeling(null);
+                        setSelectedActivity(null);
+                        setFeeling("");
+                    }}
+                />
+            )}
         </div >
 
+    );
+};
+
+// GIF Search Modal Component
+const GifSearchModal = ({ isOpen, onClose, searchQuery, setSearchQuery, gifResults, gifLoading, onSelectGif, onLoadMore }) => {
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen]);
+
+    if (!isOpen) return null;
+
+    return (
+        <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] px-2 md:px-6"
+            onClick={onClose}
+        >
+            <div
+                className="bg-white rounded-2xl w-full max-w-4xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200">
+                    <h2 className="text-xl md:text-2xl font-semibold text-gray-800">Search GIFs</h2>
+                    <button
+                        onClick={onClose}
+                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    >
+                        <X className="w-5 h-5 text-gray-600" />
+                    </button>
+                </div>
+
+                {/* Search Input */}
+                <div className="p-4 md:p-6 border-b border-gray-200">
+                    <div className="relative">
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Search for GIFs..."
+                            className="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
+                            autoFocus
+                        />
+                        <Icon
+                            icon="mdi:magnify"
+                            className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+                        />
+                    </div>
+                    {!searchQuery && (
+                        <p className="mt-2 text-sm text-gray-500">Showing trending GIFs</p>
+                    )}
+                </div>
+
+                {/* GIF Results */}
+                <div className="flex-1 overflow-y-auto p-4 md:p-6">
+                    {gifLoading && gifResults.length === 0 ? (
+                        <div className="flex items-center justify-center py-12">
+                            <div className="flex flex-col items-center gap-3">
+                                <div className="w-8 h-8 border-2 border-pink-500 border-t-transparent rounded-full animate-spin"></div>
+                                <span className="text-gray-600">Loading GIFs...</span>
+                            </div>
+                        </div>
+                    ) : gifResults.length === 0 ? (
+                        <div className="flex items-center justify-center py-12">
+                            <div className="text-center">
+                                <Icon icon="mdi:gif" className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                                <p className="text-gray-600">No GIFs found. Try a different search.</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                            {gifResults.map((gif) => (
+                                <button
+                                    key={gif.id}
+                                    onClick={() => onSelectGif(gif)}
+                                    className="relative group aspect-square overflow-hidden rounded-lg border-2 border-transparent hover:border-pink-500 transition-all cursor-pointer"
+                                >
+                                    <img
+                                        src={gif.preview}
+                                        alt={gif.title}
+                                        className="w-full h-full object-cover"
+                                        loading="lazy"
+                                    />
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                        <Icon
+                                            icon="mdi:check-circle"
+                                            className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                        />
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Load More Button */}
+                    {gifResults.length > 0 && !gifLoading && (
+                        <div className="flex justify-center mt-6">
+                            <button
+                                onClick={onLoadMore}
+                                disabled={gifLoading}
+                                className="px-6 py-2 bg-pink-500 hover:bg-pink-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {gifLoading ? 'Loading...' : 'Load More'}
+                            </button>
+                        </div>
+                    )}
+
+                    {gifLoading && gifResults.length > 0 && (
+                        <div className="flex justify-center mt-4">
+                            <div className="w-6 h-6 border-2 border-pink-500 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Feeling Selection Modal Component
+const FeelingSelectionModal = ({ isOpen, onClose, onSelectFeeling, selectedFeeling }) => {
+    // List of feelings with emojis
+    const feelings = [
+        { emoji: '😊', label: 'Happy', value: 'happy', color: 'bg-yellow-100', textColor: 'text-yellow-700', borderColor: 'border-yellow-300' },
+        { emoji: '😢', label: 'Sad', value: 'sad', color: 'bg-blue-100', textColor: 'text-blue-700', borderColor: 'border-blue-300' },
+        { emoji: '😍', label: 'Loved', value: 'loved', color: 'bg-pink-100', textColor: 'text-pink-700', borderColor: 'border-pink-300' },
+        { emoji: '😮', label: 'Surprised', value: 'surprised', color: 'bg-purple-100', textColor: 'text-purple-700', borderColor: 'border-purple-300' },
+        { emoji: '😡', label: 'Angry', value: 'angry', color: 'bg-red-100', textColor: 'text-red-700', borderColor: 'border-red-300' },
+        { emoji: '😴', label: 'Sleepy', value: 'sleepy', color: 'bg-indigo-100', textColor: 'text-indigo-700', borderColor: 'border-indigo-300' },
+        { emoji: '🤔', label: 'Thoughtful', value: 'thoughtful', color: 'bg-gray-100', textColor: 'text-gray-700', borderColor: 'border-gray-300' },
+        { emoji: '😎', label: 'Cool', value: 'cool', color: 'bg-cyan-100', textColor: 'text-cyan-700', borderColor: 'border-cyan-300' },
+        { emoji: '🤗', label: 'Grateful', value: 'grateful', color: 'bg-green-100', textColor: 'text-green-700', borderColor: 'border-green-300' },
+        { emoji: '😰', label: 'Anxious', value: 'anxious', color: 'bg-orange-100', textColor: 'text-orange-700', borderColor: 'border-orange-300' },
+        { emoji: '😤', label: 'Determined', value: 'determined', color: 'bg-amber-100', textColor: 'text-amber-700', borderColor: 'border-amber-300' },
+        { emoji: '🥳', label: 'Celebrating', value: 'celebrating', color: 'bg-yellow-100', textColor: 'text-yellow-700', borderColor: 'border-yellow-300' },
+        { emoji: '😌', label: 'Relieved', value: 'relieved', color: 'bg-teal-100', textColor: 'text-teal-700', borderColor: 'border-teal-300' },
+        { emoji: '😋', label: 'Playful', value: 'playful', color: 'bg-pink-100', textColor: 'text-pink-700', borderColor: 'border-pink-300' },
+        { emoji: '🤩', label: 'Excited', value: 'excited', color: 'bg-yellow-100', textColor: 'text-yellow-700', borderColor: 'border-yellow-300' },
+        { emoji: '😇', label: 'Blessed', value: 'blessed', color: 'bg-blue-100', textColor: 'text-blue-700', borderColor: 'border-blue-300' },
+        { emoji: '😏', label: 'Sneaky', value: 'sneaky', color: 'bg-gray-100', textColor: 'text-gray-700', borderColor: 'border-gray-300' },
+        { emoji: '🥰', label: 'Loved', value: 'loved', color: 'bg-pink-100', textColor: 'text-pink-700', borderColor: 'border-pink-300' },
+        { emoji: '😭', label: 'Crying', value: 'crying', color: 'bg-blue-100', textColor: 'text-blue-700', borderColor: 'border-blue-300' },
+        { emoji: '🤪', label: 'Crazy', value: 'crazy', color: 'bg-purple-100', textColor: 'text-purple-700', borderColor: 'border-purple-300' },
+    ];
+
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen]);
+
+    if (!isOpen) return null;
+
+    return (
+        <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] px-2 md:px-6"
+            onClick={onClose}
+        >
+            <div
+                className="bg-white rounded-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200">
+                    <h2 className="text-xl md:text-2xl font-semibold text-gray-800">How are you feeling?</h2>
+                    <button
+                        onClick={onClose}
+                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    >
+                        <X className="w-5 h-5 text-gray-600" />
+                    </button>
+                </div>
+
+                {/* Feelings Grid */}
+                <div className="flex-1 overflow-y-auto p-4 md:p-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                        {feelings.map((feeling) => (
+                            <button
+                                key={feeling.value}
+                                onClick={() => onSelectFeeling(feeling)}
+                                className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all cursor-pointer hover:scale-105 ${
+                                    selectedFeeling?.value === feeling.value
+                                        ? `${feeling.color} ${feeling.borderColor} border-2`
+                                        : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+                                }`}
+                            >
+                                <span className="text-4xl mb-2">{feeling.emoji}</span>
+                                <span className={`text-sm font-medium ${selectedFeeling?.value === feeling.value ? feeling.textColor : 'text-gray-700'}`}>
+                                    {feeling.label}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Reactions Main Modal Component - Shows all activity types
+const ReactionsMainModal = ({ isOpen, onClose, onSelectActivityType, selectedFeeling, selectedActivity, onClearSelection }) => {
+    const activities = [
+        { 
+            type: 'feeling', 
+            label: 'Feeling', 
+            emoji: '😊', 
+            color: 'bg-yellow-100', 
+            textColor: 'text-yellow-700', 
+            borderColor: 'border-yellow-300',
+            description: 'How are you feeling?'
+        },
+        { 
+            type: 'traveling', 
+            label: 'Traveling to', 
+            emoji: '✈️', 
+            color: 'bg-blue-100', 
+            textColor: 'text-blue-700', 
+            borderColor: 'border-blue-300',
+            description: 'Where are you traveling?'
+        },
+        { 
+            type: 'listening', 
+            label: 'Listening to', 
+            emoji: '🎵', 
+            color: 'bg-cyan-100', 
+            textColor: 'text-cyan-700', 
+            borderColor: 'border-cyan-300',
+            description: 'What are you listening to?'
+        },
+        { 
+            type: 'watching', 
+            label: 'Watching', 
+            emoji: '📺', 
+            color: 'bg-pink-100', 
+            textColor: 'text-pink-700', 
+            borderColor: 'border-pink-300',
+            description: 'What are you watching?'
+        },
+        { 
+            type: 'playing', 
+            label: 'Playing', 
+            emoji: '🎮', 
+            color: 'bg-orange-100', 
+            textColor: 'text-orange-700', 
+            borderColor: 'border-orange-300',
+            description: 'What are you playing?'
+        },
+        { 
+            type: 'reaction', 
+            label: 'Reaction', 
+            emoji: '👍', 
+            color: 'bg-red-100', 
+            textColor: 'text-red-700', 
+            borderColor: 'border-red-300',
+            description: 'Select a reaction'
+        },
+    ];
+
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen]);
+
+    if (!isOpen) return null;
+
+    const getSelectedActivity = () => {
+        if (selectedFeeling) {
+            return { type: 'feeling', label: selectedFeeling.label, emoji: selectedFeeling.emoji };
+        }
+        if (selectedActivity) {
+            return selectedActivity;
+        }
+        return null;
+    };
+
+    const selected = getSelectedActivity();
+
+    return (
+        <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] px-2 md:px-6"
+            onClick={onClose}
+        >
+            <div
+                className="bg-white rounded-2xl w-full max-w-3xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200">
+                    <h2 className="text-xl md:text-2xl font-semibold text-gray-800">Reactions & Activities</h2>
+                    <button
+                        onClick={onClose}
+                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    >
+                        <X className="w-5 h-5 text-gray-600" />
+                    </button>
+                </div>
+
+                {/* Selected Activity Display */}
+                {selected && (
+                    <div className="p-4 md:p-6 border-b border-gray-200 bg-gray-50">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <span className="text-3xl">{selected.emoji}</span>
+                                <div>
+                                    <p className="text-sm text-gray-600">Currently selected:</p>
+                                    <p className="text-gray-800 font-semibold">{selected.label}</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={onClearSelection}
+                                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-lg transition-colors"
+                            >
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Activities Grid */}
+                <div className="flex-1 overflow-y-auto p-4 md:p-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        {activities.map((activity) => {
+                            const isSelected = (selectedFeeling && activity.type === 'feeling') || 
+                                             (selectedActivity && selectedActivity.type === activity.type);
+                            return (
+                                <button
+                                    key={activity.type}
+                                    onClick={() => onSelectActivityType(activity.type)}
+                                    className={`flex flex-col items-center justify-center p-6 rounded-lg border-2 transition-all cursor-pointer hover:scale-105 ${
+                                        isSelected
+                                            ? `${activity.color} ${activity.borderColor} border-2`
+                                            : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+                                    }`}
+                                >
+                                    <span className="text-5xl mb-3">{activity.emoji}</span>
+                                    <span className={`text-base font-semibold mb-1 ${
+                                        isSelected ? activity.textColor : 'text-gray-700'
+                                    }`}>
+                                        {activity.label}
+                                    </span>
+                                    <span className="text-xs text-gray-500 text-center">
+                                        {activity.description}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Activity Selection Modal Component (Traveling, Listening, Watching, Playing, Reaction)
+const ActivitySelectionModal = ({ isOpen, onClose, activityType, onSelectActivity, selectedActivity }) => {
+    const [inputValue, setInputValue] = useState('');
+    const [selectedReaction, setSelectedReaction] = useState(null);
+
+    // Reactions for reaction type
+    const reactions = [
+        { emoji: '👍', label: 'Like', value: 'like' },
+        { emoji: '❤️', label: 'Love', value: 'love' },
+        { emoji: '😂', label: 'Haha', value: 'haha' },
+        { emoji: '😮', label: 'Wow', value: 'wow' },
+        { emoji: '😢', label: 'Sad', value: 'sad' },
+        { emoji: '😡', label: 'Angry', value: 'angry' },
+    ];
+
+    // Activity type configurations
+    const activityConfig = {
+        traveling: {
+            title: 'Traveling to',
+            placeholder: 'Where are you traveling? (e.g., Paris, New York)',
+            emoji: '✈️',
+            prefix: 'Traveling to'
+        },
+        listening: {
+            title: 'Listening to',
+            placeholder: 'What are you listening to? (e.g., Song Name, Artist)',
+            emoji: '🎵',
+            prefix: 'Listening to'
+        },
+        watching: {
+            title: 'Watching',
+            placeholder: 'What are you watching? (e.g., Movie Name, TV Show)',
+            emoji: '📺',
+            prefix: 'Watching'
+        },
+        playing: {
+            title: 'Playing',
+            placeholder: 'What are you playing? (e.g., Game Name, Sport)',
+            emoji: '🎮',
+            prefix: 'Playing'
+        },
+        reaction: {
+            title: 'Reaction',
+            placeholder: 'Select a reaction',
+            emoji: '😊',
+            prefix: 'Reaction'
+        }
+    };
+
+    const config = activityConfig[activityType] || {};
+
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+            // Pre-fill if activity is already selected
+            if (selectedActivity && selectedActivity.type === activityType) {
+                if (activityType === 'reaction') {
+                    setSelectedReaction(selectedActivity.value);
+                } else {
+                    setInputValue(selectedActivity.value);
+                }
+            } else {
+                setInputValue('');
+                setSelectedReaction(null);
+            }
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen, activityType, selectedActivity]);
+
+    if (!isOpen || !activityType) return null;
+
+    const handleSubmit = () => {
+        if (activityType === 'reaction') {
+            if (!selectedReaction) {
+                toast.error('Please select a reaction');
+                return;
+            }
+            const reaction = reactions.find(r => r.value === selectedReaction);
+            onSelectActivity({
+                type: 'reaction',
+                value: selectedReaction,
+                label: `${reaction.emoji} ${reaction.label}`,
+                emoji: reaction.emoji
+            });
+        } else {
+            if (!inputValue.trim()) {
+                toast.error(`Please enter ${config.title.toLowerCase()}`);
+                return;
+            }
+            onSelectActivity({
+                type: activityType,
+                value: inputValue.trim(),
+                label: `${config.prefix} ${inputValue.trim()}`,
+                emoji: config.emoji
+            });
+        }
+    };
+
+    return (
+        <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] px-2 md:px-6"
+            onClick={onClose}
+        >
+            <div
+                className="bg-white rounded-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200">
+                    <div className="flex items-center gap-3">
+                        <span className="text-3xl">{config.emoji}</span>
+                        <h2 className="text-xl md:text-2xl font-semibold text-gray-800">{config.title}</h2>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    >
+                        <X className="w-5 h-5 text-gray-600" />
+                    </button>
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto p-4 md:p-6">
+                    {activityType === 'reaction' ? (
+                        // Reaction Selection
+                        <div>
+                            <p className="text-gray-600 mb-4">Select a reaction:</p>
+                            <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+                                {reactions.map((reaction) => (
+                                    <button
+                                        key={reaction.value}
+                                        onClick={() => setSelectedReaction(reaction.value)}
+                                        className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all cursor-pointer hover:scale-105 ${
+                                            selectedReaction === reaction.value
+                                                ? 'bg-blue-100 border-blue-500'
+                                                : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+                                        }`}
+                                    >
+                                        <span className="text-4xl mb-2">{reaction.emoji}</span>
+                                        <span className={`text-sm font-medium ${
+                                            selectedReaction === reaction.value ? 'text-blue-700' : 'text-gray-700'
+                                        }`}>
+                                            {reaction.label}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        // Text Input for other activities
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                {config.title}
+                            </label>
+                            <input
+                                type="text"
+                                value={inputValue}
+                                onChange={(e) => setInputValue(e.target.value)}
+                                placeholder={config.placeholder}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                autoFocus
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        handleSubmit();
+                                    }
+                                }}
+                            />
+                            {selectedActivity && selectedActivity.type === activityType && (
+                                <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                    <p className="text-sm text-gray-600">Current: {selectedActivity.label}</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center justify-end gap-3 p-4 md:p-6 border-t border-gray-200">
+                    <button
+                        onClick={onClose}
+                        className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg font-medium transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={handleSubmit}
+                        className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
+                    >
+                        {selectedActivity && selectedActivity.type === activityType ? 'Update' : 'Add'}
+                    </button>
+                </div>
+            </div>
+        </div>
     );
 };

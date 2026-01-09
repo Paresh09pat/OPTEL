@@ -385,12 +385,12 @@ const Forum = () => {
                             )}
                           </div>
                           <div className="flex-shrink-0">
-                            {forum.privacy === 'private' && (
+                          {forum.privacy === 'private' && (
                               <FaLock className="w-5 h-5 text-gray-400" />
-                            )}
-                            {forum.privacy === 'public' && (
+                          )}
+                          {forum.privacy === 'public' && (
                               <FaLockOpen className="w-5 h-5 text-gray-400" />
-                            )}
+                          )}
                           </div>
                         </div>
 
@@ -410,17 +410,17 @@ const Forum = () => {
                         <div className="flex items-center gap-2 mb-4 pb-4 border-b border-gray-100 min-h-[60px]">
                           {forum.owner ? (
                             <>
-                              <Avatar
-                                src={forum.owner.avatar_url}
-                                name={forum.owner.username || 'Unknown'}
-                                size="sm"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs text-gray-500">Created by</p>
-                                <p className="text-sm font-medium text-gray-700 truncate">
-                                  {forum.owner.username || 'Unknown'}
-                                </p>
-                              </div>
+                            <Avatar
+                              src={forum.owner.avatar_url}
+                              name={forum.owner.username || 'Unknown'}
+                              size="sm"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs text-gray-500">Created by</p>
+                              <p className="text-sm font-medium text-gray-700 truncate">
+                                {forum.owner.username || 'Unknown'}
+                              </p>
+                            </div>
                             </>
                           ) : (
                             <>
@@ -430,7 +430,7 @@ const Forum = () => {
                               <div className="flex-1 min-w-0">
                                 <p className="text-xs text-gray-500">Created by</p>
                                 <p className="text-sm font-medium text-gray-700 truncate">Unknown</p>
-                              </div>
+                          </div>
                             </>
                           )}
                         </div>

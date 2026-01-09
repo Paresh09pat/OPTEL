@@ -51,6 +51,13 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
   const [showEditCommentEmojiPicker, setShowEditCommentEmojiPicker] = useState({});
   const [showEditReplyEmojiPicker, setShowEditReplyEmojiPicker] = useState({});
   const emojiPickerRef = useRef(null);
+  // Add ref to preserve comments open state during deletion
+  const keepCommentsOpenRef = useRef(false);
+  // Add ref to prevent prop updates from overwriting local state during refetch
+  const isRefetchingRef = useRef(false);
+  // Add state for comment reaction popups
+  const [showCommentReactionPopup, setShowCommentReactionPopup] = useState({});
+  const [commentHoverTimeouts, setCommentHoverTimeouts] = useState({});
   const buildAuthHeaders = useCallback(() => {
     const accessToken = localStorage.getItem("access_token");
     const headers = {
@@ -72,11 +79,19 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
     return null;
   }, [commentReplies]);
   // Update local comments when prop changes
+  // But don't overwrite if we're in the middle of a refetch (to preserve optimistic updates)
   useEffect(() => {
-    if (commentsData && Array.isArray(commentsData)) {
+    if (!isRefetchingRef.current && commentsData && Array.isArray(commentsData)) {
       setLocalCommentsData(commentsData);
     }
   }, [commentsData]);
+
+  // Restore comments open state if it was preserved during deletion
+  useEffect(() => {
+    if (keepCommentsOpenRef.current && !clickedComments) {
+      setClickedComments(true);
+    }
+  }, [clickedComments]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -84,8 +99,14 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
       if (hoverTimeout) {
         clearTimeout(hoverTimeout);
       }
+      // Cleanup comment hover timeouts
+      Object.values(commentHoverTimeouts).forEach(timeout => {
+        if (timeout) {
+          clearTimeout(timeout);
+        }
+      });
     };
-  }, [hoverTimeout]);
+  }, [hoverTimeout, commentHoverTimeouts]);
 
   // Add click outside handler
   useEffect(() => {
@@ -95,6 +116,20 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
     }
   }, [showReactionPopup]);
 
+  // Add click outside handler for comment reaction popups
+  useEffect(() => {
+    const handleCommentReactionClickOutside = (event) => {
+      if (!event.target.closest('[data-comment-reaction-popup]') && !event.target.closest('[data-comment-reaction-button]')) {
+        setShowCommentReactionPopup({});
+      }
+    };
+
+    if (Object.keys(showCommentReactionPopup).length > 0) {
+      document.addEventListener('mousedown', handleCommentReactionClickOutside);
+      return () => document.removeEventListener('mousedown', handleCommentReactionClickOutside);
+    }
+  }, [showCommentReactionPopup]);
+
 
 
   useEffect(() => {
@@ -102,6 +137,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
       const commentsSection = event.target.closest('[data-comments-section]');
       if (!commentsSection) {
         setClickedComments(false);
+        keepCommentsOpenRef.current = false; // User closed by clicking outside
       }
     };
 
@@ -208,26 +244,35 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
       );
       const data = response.data;
       if (data?.ok === true) {
+        // Handle different API response structures
         const fetched =
           (Array.isArray(data?.data?.comments) && data.data.comments) ||
           (Array.isArray(data?.data?.data) && data.data.data) ||
           (Array.isArray(data?.data) && data.data) ||
+          (Array.isArray(data?.comments) && data.comments) ||
           [];
         if (Array.isArray(fetched)) {
           setLocalCommentsData(fetched);
           return fetched;
+        } else {
+          console.warn('Fetched comments is not an array:', fetched);
+          // Don't overwrite existing comments if fetch returns invalid data
+          return null;
         }
       } else {
         console.log('Failed to fetch comments:', data);
+        // Don't overwrite existing comments on API error
+        return null;
       }
     } catch (error) {
       console.error('Error fetching comments:', error);
+      // Don't overwrite existing comments on network error
+      return null;
     } finally {
       if (showLoader) {
         setIsLoadingComments(false);
       }
     }
-    return [];
   }, [post_id, buildAuthHeaders]);
 
   const fetchReactionDetails = useCallback(async () => {
@@ -260,6 +305,9 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
     try {
       if (!clickedComments) {
         await fetchPostComments(true);
+        keepCommentsOpenRef.current = true; // User opened comments
+      } else {
+        keepCommentsOpenRef.current = false; // User closed comments manually
       }
       setClickedComments(!clickedComments);
     } catch (error) {
@@ -361,10 +409,71 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
     setShowReactionPopup(false);
   };
 
+  // Comment reaction handlers
+  const handleCommentReactionButtonClick = useCallback((commentId) => {
+    setShowCommentReactionPopup(prev => ({ ...prev, [commentId]: !prev[commentId] }));
+  }, []);
+
+  const handleCommentReactionButtonMouseEnter = useCallback((commentId) => {
+    // Clear any existing timeout for this comment
+    if (commentHoverTimeouts[commentId]) {
+      clearTimeout(commentHoverTimeouts[commentId]);
+    }
+
+    const timeout = setTimeout(() => {
+      setShowCommentReactionPopup(prev => ({ ...prev, [commentId]: true }));
+    }, 300);
+    setCommentHoverTimeouts(prev => ({ ...prev, [commentId]: timeout }));
+  }, [commentHoverTimeouts]);
+
+  const handleCommentReactionButtonMouseLeave = useCallback((commentId) => {
+    if (commentHoverTimeouts[commentId]) {
+      clearTimeout(commentHoverTimeouts[commentId]);
+      setCommentHoverTimeouts(prev => {
+        const newTimeouts = { ...prev };
+        delete newTimeouts[commentId];
+        return newTimeouts;
+      });
+    }
+    setTimeout(() => {
+      if (!showCommentReactionPopup[commentId]) {
+        setShowCommentReactionPopup(prev => {
+          const newPopups = { ...prev };
+          delete newPopups[commentId];
+          return newPopups;
+        });
+      }
+    }, 100);
+  }, [commentHoverTimeouts, showCommentReactionPopup]);
+
+  const handleCommentReactionPopupMouseEnter = useCallback((commentId) => {
+    if (commentHoverTimeouts[commentId]) {
+      clearTimeout(commentHoverTimeouts[commentId]);
+      setCommentHoverTimeouts(prev => {
+        const newTimeouts = { ...prev };
+        delete newTimeouts[commentId];
+        return newTimeouts;
+      });
+    }
+  }, [commentHoverTimeouts]);
+
+  const handleCommentReactionPopupMouseLeave = useCallback((commentId) => {
+    setShowCommentReactionPopup(prev => {
+      const newPopups = { ...prev };
+      delete newPopups[commentId];
+      return newPopups;
+    });
+  }, []);
+
+
   const handleClickOutside = (e) => {
     // Hide popup when clicking outside
     if (showReactionPopup && !e.target.closest('[data-reaction-popup]')) {
       setShowReactionPopup(false);
+    }
+    // Hide comment reaction popups when clicking outside
+    if (!e.target.closest('[data-comment-reaction-popup]') && !e.target.closest('[data-comment-reaction-button]')) {
+      setShowCommentReactionPopup({});
     }
   };
 
@@ -610,20 +719,33 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
       );
       const data = response.data;
       if (data?.ok === true) {
+        toast.success(data?.message || 'Reaction added successfully');
+        // Close the reaction popup for this comment
+        setShowCommentReactionPopup(prev => ({ ...prev, [targetId]: false }));
         if (refreshRepliesFor) {
           fetchReply(refreshRepliesFor);
         } else if (clickedComments) {
           await fetchPostComments(false);
         }
       } else {
+        toast.error(data?.message || 'Failed to add reaction');
         console.log('Failed to react on comment:', data);
       }
     } catch (error) {
       console.error('Error reacting on comment:', error);
+      toast.error(error?.response?.data?.message || 'Error adding reaction');
     } finally {
       setCommentActionLoading(prev => ({ ...prev, [loadingKey]: false }));
     }
   }, [buildAuthHeaders, clickedComments, fetchPostComments, fetchReply]);
+
+  const handleCommentReactionClick = useCallback((commentId, reactionType) => {
+    sendCommentReaction({
+      targetId: commentId,
+      reactionType: reactionType,
+      loadingKey: `comment_reaction_${commentId}_${reactionType}`
+    });
+  }, [sendCommentReaction]);
 
   // Define editComment function after fetchReply
   const editComment = useCallback(async (comment_id, newText) => {
@@ -649,6 +771,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
       }
     } catch (error) {
       console.error('Error editing comment:', error);
+      toast.error(error?.response?.data?.message || 'Error updating comment. Please try again.');
     } finally {
       setCommentActionLoading(prev => ({ ...prev, [`edit_${comment_id}`]: false }));
     }
@@ -687,6 +810,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
       }
     } catch (error) {
       console.error('Error editing reply:', error);
+      toast.error(error?.response?.data?.message || 'Error updating reply. Please try again.');
     } finally {
       setCommentActionLoading(prev => ({ ...prev, [`edit_reply_${reply_id}`]: false }));
     }
@@ -716,6 +840,11 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
 
   // New function for deleting comments
   const deleteComment = useCallback(async (comment_id) => {
+    // Store the current state of clickedComments before deletion
+    const wasCommentsOpen = clickedComments;
+    // Set ref to preserve state across re-renders
+    keepCommentsOpenRef.current = wasCommentsOpen;
+    
     setCommentActionLoading(prev => ({ ...prev, [`delete_${comment_id}`]: true }));
     try {
       const response = await axios.delete(
@@ -724,12 +853,9 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
       );
       const data = response.data;
       if (data?.ok === true) {
-        if (getNewsFeed && typeof getNewsFeed === 'function') {
-          getNewsFeed();
-        }
-        if (clickedComments) {
-          await fetchPostComments(false);
-        }
+        toast.success(data?.message || 'Comment deleted successfully');
+        
+        // Remove replies for this comment if they exist
         if (commentReplies[comment_id]) {
           setCommentReplies(prev => {
             const newReplies = { ...prev };
@@ -737,11 +863,65 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
             return newReplies;
           });
         }
+        
+        // Ensure comments section stays open if it was open before deletion
+        if (wasCommentsOpen) {
+          setClickedComments(true);
+          keepCommentsOpenRef.current = true;
+        }
+        
+        // Immediately remove the comment from local state (optimistic update)
+        // This provides instant feedback like Instagram/Facebook
+        setLocalCommentsData(prev => prev.filter(comment => comment.id !== comment_id));
+        
+        // Refetch comments in the background to sync with server (without showing loader)
+        // This ensures we have the latest data from the server
+        isRefetchingRef.current = true;
+        fetchPostComments(false).then((fetchedComments) => {
+          // After refetch, update with fresh data from server (even if empty array)
+          // Only update if we got valid data (not null)
+          if (fetchedComments !== null && Array.isArray(fetchedComments)) {
+            console.log('Refetched comments after delete:', fetchedComments.length, 'comments');
+            setLocalCommentsData(fetchedComments);
+          } else {
+            console.warn('Refetch returned invalid data, keeping optimistic update');
+          }
+          // Ensure comments section is still open if it was open
+          if (keepCommentsOpenRef.current) {
+            setClickedComments(true);
+          }
+        }).catch(err => {
+          console.error('Error refetching comments after delete:', err);
+          // If refetch fails, we already have the optimistic update
+          // Still keep comments open even if refetch fails
+          if (keepCommentsOpenRef.current) {
+            setClickedComments(true);
+          }
+        }).finally(() => {
+          // Reset refetch flag after refetch completes
+          isRefetchingRef.current = false;
+        });
+        
+        // Refresh the news feed to update comment count in parent (non-blocking)
+        // Use setTimeout to delay this so it doesn't interfere with state updates
+        setTimeout(() => {
+          if (getNewsFeed && typeof getNewsFeed === 'function') {
+            getNewsFeed();
+          }
+          // Restore comments state after parent re-render
+          if (keepCommentsOpenRef.current) {
+            setClickedComments(true);
+          }
+        }, 100);
       } else {
+        toast.error(data?.message || 'Failed to delete comment');
         console.log('Failed to delete comment:', data);
+        keepCommentsOpenRef.current = false;
       }
     } catch (error) {
       console.error('Error deleting comment:', error);
+      toast.error(error?.response?.data?.message || 'Error deleting comment. Please try again.');
+      keepCommentsOpenRef.current = false;
     } finally {
       setCommentActionLoading(prev => ({ ...prev, [`delete_${comment_id}`]: false }));
     }
@@ -757,15 +937,18 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
       );
       const data = response.data;
       if (data?.ok === true) {
+        toast.success(data?.message || 'Reply deleted successfully');
         const parentCommentId = findParentCommentId(reply_id);
         if (parentCommentId) {
           fetchReply(parentCommentId);
         }
       } else {
+        toast.error(data?.message || 'Failed to delete reply');
         console.log('Failed to delete reply:', data);
       }
     } catch (error) {
       console.error('Error deleting reply:', error);
+      toast.error(error?.response?.data?.message || 'Error deleting reply. Please try again.');
     } finally {
       setCommentActionLoading(prev => ({ ...prev, [`delete_reply_${reply_id}`]: false }));
     }
@@ -816,6 +999,16 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
   const displayedComments = showAllComments ? localCommentsData : localCommentsData.slice(0, 5);
   const hasMoreComments = localCommentsData.length > 5;
 
+  // Get current comment count - use localCommentsData if we have fetched comments, otherwise use prop
+  const getCurrentCommentCount = () => {
+    // If we have local comments data (meaning we've fetched comments), use its length
+    // Otherwise, use the comments prop from parent
+    if (localCommentsData.length > 0 || clickedComments) {
+      return localCommentsData.length;
+    }
+    return comments || 0;
+  };
+
 
   const likeComment = useCallback(async (comment_id) => {
     await sendCommentReaction({
@@ -854,6 +1047,21 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
   }, [findParentCommentId, sendCommentReaction]);
 
   const ownerid = localStorage.getItem('user_id');
+  const currentUserId = userData?.user_id || userData?.id || userData?.userId || ownerid;
+
+  // Helper function to check if current user is the author of a comment/reply
+  const isCommentAuthor = useCallback((comment) => {
+    // First check if is_owner field exists (from API)
+    if (comment?.is_owner !== undefined) {
+      return comment.is_owner === true;
+    }
+    // Fallback to checking author/publisher user_id
+    const author = comment?.author || comment?.publisher;
+    if (!author || !currentUserId) return false;
+    const authorId = author.user_id || author.id || author.userId;
+    // Compare as strings to handle both string and number IDs
+    return String(authorId) === String(currentUserId);
+  }, [currentUserId]);
 
 
 
@@ -1107,7 +1315,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
             {getTotalReactionCount() || 0} Reactions
           </span>
           <div className="flex space-x-4">
-            <span>{comments || 0} Comments</span>
+            <span>{getCurrentCommentCount()} Comments</span>
             <span>{shares || 0} Shares</span>
           </div>
         </div>
@@ -1180,7 +1388,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
             <button className="flex items-center space-x-2 text-gray-600 hover:text-blue-500 transition-colors cursor-pointer" onClick={handleClickComments}>
               <MessageCircle className="w-5 h-5" />
               <span className="text-sm font-medium">
-                {isLoadingComments ? 'Loading...' : (comments > 0 ? `Comments (${comments})` : 'Comment')}
+                {isLoadingComments ? 'Loading...' : (getCurrentCommentCount() > 0 ? `Comments (${getCurrentCommentCount()})` : 'Comment')}
               </span>
             </button>
 
@@ -1222,17 +1430,18 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                       <div
                         className="cursor-pointer hover:opacity-80 transition-opacity"
                         onClick={() => {
-                          const userIdToNavigate = comment.publisher?.user_id || comment.publisher?.id || comment.publisher?.userId;
+                          const author = comment.author || comment.publisher;
+                          const userIdToNavigate = author?.user_id || author?.id || author?.userId;
                           if (userIdToNavigate) {
                             navigate(`/profile/${userIdToNavigate}`);
                           }
                         }}
                       >
                         <Avatar
-                          src={comment.publisher?.avatar_url || comment.publisher?.avatar}
-                          name={`${comment.publisher?.first_name || 'Unknown'} ${comment.publisher?.last_name || ''}`}
-                          email={comment.publisher?.email}
-                          alt={comment.publisher?.name || 'User'}
+                          src={(comment.author || comment.publisher)?.avatar_url || (comment.author || comment.publisher)?.avatar}
+                          name={(comment.author || comment.publisher)?.name || (comment.author || comment.publisher)?.username || 'Unknown'}
+                          email={(comment.author || comment.publisher)?.email}
+                          alt={(comment.author || comment.publisher)?.name || 'User'}
                           size="sm"
                         />
                       </div>
@@ -1242,31 +1451,20 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                             <span
                               className="font-medium text-sm text-gray-900 block truncate cursor-pointer hover:text-blue-600 transition-colors"
                               onClick={() => {
-                                const userIdToNavigate = comment.publisher?.user_id || comment.publisher?.id || comment.publisher?.userId;
+                                const author = comment.author || comment.publisher;
+                                const userIdToNavigate = author?.user_id || author?.id || author?.userId;
                                 if (userIdToNavigate) {
                                   navigate(`/profile/${userIdToNavigate}`);
                                 }
                               }}
                             >
-                              {comment.publisher?.first_name || 'Unknown'} {comment.publisher?.last_name || ''}
+                              {(comment.author || comment.publisher)?.name || (comment.author || comment.publisher)?.username || 'Unknown'}
                             </span>
                             <span className="text-xs text-gray-500 block truncate">
-                              {comment.time ? new Date(comment.time * 1000).toLocaleDateString() : 'Unknown time'}
+                              {comment.created_at_human || (comment.time ? new Date(comment.time * 1000).toLocaleDateString() : 'Unknown time')}
                             </span>
                           </div>
-                          {/* Comment Actions Menu */}
-                          <div className="relative ml-2">
-                            <button
-                              className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-200 transition-colors"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                // TODO: Implement comment options menu
-                                console.log('Comment options for:', comment.id);
-                              }}
-                            >
-                              <MoreHorizontal className="w-4 h-4" />
-                            </button>
-                          </div>
+                        
                         </div>
 
                         {/* Comment Text - Show edit input when editing */}
@@ -1358,32 +1556,87 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                         {/* Comment Action Buttons - Hide when editing */}
                         {editingComment !== comment.id && (
                           <div className="flex items-center space-x-4 mb-2">
-                            {/* Like Button - Toggles between liked/disliked */}
-                            <button
-                              className={`flex items-center space-x-1 cursor-pointer transition-colors ${comment.is_comment_liked
-                                ? 'text-blue-600 hover:text-blue-700'
-                                : 'text-gray-400 hover:text-gray-600'
-                                }`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                // Like button now toggles between liked/disliked states
-                                // When clicked, it will like if not liked, or unlike if already liked
-                                likeComment(comment.id);
-                              }}
-                              disabled={commentActionLoading[`like_${comment.id}`]}
-                            >
-                              {commentActionLoading[`like_${comment.id}`] ? (
-                                <div className="w-4 h-4 border border-current border-t-transparent rounded-full animate-spin"></div>
-                              ) : (
-                                <ThumbsUp className={`w-4 h-4 ${comment.is_comment_liked ? 'fill-current' : ''
-                                  }`} />
+                            {/* Reaction Button - Shows popup with all reactions */}
+                            <div className="relative">
+                              <button
+                                data-comment-reaction-button
+                                className={`flex items-center space-x-1 cursor-pointer transition-colors ${comment.user_reaction || comment.is_comment_liked
+                                  ? 'text-blue-600 hover:text-blue-700'
+                                  : 'text-gray-400 hover:text-gray-600'
+                                  }`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCommentReactionButtonClick(comment.id);
+                                }}
+                                onMouseEnter={() => handleCommentReactionButtonMouseEnter(comment.id)}
+                                onMouseLeave={() => handleCommentReactionButtonMouseLeave(comment.id)}
+                                disabled={commentActionLoading[`comment_reaction_${comment.id}_1`]}
+                              >
+                                {commentActionLoading[`comment_reaction_${comment.id}_1`] ? (
+                                  <div className="w-4 h-4 border border-current border-t-transparent rounded-full animate-spin"></div>
+                                ) : (
+                                  <>
+                                    {comment.user_reaction ? (
+                                      <span className="text-lg">{getReactionEmoji(comment.user_reaction)}</span>
+                                    ) : comment.is_comment_liked ? (
+                                      <ThumbsUp className="w-4 h-4 fill-current" />
+                                    ) : (
+                                      <ThumbsUp className="w-4 h-4" />
+                                    )}
+                                  </>
+                                )}
+                                {(comment.reaction_counts && Object.values(comment.reaction_counts).reduce((sum, count) => sum + count, 0) > 0) || comment.comment_likes > 0 ? (
+                                  <span className="text-xs text-gray-500">
+                                    {comment.reaction_counts ? Object.values(comment.reaction_counts).reduce((sum, count) => sum + count, 0) : comment.comment_likes}
+                                  </span>
+                                ) : null}
+                              </button>
+
+                              {/* Comment Reaction Popup */}
+                              {showCommentReactionPopup[comment.id] && (
+                                <div
+                                  className="absolute bottom-full left-0 mb-2 z-20"
+                                  data-comment-reaction-popup
+                                  onMouseEnter={() => handleCommentReactionPopupMouseEnter(comment.id)}
+                                  onMouseLeave={() => handleCommentReactionPopupMouseLeave(comment.id)}
+                                >
+                                  <div className="bg-white rounded-full shadow-2xl border-2 border-gray-300 p-3 flex items-center space-x-2">
+                                    {[
+                                      { emoji: '👍', type: 1, label: 'Like' },
+                                      { emoji: '❤️', type: 2, label: 'Love' },
+                                      { emoji: '😂', type: 3, label: 'Haha' },
+                                      { emoji: '😮', type: 4, label: 'Wow' },
+                                      { emoji: '😢', type: 5, label: 'Sad' },
+                                      { emoji: '😡', type: 6, label: 'Angry' }
+                                    ].map((reaction) => {
+                                      const count = comment.reaction_counts?.[reaction.type] || 0;
+                                      const isCurrentReaction = (comment.user_reaction || (comment.is_comment_liked && reaction.type === 1)) === reaction.type;
+                                      return (
+                                        <button
+                                          key={reaction.type}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleCommentReactionClick(comment.id, reaction.type);
+                                          }}
+                                          className={`w-10 h-10 flex items-center justify-center text-2xl hover:scale-125 transition-all duration-200 rounded-full relative ${isCurrentReaction
+                                            ? 'bg-blue-100 ring-2 ring-blue-500'
+                                            : 'hover:bg-gray-100'
+                                            }`}
+                                          title={`${reaction.label}${count > 0 ? ` (${count})` : ''}${isCurrentReaction ? ' - Current' : ''}`}
+                                        >
+                                          {reaction.emoji}
+                                          {count > 0 && (
+                                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                                              {count}
+                                            </span>
+                                          )}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
                               )}
-                              {comment.comment_likes > 0 && (
-                                <span className="text-xs text-gray-500">
-                                  {comment.comment_likes}
-                                </span>
-                              )}
-                            </button>
+                            </div>
 
 
 
@@ -1392,7 +1645,8 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                               className="flex items-center space-x-1 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleStartReply(comment.id, `${comment.publisher?.first_name || 'Unknown'} ${comment.publisher?.last_name || ''}`);
+                                const author = comment.author || comment.publisher;
+                                handleStartReply(comment.id, author?.name || author?.username || 'Unknown');
                               }}
                             >
                               <MessageCircle className="w-4 h-4" />
@@ -1400,7 +1654,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                             </button>
 
                             {/* Edit Button - Only show for current user's comments */}
-                            {comment.publisher?.user_id == ownerid && (
+                            {isCommentAuthor(comment) && (
                               <button
                                 className="flex items-center space-x-1 text-gray-400 hover:text-blue-600 cursor-pointer transition-colors"
                                 onClick={(e) => {
@@ -1415,7 +1669,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                               </button>
                             )}
                             {/* Delete Button - Only show for current user's comments */}
-                            {comment.publisher?.user_id == ownerid && (
+                            {isCommentAuthor(comment) && (
                               <button
                                 className="flex items-center space-x-1 text-gray-400 hover:text-red-600 cursor-pointer transition-colors"
                                 onClick={(e) => {
@@ -1437,31 +1691,8 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                           </div>
                         )}
 
-                        {/* Show replies count if comment has replies */}
-                        {comment.replies_count && comment.replies_count > 0 && (
-                          <div className="mt-2">
-                            <span
-                              className="text-xs text-blue-600 font-medium cursor-pointer hover:text-blue-800 flex items-center space-x-1"
-                              onClick={() => fetchReply(comment.id)}
-                            >
-                              {loadingReplies[comment.id] ? (
-                                <>
-                                  <div className="w-3 h-3 border border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                                  <span>Loading...</span>
-                                </>
-                              ) : (
-                                <>
-                                  <span>{comment.replies_count} {comment.replies_count === 1 ? 'reply' : 'replies'}</span>
-                                  {commentReplies[comment.id] ? (
-                                    <span className="text-blue-400">(hide)</span>
-                                  ) : (
-                                    <span className="text-blue-400">(show)</span>
-                                  )}
-                                </>
-                              )}
-                            </span>
-                          </div>
-                        )}
+                      
+                       
                       </div>
                     </div>
 
@@ -1552,17 +1783,18 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                               <div
                                 className="cursor-pointer hover:opacity-80 transition-opacity"
                                 onClick={() => {
-                                  const userIdToNavigate = reply.publisher?.user_id || reply.publisher?.id || reply.publisher?.userId;
+                                  const author = reply.author || reply.publisher;
+                                  const userIdToNavigate = author?.user_id || author?.id || author?.userId;
                                   if (userIdToNavigate) {
                                     navigate(`/profile/${userIdToNavigate}`);
                                   }
                                 }}
                               >
                                 <Avatar
-                                  src={reply.publisher?.avatar_url || reply.publisher?.avatar}
-                                  name={`${reply.publisher?.first_name || 'Unknown'} ${reply.publisher?.last_name || ''}`}
-                                  email={reply.publisher?.email}
-                                  alt={reply.publisher?.name || 'User'}
+                                  src={(reply.author || reply.publisher)?.avatar_url || (reply.author || reply.publisher)?.avatar}
+                                  name={(reply.author || reply.publisher)?.name || (reply.author || reply.publisher)?.username || 'Unknown'}
+                                  email={(reply.author || reply.publisher)?.email}
+                                  alt={(reply.author || reply.publisher)?.name || 'User'}
                                   size="sm"
                                 />
                               </div>
@@ -1572,16 +1804,17 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                                     <span
                                       className="font-medium text-xs text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
                                       onClick={() => {
-                                        const userIdToNavigate = reply.publisher?.user_id || reply.publisher?.id || reply.publisher?.userId;
+                                        const author = reply.author || reply.publisher;
+                                        const userIdToNavigate = author?.user_id || author?.id || author?.userId;
                                         if (userIdToNavigate) {
                                           navigate(`/profile/${userIdToNavigate}`);
                                         }
                                       }}
                                     >
-                                      {reply.publisher?.first_name || 'Unknown'} {reply.publisher?.last_name || ''}
+                                      {(reply.author || reply.publisher)?.name || (reply.author || reply.publisher)?.username || 'Unknown'}
                                     </span>
                                     <span className="text-xs text-gray-500">
-                                      {reply.time ? new Date(reply.time * 1000).toLocaleDateString() : 'Unknown time'}
+                                      {reply.created_at_human || (reply.time ? new Date(reply.time * 1000).toLocaleDateString() : 'Unknown time')}
                                     </span>
                                   </div>
                                   {/* Reply Actions Menu */}
@@ -1687,31 +1920,94 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                                 {/* Reply Action Buttons - Hide when editing */}
                                 {editingReply !== reply.id && (
                                   <div className="flex items-center space-x-3">
-                                    {/* Like Button for Reply - Uses new reply_like API */}
-                                    <button
-                                      className={`flex items-center space-x-1 cursor-pointer transition-colors ${reply.is_comment_liked
-                                        ? 'text-blue-600 hover:text-blue-700'
-                                        : 'text-gray-400 hover:text-gray-600'
-                                        }`}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        // Use the new likeCommentReply function for replies
-                                        likeCommentReply(reply.id);
-                                      }}
-                                      disabled={commentActionLoading[`reply_like_${reply.id}`]}
-                                    >
-                                      {commentActionLoading[`reply_like_${reply.id}`] ? (
-                                        <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin"></div>
-                                      ) : (
-                                        <ThumbsUp className={`w-3 h-3 ${reply.is_comment_liked ? 'fill-current' : ''
-                                          }`} />
+                                    {/* Reaction Button for Reply - Shows popup with all reactions */}
+                                    <div className="relative">
+                                      <button
+                                        data-comment-reaction-button
+                                        className={`flex items-center space-x-1 cursor-pointer transition-colors ${reply.user_reaction || reply.is_comment_liked
+                                          ? 'text-blue-600 hover:text-blue-700'
+                                          : 'text-gray-400 hover:text-gray-600'
+                                          }`}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleCommentReactionButtonClick(reply.id);
+                                        }}
+                                        onMouseEnter={() => handleCommentReactionButtonMouseEnter(reply.id)}
+                                        onMouseLeave={() => handleCommentReactionButtonMouseLeave(reply.id)}
+                                        disabled={commentActionLoading[`comment_reaction_${reply.id}_1`]}
+                                      >
+                                        {commentActionLoading[`comment_reaction_${reply.id}_1`] ? (
+                                          <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin"></div>
+                                        ) : (
+                                          <>
+                                            {reply.user_reaction ? (
+                                              <span className="text-base">{getReactionEmoji(reply.user_reaction)}</span>
+                                            ) : reply.is_comment_liked ? (
+                                              <ThumbsUp className="w-3 h-3 fill-current" />
+                                            ) : (
+                                              <ThumbsUp className="w-3 h-3" />
+                                            )}
+                                          </>
+                                        )}
+                                        {(reply.reaction_counts && Object.values(reply.reaction_counts).reduce((sum, count) => sum + count, 0) > 0) || reply.comment_likes > 0 ? (
+                                          <span className="text-xs text-gray-500">
+                                            {reply.reaction_counts ? Object.values(reply.reaction_counts).reduce((sum, count) => sum + count, 0) : reply.comment_likes}
+                                          </span>
+                                        ) : null}
+                                      </button>
+
+                                      {/* Reply Reaction Popup */}
+                                      {showCommentReactionPopup[reply.id] && (
+                                        <div
+                                          className="absolute bottom-full left-0 mb-2 z-20"
+                                          data-comment-reaction-popup
+                                          onMouseEnter={() => handleCommentReactionPopupMouseEnter(reply.id)}
+                                          onMouseLeave={() => handleCommentReactionPopupMouseLeave(reply.id)}
+                                        >
+                                          <div className="bg-white rounded-full shadow-2xl border-2 border-gray-300 p-2 flex items-center space-x-1">
+                                            {[
+                                              { emoji: '👍', type: 1, label: 'Like' },
+                                              { emoji: '❤️', type: 2, label: 'Love' },
+                                              { emoji: '😂', type: 3, label: 'Haha' },
+                                              { emoji: '😮', type: 4, label: 'Wow' },
+                                              { emoji: '😢', type: 5, label: 'Sad' },
+                                              { emoji: '😡', type: 6, label: 'Angry' }
+                                            ].map((reaction) => {
+                                              const count = reply.reaction_counts?.[reaction.type] || 0;
+                                              const isCurrentReaction = (reply.user_reaction || (reply.is_comment_liked && reaction.type === 1)) === reaction.type;
+                                              return (
+                                                <button
+                                                  key={reaction.type}
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    const parentCommentId = findParentCommentId(reply.id);
+                                                    sendCommentReaction({
+                                                      targetId: reply.id,
+                                                      reactionType: reaction.type,
+                                                      loadingKey: `reply_reaction_${reply.id}_${reaction.type}`,
+                                                      refreshRepliesFor: parentCommentId || undefined
+                                                    });
+                                                    setShowCommentReactionPopup(prev => ({ ...prev, [reply.id]: false }));
+                                                  }}
+                                                  className={`w-8 h-8 flex items-center justify-center text-xl hover:scale-125 transition-all duration-200 rounded-full relative ${isCurrentReaction
+                                                    ? 'bg-blue-100 ring-2 ring-blue-500'
+                                                    : 'hover:bg-gray-100'
+                                                    }`}
+                                                  title={`${reaction.label}${count > 0 ? ` (${count})` : ''}${isCurrentReaction ? ' - Current' : ''}`}
+                                                >
+                                                  {reaction.emoji}
+                                                  {count > 0 && (
+                                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] rounded-full w-3 h-3 flex items-center justify-center">
+                                                      {count}
+                                                    </span>
+                                                  )}
+                                                </button>
+                                              );
+                                            })}
+                                          </div>
+                                        </div>
                                       )}
-                                      {reply.comment_likes > 0 && (
-                                        <span className="text-xs text-gray-500">
-                                          {reply.comment_likes}
-                                        </span>
-                                      )}
-                                    </button>
+                                    </div>
 
 
 
@@ -1729,7 +2025,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                                     </button>
 
                                     {/* Edit Reply Button - Only show for current user's replies */}
-                                    {reply.publisher?.user_id == ownerid && (
+                                    {isCommentAuthor(reply) && (
                                       <button
                                         className="flex items-center space-x-1 text-gray-400 hover:text-blue-600 cursor-pointer transition-colors"
                                         onClick={(e) => {
@@ -1745,7 +2041,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                                     )}
 
                                     {/* Delete Reply Button - Only show for current user's replies */}
-                                    {reply.publisher?.user_id == ownerid && (
+                                    {isCommentAuthor(reply) && (
                                       <button
                                         className="flex items-center space-x-1 text-gray-400 hover:text-red-600 cursor-pointer transition-colors"
                                         onClick={(e) => {
