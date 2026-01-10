@@ -14,6 +14,7 @@ const GroupDetailed = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [joining, setJoining] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
   const accessToken = localStorage.getItem('access_token');
 
   const getGroup = async () => {
@@ -38,10 +39,22 @@ const GroupDetailed = () => {
     }
   };
 
+  const handleJoinGroupClick = () => {
+    if (group.is_joined) {
+      // Show confirmation modal for leaving
+      setShowLeaveModal(true);
+    } else {
+      // Join directly without modal
+      handleJoinGroup();
+    }
+  };
+
   const handleJoinGroup = async () => {
     if (!group || joining) return;
 
     setJoining(true);
+    setShowLeaveModal(false); // Close modal if open
+    
     try {
       const response = await axios.post(
         `${baseUrl}/api/v1/groups/join`,
@@ -59,20 +72,23 @@ const GroupDetailed = () => {
       const responseData = response.data;
       
       if (responseData.ok || responseData.api_status === 200) {
+        const isLeaving = group.is_joined;
+        
         // Update group state to reflect membership
         setGroup(prev => ({
           ...prev,
-          is_member: !prev.is_member,
-          members_count: prev.is_member 
+          is_joined: !prev.is_joined,
+          members_count: prev.is_joined 
             ? Math.max(0, (prev.members_count || 0) - 1)
             : (prev.members_count || 0) + 1
         }));
         
         toast.success(
-          group.is_member 
+          isLeaving 
             ? 'Left group successfully' 
             : 'Joined group successfully'
         );
+        navigate("/my-groups");
       } else {
         toast.error(responseData.message || 'Failed to join/leave group');
       }
@@ -241,21 +257,21 @@ const GroupDetailed = () => {
             {!group.is_owner && (
               <div className="w-full md:w-auto">
                 <button
-                  onClick={handleJoinGroup}
+                  onClick={handleJoinGroupClick}
                   disabled={joining}
                   className={`w-full md:w-auto px-8 py-3 rounded-lg font-semibold text-white transition-all duration-200 shadow-lg hover:shadow-xl ${
-                    group.is_member
-                      ? 'bg-gray-500 hover:bg-gray-600'
+                    group.is_joined
+                      ? 'bg-red-500 hover:bg-red-600'
                       : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
                   } ${joining ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {joining ? (
                     <span className="flex items-center justify-center gap-2">
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      {group.is_member ? 'Leaving...' : 'Joining...'}
+                      {group.is_joined ? 'Leaving...' : 'Joining...'}
                     </span>
-                  ) : group.is_member ? (
-                    'Leave Group'
+                  ) : group.is_joined ? (
+                    'Leave'
                   ) : (
                     'Join Group'
                   )}
@@ -302,6 +318,61 @@ const GroupDetailed = () => {
           </div>
         )}
       </div>
+
+      {/* Leave Group Confirmation Modal */}
+      {showLeaveModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full animate-fade-in">
+            <div className="text-center mb-6">
+              <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <svg
+                  className="w-8 h-8 text-red-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                Leave Group?
+              </h3>
+              <p className="text-gray-600">
+                Do you really want to leave <span className="font-semibold">{group.group_name}</span>? You can always rejoin later.
+              </p>
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLeaveModal(false)}
+                disabled={joining}
+                className="flex-1 px-4 py-3 rounded-lg font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleJoinGroup}
+                disabled={joining}
+                className="flex-1 px-4 py-3 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {joining ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Leaving...
+                  </span>
+                ) : (
+                  'Leave Group'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

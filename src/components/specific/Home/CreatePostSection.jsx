@@ -1203,7 +1203,7 @@ const CreatePostPopup = ({
         };
     }, [isOpen, onClose]);
 
-    if (!isOpen) return null;
+    if (!isOpen) return null;   
 
     const handlePost = async () => {
         console.log('Posting:', { postText, commentsEnabled, showSharing, showPoll, pollQuestion, pollOptions, pollDuration });
