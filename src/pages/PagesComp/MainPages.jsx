@@ -1,12 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import MyPages from './MyPages';
 import SuggestedPages from './SuggestedPages';
 import LikedPages from './LikedPages';
 import { MdOutlineAddPhotoAlternate } from "react-icons/md";
 import { Link } from 'react-router-dom';
+import axios from 'axios';
+import { toast } from 'react-toastify';
 
 const MainPages = () => {
   const [activeTab, setActiveTab] = useState('myPages');
+  const [suggestedPages, setSuggestedPages] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const tabs = [
     { id: 'myPages', label: 'My Pages' },
@@ -14,12 +18,52 @@ const MainPages = () => {
     { id: 'likedPages', label: 'Liked Page' }
   ];
 
+  // Fetch suggested pages when the suggested tab is active
+  useEffect(() => {
+    if (activeTab === 'suggestedPages') {
+      fetchSuggestedPages();
+    }
+  }, [activeTab]);
+
+  const fetchSuggestedPages = async () => {
+    setLoading(true);
+    try {
+      const accessToken = localStorage.getItem('access_token');
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_URL}/api/v1/pages?type=suggested`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        }
+      );
+
+      console.log('Suggested pages API response:', response.data);
+
+      // Response structure is {data: Array, meta: {...}}
+      if (response.data?.data && Array.isArray(response.data.data)) {
+        setSuggestedPages(response.data.data);
+      } else {
+        setSuggestedPages([]);
+      }
+    } catch (error) {
+      console.error('Error fetching suggested pages:', error);
+      toast.error('Failed to load suggested pages');
+      setSuggestedPages([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  console.log(suggestedPages, "mainpage suggest")
+
   const renderContent = () => {
     switch (activeTab) {
       case 'myPages':
         return <MyPages />;
       case 'suggestedPages':
-        return <SuggestedPages />;
+        return <SuggestedPages pages={suggestedPages} loading={loading} onRefresh={fetchSuggestedPages} />;
       case 'likedPages':
         return <LikedPages />;
       default:

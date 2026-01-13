@@ -101,7 +101,6 @@ function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/:userId" element={<Profile />} />
             <Route path="/profile-settings" element={<MainProfileSetting />} />
-            <Route path="/page/:pageId/settings" element={<MainPageSetting />} />
             <Route path="/pagescomp/mainpages/pagesetting/mainpagesetting" element={<MainPageSetting />} />
             <Route path="/PageProfile" element={<PageProfile />} />
           </Route>
