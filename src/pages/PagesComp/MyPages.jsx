@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { BiSolidEdit } from "react-icons/bi";
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Loader from '../../components/loading/Loader';
 import { baseUrl } from '../../utils/constant';
 
 const MyPages = () => {
+    const navigate = useNavigate();
     const [myPages, setMyPages] = useState([]);
     const [myPagesType, setMyPagesType] = useState('my_pages');
     const [loading, setLoading] = useState(true);
@@ -213,7 +214,11 @@ const MyPages = () => {
                 </div>
             )}
             {myPages?.map((page) => (
-                <div key={page.id} className="bg-white rounded-lg border border-[#808080] p-4 sm:p-6">
+                <div
+                    key={page.id}
+                    className="bg-white rounded-lg border border-[#808080] p-4 sm:p-6 cursor-pointer hover:shadow-sm transition-shadow"
+                    onClick={() => navigate(`/page/${page.id}`)}
+                >
                     {/* Top Row */}
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div className="flex items-center gap-4">
@@ -246,7 +251,10 @@ const MyPages = () => {
                             <p className="text-sm text-gray-600 font-medium sm:hidden">
                                 {/* Already shown inside image section */}
                             </p>
-                            <Link to="/pagescomp/mainpages/pagesetting/mainpagesetting" >
+                            <Link
+                                to={`/page/${page.id}/settings`}
+                                onClick={(e) => e.stopPropagation()}
+                            >
                                 <button className="cursor-pointer w-full sm:w-auto px-4 py-2 border border-[#808080] rounded-full text-[#808080] hover:bg-gray-50 flex items-center justify-center gap-2 text-sm sm:text-base"
                                 >
                                     <BiSolidEdit className="text-lg" />

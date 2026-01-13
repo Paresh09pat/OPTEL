@@ -2,17 +2,23 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import Loader from '../components/loading/Loader';
+import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import { baseUrl } from '../utils/constant';
 import axios from 'axios';
 import { getCategoryName } from '../constants/blogCategories';
+import { useUser } from '../context/UserContext';
 
 const BlogDetailed = () => {
   const { blogId } = useParams();
   const [blog, setBlog] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const accessToken = localStorage.getItem('access_token'); 
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const accessToken = localStorage.getItem('access_token');
+  const currentUserId = localStorage.getItem('user_id');
   const navigate = useNavigate();
+  const { userData } = useUser();
 
   const getBlog = async () => {
     try {
@@ -114,7 +120,38 @@ const BlogDetailed = () => {
     toast.info('Comment feature coming soon!');
   };
 
+  // Handle delete blog
+  const handleDeleteBlog = async () => {
+    setDeleting(true);
+    try {
+      const response = await fetch(`${baseUrl}/api/v1/blogs/${blogId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Accept': 'application/json',
+        },
+      });
+      const responseData = await response.json();
 
+      if (responseData.api_status === 200) {
+        toast.success('Blog deleted successfully!');
+        setShowDeleteModal(false);
+        setTimeout(() => {
+          navigate('/blog');
+        }, 1500);
+      } else {
+        throw new Error(responseData.message || 'Failed to delete blog');
+      }
+    } catch (err) {
+      console.error('Error deleting blog:', err);
+      toast.error(err.message || 'Failed to delete blog');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // Check if current user is the blog author
+  const isOwnBlog = blog?.author?.id === parseInt(currentUserId) || blog?.author?.user_id === parseInt(currentUserId);
 
   useEffect(() => {
     getBlog();
@@ -301,10 +338,7 @@ const BlogDetailed = () => {
 
             {/* Action Buttons */}
             <div className="mt-8 pt-6 border-t border-gray-200">
-              <div className="flex items-center justify-between gap-4">
-                {/* Like Button */}
-               
-
+              <div className="flex items-center justify-between gap-4 flex-wrap">
                 {/* Comment Button */}
                 <button
                   onClick={handleComment}
@@ -350,10 +384,39 @@ const BlogDetailed = () => {
                   </svg>
                   <span className="text-sm font-medium">{blog?.views || 0}</span>
                 </div>
+
+                {/* Delete Button - Only visible for blog author */}
+                {isOwnBlog && (
+                  <button
+                    onClick={() => setShowDeleteModal(true)}
+                    className="flex items-center gap-2 px-6 py-3 rounded-full font-semibold bg-red-50 text-red-600 hover:bg-red-100 border-2 border-red-200 transition-all duration-200 ml-auto"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    <span>Delete</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
         </div>
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && (
+          <DeleteConfirmModal
+            title="Delete Blog?"
+            message="Are you sure you want to delete this blog? This action cannot be undone."
+            onConfirm={handleDeleteBlog}
+            onCancel={() => setShowDeleteModal(false)}
+            loading={deleting}
+          />
+        )}
       </div>
     </div>
   )

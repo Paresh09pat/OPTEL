@@ -23,6 +23,7 @@ import FullAlbumView from "./pages/FullAlbum";
 import CreateAlbum from "./pages/CreateAlbum";
 import MainPages from "./pages/PagesComp/MainPages";
 import CreatePage from "./pages/PagesComp/CreatePage";
+import PageDetailed from "./pages/PagesComp/PageDetailed";
 import MainPageSetting from "./pages/PageSetting/MainPageSetting";
 import MainProfileSetting from "./pages/ProfileSetting/MainProfileSetting";
 import Profile from "./pages/Profile";
@@ -77,6 +78,7 @@ function App() {
             <Route path="/forum/:forumId" element={<ForumDetailed />} />
             <Route path="/forum/create" element={<CreateForum />} />
             <Route path="/PagesComp/MainPages" element={<MainPages />} />
+            <Route path="/page/:pageId" element={<PageDetailed />} />
             <Route path="/my-groups" element={<MyGroups />} />
             <Route path="/group/:groupId" element={<GroupDetailed />} />
             <Route path="/my-pages" element={<MyPages />} />
@@ -99,6 +101,7 @@ function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/:userId" element={<Profile />} />
             <Route path="/profile-settings" element={<MainProfileSetting />} />
+            <Route path="/page/:pageId/settings" element={<MainPageSetting />} />
             <Route path="/pagescomp/mainpages/pagesetting/mainpagesetting" element={<MainPageSetting />} />
             <Route path="/PageProfile" element={<PageProfile />} />
           </Route>

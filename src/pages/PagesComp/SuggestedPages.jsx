@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { FaHeart } from 'react-icons/fa';
 import { LuThumbsUp } from 'react-icons/lu';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const SuggestedPages = () => {
+  const navigate = useNavigate();
   const suggestedPagesData = [
     {
       id: 1,
@@ -71,7 +73,8 @@ const SuggestedPages = () => {
         return (
           <div
             key={page.id}
-            className="bg-white rounded-lg border border-gray-300 p-4 sm:p-6"
+            className="bg-white rounded-lg border border-gray-300 p-4 sm:p-6 cursor-pointer hover:shadow-sm transition-shadow"
+            onClick={() => navigate(`/page/${page.id}`)}
           >
             {/* Top Section */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -96,6 +99,7 @@ const SuggestedPages = () => {
                 <button
                   onClick={() => handleLike(page.id)}
                   disabled={loadingPageId === page.id}
+                  onClickCapture={(e) => e.stopPropagation()}
                   className={`w-full sm:w-auto px-4 py-2 rounded-full flex items-center justify-center gap-2 text-sm sm:text-base transition
                     ${
                       isLiked

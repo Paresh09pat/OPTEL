@@ -1,25 +1,7 @@
 // components/SocialLinks.js
-import React, { useState } from 'react';
+import React from 'react';
 
-const SocialLinks = () => {
-  const [formData, setFormData] = useState({
-    facebook: '',
-    twitter: '',
-    instagram: '',
-    vkontakte: '',
-    linkedin: '',
-    youtube: ''
-  });
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Social Links Data:', formData);
-    // Handle form submission here
-  };
+const SocialLinks = ({ formData, handleChange }) => {
 
   const validateUrl = (url) => {
     if (!url) return true; // Empty URLs are valid
@@ -35,8 +17,7 @@ const SocialLinks = () => {
     <div className="bg-white rounded-xl p-3.5 border border-[#808080]">
       <h2 className="text-xl font-semibold text-[#808080] text-center border-b border-[#808080] pb-2 mb-2">Social Links</h2>
       
-      <form onSubmit={handleSubmit}>
-        <div className="space-y-4">
+      <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Facebook :</label>
             <input
@@ -133,16 +114,6 @@ const SocialLinks = () => {
             />
           </div>
         </div>
-
-        <div className="border-t border-[#808080] pt-4 mt-3.5 grid place-items-center ">
-          <button 
-            type="submit"
-            className="w-32 mx-auto border bg-gradient-to-l from-[rgba(96,161,249,1)] to-[rgba(17,83,231,1)] text-white py-2 px-4 rounded-lg cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm font-semibold"
-          >
-            Save
-          </button>
-        </div>
-      </form>
     </div>
   );
 };

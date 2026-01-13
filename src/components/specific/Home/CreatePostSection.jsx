@@ -1,4 +1,4 @@
-import { useState, useEffect, memo } from 'react';
+import { useState, useEffect, memo, useCallback } from 'react';
 import { BsImage, BsCameraVideo, BsFolder } from 'react-icons/bs';
 import { BiBarChartAlt2 } from 'react-icons/bi';
 import { CiCirclePlus } from 'react-icons/ci';
@@ -53,6 +53,12 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
     const [currentActivityType, setCurrentActivityType] = useState(null); // 'traveling', 'listening', 'watching', 'playing', 'reaction'
     const [selectedActivity, setSelectedActivity] = useState(null); // { type: 'traveling', value: 'Paris', label: 'Traveling to Paris' }
 
+    // Colored backgrounds state
+    const [coloredBackgrounds, setColoredBackgrounds] = useState([]);
+    const [showColoredPostModal, setShowColoredPostModal] = useState(false);
+    const [selectedColorBg, setSelectedColorBg] = useState(null);
+    const [coloredPostText, setColoredPostText] = useState('');
+
     const handleMoreClick = () => {
         setShowPopup(true);
     };
@@ -62,7 +68,28 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
         setShowPopup(true);
     };
 
-
+    // Fetch colored backgrounds from API
+    const fetchColoredBackgrounds = useCallback(async () => {
+        console.log('fetchColoredBackgrounds called');
+        try {
+            const response = await axios.get('https://admin.ouptel.in/api/v1/posts/colored');
+            const data = response.data;
+            
+            console.log('Colored backgrounds response:', data);
+            
+            // API returns: { ok: true, data: { colored_posts: [...], total: n } }
+            const coloredPosts = data?.data?.colored_posts;
+            if (Array.isArray(coloredPosts)) {
+                console.log('Setting colored backgrounds:', coloredPosts.length, 'items');
+                setColoredBackgrounds(coloredPosts);
+            } else {
+                console.warn('Invalid colored backgrounds data:', data);
+            }
+        } catch (error) {
+            console.error('Error fetching colored backgrounds:', error);
+            toast.error('Failed to load color backgrounds');
+        }
+    }, []);
 
     const addPollOption = () => {
         if (pollOptions.length < 10) { // Limit to 10 options
@@ -1030,6 +1057,66 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
                 )}
             </div>
 
+            {/* Colored Post Modal */}
+            {showColoredPostModal && selectedColorBg && (
+                <ColoredPostModal
+                    isOpen={showColoredPostModal}
+                    onClose={() => {
+                        setShowColoredPostModal(false);
+                        setSelectedColorBg(null);
+                        setColoredPostText('');
+                    }}
+                    colorBg={selectedColorBg}
+                    postText={coloredPostText}
+                    setPostText={setColoredPostText}
+                    onPost={async () => {
+                        if (!coloredPostText.trim()) {
+                            toast.error('Please enter some text');
+                            return;
+                        }
+                        
+                        setLoading(true);
+                        try {
+                            const accessToken = localStorage.getItem('access_token');
+                            const requestData = {
+                                postText: coloredPostText.trim(),
+                                postPrivacy: postPrivacy,
+                                color_id: selectedColorBg.color_id ?? selectedColorBg.id
+                            };
+
+                            const response = await axios.post(
+                                `${import.meta.env.VITE_API_URL}/api/v1/posts?type=colored`,
+                                requestData,
+                                {
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${accessToken}`,
+                                    },
+                                }
+                            );
+
+                            const data = response.data;
+                            if (data.ok === true || data.api_status === 200) {
+                                toast.success('Colored post created successfully!');
+                                if (fetchNewFeeds) {
+                                    fetchNewFeeds();
+                                }
+                                setShowColoredPostModal(false);
+                                setSelectedColorBg(null);
+                                setColoredPostText('');
+                            } else {
+                                toast.error(data.message || 'Failed to create post');
+                            }
+                        } catch (error) {
+                            console.error('Error creating colored post:', error);
+                            toast.error(error.response?.data?.message || 'Failed to create post');
+                        } finally {
+                            setLoading(false);
+                        }
+                    }}
+                />
+            )}
+
             {/* Post Popup */}
 
             <CreatePostPopup
@@ -1096,6 +1183,15 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
                 selectedActivity={selectedActivity}
                 setSelectedActivity={setSelectedActivity}
                 createActivityPost={createActivityPost}
+                // Colored backgrounds props
+                coloredBackgrounds={coloredBackgrounds}
+                fetchColoredBackgrounds={fetchColoredBackgrounds}
+                showColoredPostModal={showColoredPostModal}
+                setShowColoredPostModal={setShowColoredPostModal}
+                selectedColorBg={selectedColorBg}
+                setSelectedColorBg={setSelectedColorBg}
+                coloredPostText={coloredPostText}
+                setColoredPostText={setColoredPostText}
             />
         </>
     );
@@ -1121,14 +1217,25 @@ const CreatePostPopup = ({
     showFeelingModal, setShowFeelingModal, selectedFeeling, setSelectedFeeling,
     // Activity props
     showActivityModal, setShowActivityModal, currentActivityType, setCurrentActivityType,
-    selectedActivity, setSelectedActivity, createActivityPost
+    selectedActivity, setSelectedActivity, createActivityPost,
+    // Colored backgrounds props
+    coloredBackgrounds, fetchColoredBackgrounds, showColoredPostModal, setShowColoredPostModal,
+    selectedColorBg, setSelectedColorBg, coloredPostText, setColoredPostText
 }) => {
     const { userData } = useUser();
     const [postText, setPostText] = useState('');
     const [showSharing, setShowSharing] = useState(false);
     const [commentsEnabled, setCommentsEnabled] = useState(true);
+    const [showColorSection, setShowColorSection] = useState(false);
 
     const [selectedFiles, setSelectedFiles] = useState([]);
+
+    // Fetch colored backgrounds when popup opens
+    useEffect(() => {
+        if (isOpen && coloredBackgrounds.length === 0) {
+            fetchColoredBackgrounds();
+        }
+    }, [isOpen, coloredBackgrounds.length, fetchColoredBackgrounds]);
 
     const handleFileSelect = (type) => {
         const input = document.createElement('input');
@@ -1513,6 +1620,60 @@ const CreatePostPopup = ({
                         </div>
                     )}
 
+                    {/* Color Selection Section */}
+                    {showColorSection && (
+                        <div id="color-selection-section" className="mt-4 mb-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200 animate-in slide-in-from-top-2 duration-300">
+                            <div className="flex items-center justify-between mb-3">
+                                <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                                    <Palette className="w-4 h-4 text-indigo-600" />
+                                    Choose a Color Background
+                                </h4>
+                                <button
+                                    onClick={() => setShowColorSection(false)}
+                                    className="p-1 hover:bg-purple-100 rounded-full transition-colors"
+                                    title="Close"
+                                >
+                                    <X className="w-4 h-4 text-gray-600" />
+                                </button>
+                            </div>
+                            {coloredBackgrounds.length > 0 ? (
+                                <>
+                                    <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                                        {coloredBackgrounds.map((colorBg, index) => (
+                                            <button
+                                                key={index}
+                                                onClick={() => {
+                                                    console.log('Color selected:', colorBg);
+                                                    setSelectedColorBg(colorBg);
+                                                    setShowColoredPostModal(true);
+                                                    setShowColorSection(false);
+                                                }}
+                                                className={`flex-shrink-0 w-14 h-14 rounded-full border-3 transition-all hover:scale-110 ${
+                                                    selectedColorBg?.id === colorBg.id 
+                                                        ? 'border-indigo-600 ring-4 ring-indigo-200' 
+                                                        : 'border-gray-300 hover:border-indigo-400'
+                                                }`}
+                                                style={{ 
+                                                    background: colorBg.color_1 && colorBg.color_2 
+                                                        ? `linear-gradient(135deg, ${colorBg.color_1} 0%, ${colorBg.color_2} 100%)`
+                                                        : colorBg.color_1 || '#000',
+                                                    boxShadow: selectedColorBg?.id === colorBg.id ? '0 4px 12px rgba(99, 102, 241, 0.3)' : '0 2px 4px rgba(0,0,0,0.1)'
+                                                }}
+                                                title="Create colored post"
+                                            />
+                                        ))}
+                                    </div>
+                                    <p className="text-xs text-gray-600 mt-2">Create a WhatsApp-style colored status post</p>
+                                </>
+                            ) : (
+                                <div className="text-center py-4">
+                                    <div className="inline-block w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                                    <p className="text-sm text-gray-600">Loading colors...</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {/* Media Options */}
                     <div className="mt-6">
                         {/* Display selected files */}
@@ -1690,11 +1851,61 @@ const CreatePostPopup = ({
                             </button>
 
                             {/* Color */}
-                            <button className="flex items-center space-x-3 p-3 cursor-pointer">
-                                <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                                    <Palette className="w-5 h-5 text-indigo-600" />
+                            <button 
+                                type="button"
+                                className={`flex items-center space-x-3 p-3 cursor-pointer transition-all duration-200 ${
+                                    showColorSection || selectedColorBg ? 'bg-indigo-100 rounded-lg border-2 border-indigo-300' : 'hover:bg-indigo-50'
+                                }`}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    console.log('Color button clicked!', { showColorSection, coloredBackgrounds: coloredBackgrounds.length });
+                                    
+                                    // Fetch colors if not already fetched
+                                    if (!coloredBackgrounds || coloredBackgrounds.length === 0) {
+                                        console.log('Fetching colored backgrounds...');
+                                        if (fetchColoredBackgrounds) {
+                                            fetchColoredBackgrounds();
+                                        } else {
+                                            console.error('fetchColoredBackgrounds is not available');
+                                        }
+                                    }
+                                    
+                                    // Toggle color selection section
+                                    const newState = !showColorSection;
+                                    console.log('Setting showColorSection to:', newState);
+                                    setShowColorSection(newState);
+                                    
+                                    // Close other modals
+                                    if (setShowGifSearch) setShowGifSearch(false);
+                                    if (setShowFeelingModal) setShowFeelingModal(false);
+                                    if (setShowActivityModal) setShowActivityModal(false);
+                                    
+                                    // Scroll to color section after a brief delay
+                                    if (newState) {
+                                        setTimeout(() => {
+                                            const colorSection = document.getElementById('color-selection-section');
+                                            console.log('Color section element:', colorSection);
+                                            if (colorSection) {
+                                                colorSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                                            }
+                                        }, 200);
+                                    }
+                                }}
+                                title={selectedColorBg ? "Colored post selected" : "Create colored post"}
+                            >
+                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+                                    showColorSection || selectedColorBg ? 'bg-indigo-200' : 'bg-indigo-100'
+                                }`}>
+                                    <Palette className={`w-5 h-5 transition-colors ${
+                                        showColorSection || selectedColorBg ? 'text-indigo-700' : 'text-indigo-600'
+                                    }`} />
                                 </div>
-                                <span className="text-gray-700 font-medium">Color</span>
+                                <span className={`font-medium transition-colors ${
+                                    showColorSection || selectedColorBg ? 'text-indigo-800' : 'text-gray-700'
+                                }`}>
+                                    {showColorSection ? 'Hide Colors' : selectedColorBg ? 'Color Selected' : 'Color'}
+                                </span>
                             </button>
                         </div>
                     </div>
@@ -1983,6 +2194,64 @@ const CreatePostPopup = ({
                         setSelectedFeeling(null);
                         setSelectedActivity(null);
                         setFeeling("");
+                    }}
+                />
+            )}
+
+            {/* Colored Post Modal */}
+            {showColoredPostModal && selectedColorBg && (
+                <ColoredPostModal
+                    isOpen={showColoredPostModal}
+                    onClose={() => {
+                        setShowColoredPostModal(false);
+                        setSelectedColorBg(null);
+                        setColoredPostText('');
+                    }}
+                    colorBg={selectedColorBg}
+                    postText={coloredPostText}
+                    setPostText={setColoredPostText}
+                    onPost={async () => {
+                        if (!coloredPostText.trim()) {
+                            toast.error('Please enter some text');
+                            return;
+                        }
+                        
+                        try {
+                            const accessToken = localStorage.getItem('access_token');
+                            const requestData = {
+                                postText: coloredPostText.trim(),
+                                postPrivacy: postPrivacy,
+                                color_id: selectedColorBg.color_id ?? selectedColorBg.id
+                            };
+
+                            const response = await axios.post(
+                                `${import.meta.env.VITE_API_URL}/api/v1/posts?type=colored`,
+                                requestData,
+                                {
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${accessToken}`,
+                                    },
+                                }
+                            );
+
+                            const data = response.data;
+                            if (data.ok === true || data.api_status === 200) {
+                                toast.success('Colored post created successfully!');
+                                if (typeof createNewPost === 'function') {
+                                    // Optionally refresh feed
+                                }
+                                setShowColoredPostModal(false);
+                                setSelectedColorBg(null);
+                                setColoredPostText('');
+                                onClose(); // Close the main popup too
+                            } else {
+                                toast.error(data.message || 'Failed to create post');
+                            }
+                        } catch (error) {
+                            console.error('Error creating colored post:', error);
+                            toast.error(error.response?.data?.message || 'Failed to create post');
+                        }
                     }}
                 />
             )}
@@ -2542,6 +2811,102 @@ const ActivitySelectionModal = ({ isOpen, onClose, activityType, onSelectActivit
                         className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
                     >
                         {selectedActivity && selectedActivity.type === activityType ? 'Update' : 'Add'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Colored Post Modal Component
+const ColoredPostModal = ({ isOpen, onClose, colorBg, postText, setPostText, onPost }) => {
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen]);
+
+    if (!isOpen || !colorBg) return null;
+
+    const primaryColor = colorBg.color_1 || '#000';
+    const secondaryColor = colorBg.color_2 || colorBg.text_color || '#fff';
+    const textColor = colorBg.text_color || '#fff';
+
+    return (
+        <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] px-2 md:px-6"
+            onClick={onClose}
+        >
+            <div
+                className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200">
+                    <h2 className="text-xl md:text-2xl font-semibold text-gray-800">Create Colored Post</h2>
+                    <button
+                        onClick={onClose}
+                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    >
+                        <X className="w-5 h-5 text-gray-600" />
+                    </button>
+                </div>
+
+                {/* Colored Post Preview */}
+                <div className="flex-1 overflow-y-auto p-4 md:p-6">
+                    <div
+                        className="relative w-full h-96 rounded-2xl shadow-lg overflow-hidden flex items-center justify-center p-8"
+                        style={{
+                            background: colorBg.color_2
+                                ? `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`
+                                : primaryColor
+                        }}
+                    >
+                        <textarea
+                            value={postText}
+                            onChange={(e) => setPostText(e.target.value)}
+                            placeholder="What's on your mind?"
+                            className="w-full h-full resize-none bg-transparent border-none outline-none text-center flex items-center justify-center font-semibold text-2xl md:text-3xl placeholder-opacity-50"
+                            style={{
+                                color: textColor,
+                                textShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                            }}
+                            maxLength={200}
+                            autoFocus
+                        />
+                        
+                        {/* Character Counter */}
+                        <div
+                            className="absolute bottom-4 right-4 text-sm font-medium opacity-70"
+                            style={{ color: textColor }}
+                        >
+                            {postText.length}/200
+                        </div>
+                    </div>
+
+                    {/* Color Preview Info */}
+                    <div className="mt-4 text-center text-sm text-gray-600">
+                        <p>Your post will appear with this colored background</p>
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center justify-end gap-3 p-4 md:p-6 border-t border-gray-200">
+                    <button
+                        onClick={onClose}
+                        className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg font-medium transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={onPost}
+                        disabled={!postText.trim()}
+                        className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        Post
                     </button>
                 </div>
             </div>

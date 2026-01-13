@@ -3,8 +3,10 @@ import { FaHeart } from 'react-icons/fa';
 import axios from 'axios';
 import Loader from '../../components/loading/Loader';
 import { baseUrl } from '../../utils/constant';
+import { useNavigate } from 'react-router-dom';
 
 const LikedPages = () => {
+    const navigate = useNavigate();
     const [likedPages, setLikedPages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -122,20 +124,28 @@ const LikedPages = () => {
 
     return (
         <div className="space-y-6">
-            {likedPages?.map((page) => (
-                likedPages.has(page.id) && (
-                    <div key={page.id} className="bg-white rounded-lg border border-gray-300 p-4 sm:p-6">
+            {likedPages?.map((page) => {
+                const pageId = page.page_id ?? page.id;
+                const pageName = page.page_name ?? page.name ?? 'Unnamed Page';
+                const pageAvatar = page.avatar_url ?? page.avatar ?? "/perimg.png";
+
+                return (
+                    <div
+                        key={pageId}
+                        className="bg-white rounded-lg border border-gray-300 p-4 sm:p-6 cursor-pointer hover:shadow-sm transition-shadow"
+                        onClick={() => pageId && navigate(`/page/${pageId}`)}
+                    >
                         {/* Top Section */}
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                             <div className="flex items-center gap-4">
                                 <img
-                                    src={page.avatar}
-                                    alt={page.name}
+                                    src={pageAvatar}
+                                    alt={pageName}
                                     className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover"
                                 />
                                 <div>
                                     <h3 className="font-semibold text-base sm:text-lg text-gray-900">
-                                        {page.name}
+                                        {pageName}
                                     </h3>
                                     {/* Category on mobile */}
                                     <p className="text-sm text-gray-600 mt-1 block sm:hidden">
@@ -148,6 +158,7 @@ const LikedPages = () => {
                                 <button
                                     onClick={() => handleUnlike(page.id)}
                                     disabled={loading}
+                                    onClickCapture={(e) => e.stopPropagation()}
                                     className="w-full sm:w-auto px-4 py-2  text-red-500 rounded-full flex items-center justify-center gap-2 border border-red-500 text-sm sm:text-base hover:bg-[#f8f3f3] transition"
                                 >
                                     <FaHeart className="text-red-500" />
@@ -168,8 +179,8 @@ const LikedPages = () => {
                             </div>
                         </div>
                     </div>
-                )
-            ))}
+                );
+            })}
         </div>
     );
 };

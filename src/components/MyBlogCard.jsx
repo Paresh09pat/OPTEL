@@ -1,9 +1,12 @@
 import React, { useState } from "react";
 import { FaEye, FaShareAlt, FaComment, FaHeart, FaEdit, FaTrash } from "react-icons/fa";
 import EditBlogModal from "./EditBlogModal";
+import DeleteConfirmModal from "./DeleteConfirmModal";
 
 const MyBlogCard = ({ blog, onClick, onUpdate, onDelete }) => {
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Format the posted date
   const formatDate = (dateString) => {
@@ -22,10 +25,20 @@ const MyBlogCard = ({ blog, onClick, onUpdate, onDelete }) => {
 
   const handleDelete = async (e) => {
     e.stopPropagation(); // Prevent card click
-    if (window.confirm('Are you sure you want to delete this blog?')) {
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setDeleting(true);
+    try {
       if (onDelete) {
         await onDelete(blog.id);
       }
+      setShowDeleteModal(false);
+    } catch (error) {
+      console.error('Error deleting blog:', error);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -126,6 +139,17 @@ const MyBlogCard = ({ blog, onClick, onUpdate, onDelete }) => {
           blog={blog}
           onClose={() => setShowEditModal(false)}
           onUpdate={handleUpdateSuccess}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <DeleteConfirmModal
+          title="Delete Blog?"
+          message="Are you sure you want to delete this blog? This action cannot be undone."
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setShowDeleteModal(false)}
+          loading={deleting}
         />
       )}
     </>

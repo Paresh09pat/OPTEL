@@ -1,5 +1,8 @@
 // PageManagementSystem.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { toast } from 'react-toastify';
 
 // Import all components
 import GeneralSettings from './GeneralSettings';
@@ -18,10 +21,43 @@ import { CiBurger } from 'react-icons/ci';
 import { MenuIcon, XIcon } from 'lucide-react';
 import { MdOutlineAddPhotoAlternate } from "react-icons/md";
 import { Link } from 'react-router-dom';
+import { baseUrl } from '../../utils/constant';
+import Loader from '../../components/loading/Loader';
 
 const MainPageSetting = () => {
+  const { pageId } = useParams();
+  const navigate = useNavigate();
   const [activeMenuItem, setActiveMenuItem] = useState('general-setting');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [pageData, setPageData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
+  
+  // Unified form data for all settings
+  const [formData, setFormData] = useState({
+    // General Settings
+    pageName: '',
+    category: '',
+    subCategory: '',
+    callToAction: '',
+    callToTargetUrl: '',
+    pageUrl: '',
+    canPost: 'disable',
+    // Page Information
+    companyName: '',
+    phone: '',
+    location: '',
+    websiteUrl: '',
+    about: '',
+    // Social Links
+    facebook: '',
+    twitter: '',
+    instagram: '',
+    vkontakte: '',
+    linkedin: '',
+    youtube: ''
+  });
   const pageIcon = () => {
     return (
       <svg xmlns="http://www.w3.org/2000/svg" width={19} height={19} viewBox="0 0 16 16"><path fill="currentColor" fillRule="evenodd" d="M14 4.57a.5.5 0 0 0-.024-.235l-.013-.063a1.5 1.5 0 0 0-.18-.434c-.092-.15-.222-.28-.482-.54l-2.59-2.59c-.259-.26-.389-.39-.54-.483a1.5 1.5 0 0 0-.496-.193a.5.5 0 0 0-.235-.024C9.329.004 9.194.004 9.015.004h-2.21c-1.68 0-2.52 0-3.16.327a3.02 3.02 0 0 0-1.31 1.31c-.327.642-.327 1.48-.327 3.16v6.4c0 1.68 0 2.52.327 3.16a3.02 3.02 0 0 0 1.31 1.31c.642.327 1.48.327 3.16.327h2.4c1.68 0 2.52 0 3.16-.327a3 3 0 0 0 1.31-1.31c.327-.642.327-1.48.327-3.16V4.99c0-.178 0-.313-.005-.425zm-4.8 10.4H6.8c-.857 0-1.44 0-1.89-.038c-.438-.035-.663-.1-.819-.18a2 2 0 0 1-.874-.874c-.08-.156-.145-.38-.18-.819c-.037-.45-.038-1.03-.038-1.89v-6.4c0-.857.001-1.44.038-1.89c.036-.438.101-.663.18-.819c.192-.376.498-.682.874-.874c.156-.08.381-.145.819-.18C5.36.97 5.94.97 6.8.97H9v3.5a.5.5 0 0 0 .5.5H13v6.2c0 .857 0 1.44-.038 1.89c-.035.438-.1.663-.18.819a2 2 0 0 1-.874.874c-.156.08-.38.145-.819.18c-.45.037-1.03.037-1.89.037zm.8-13.6l2.59 2.59H10z" clipRule="evenodd"></path></svg>
@@ -42,6 +78,133 @@ const MainPageSetting = () => {
       <svg xmlns="http://www.w3.org/2000/svg" width={19} height={19} viewBox="0 0 24 24"><g fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth={1.5}><path strokeLinejoin="round" d="m7 14l2.293-2.293a1 1 0 0 1 1.414 0l1.586 1.586a1 1 0 0 0 1.414 0L17 10m0 0v2.5m0-2.5h-2.5"></path><path d="M22 12c0 4.714 0 7.071-1.465 8.535C19.072 22 16.714 22 12 22s-7.071 0-8.536-1.465C2 19.072 2 16.714 2 12s0-7.071 1.464-8.536C4.93 2 7.286 2 12 2s7.071 0 8.535 1.464c.974.974 1.3 2.343 1.41 4.536"></path></g></svg>
     )
   }
+  // Fetch page data
+  const fetchPageData = async () => {
+    try {
+      setLoading(true);
+      const accessToken = localStorage.getItem('access_token');
+      
+      const response = await axios.get(`${baseUrl}/api/v1/pages/${pageId}`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('Page data response:', response.data);
+
+      if (response.data.api_status === 200 && response.data.data) {
+        const data = response.data.data;
+        setPageData(data);
+        
+        // Initialize unified form data
+        setFormData({
+          // General Settings
+          pageName: data.page_name || '',
+          category: String(data.category || ''),
+          subCategory: data.sub_category || '',
+          callToAction: data.call_to_action || '',
+          callToTargetUrl: data.call_to_target_url || '',
+          pageUrl: data.url || data.website || '',
+          canPost: data.can_post || 'disable',
+          // Page Information
+          companyName: data.page_title || data.page_name || '',
+          phone: data.phone || '',
+          location: data.address || '',
+          websiteUrl: data.website || '',
+          about: data.about || data.page_description || '',
+          // Social Links
+          facebook: data.facebook || '',
+          twitter: data.twitter || '',
+          instagram: data.instagram || '',
+          vkontakte: data.vkontakte || '',
+          linkedin: data.linkedin || '',
+          youtube: data.youtube || ''
+        });
+      } else {
+        setError('Failed to load page data');
+        toast.error('Failed to load page data');
+      }
+    } catch (err) {
+      console.error('Error fetching page data:', err);
+      setError(err.message);
+      toast.error('Error loading page data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle form field changes
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Save all changes
+  const handleSaveAll = async () => {
+    try {
+      setSaving(true);
+      const accessToken = localStorage.getItem('access_token');
+      
+      const updateData = {
+        page_name: formData.pageName,
+        page_title: formData.companyName,
+        page_description: formData.about,
+        about: formData.about,
+        page_category: parseInt(formData.category) || null,
+        website: formData.websiteUrl || formData.pageUrl,
+        phone: formData.phone,
+        address: formData.location,
+        facebook: formData.facebook,
+        twitter: formData.twitter,
+        instagram: formData.instagram,
+        vkontakte: formData.vkontakte,
+        linkedin: formData.linkedin,
+        youtube: formData.youtube,
+      };
+
+      // Add optional fields only if they exist
+      if (formData.subCategory) updateData.sub_category = formData.subCategory;
+      if (formData.callToAction) updateData.call_to_action = formData.callToAction;
+      if (formData.callToTargetUrl) updateData.call_to_target_url = formData.callToTargetUrl;
+      if (formData.canPost) updateData.can_post = formData.canPost;
+
+      console.log('Saving all page data:', updateData);
+      
+      const response = await axios.put(
+        `${baseUrl}/api/v1/pages/${pageId}`,
+        updateData,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      console.log('Update response:', response.data);
+
+      if (response.data.api_status === 200 || response.data.ok === true) {
+        toast.success('Page updated successfully!');
+        // Refresh page data
+        await fetchPageData();
+      } else {
+        toast.error(response.data.message || 'Failed to update page');
+      }
+    } catch (err) {
+      console.error('Error updating page:', err);
+      toast.error(err.response?.data?.message || 'Error updating page');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  useEffect(() => {
+    if (pageId) {
+      fetchPageData();
+    }
+  }, [pageId]);
+
   const menuItems = [
     { id: 'general-setting', label: 'General Setting', icon: FiSettings },
     { id: 'page-information', label: 'Page Information', icon: pageIcon },
@@ -54,27 +217,49 @@ const MainPageSetting = () => {
   ];
 
   const renderActiveComponent = () => {
+    if (!pageData) return null;
+
     switch (activeMenuItem) {
       case 'general-setting':
-        return <GeneralSettings />;
+        return <GeneralSettings formData={formData} handleChange={handleChange} />;
       case 'page-information':
-        return <PageInformation />;
+        return <PageInformation formData={formData} handleChange={handleChange} />;
       case 'social-links':
-        return <SocialLinks />;
+        return <SocialLinks formData={formData} handleChange={handleChange} />;
       case 'profile-picture-cover':
-        return <ProfilePictureAndCover />;
+        return <ProfilePictureAndCover pageData={pageData} />;
       case 'design':
-        return <Design />;
+        return <Design pageData={pageData} />;
       case 'admin':
-        return <Admin />;
+        return <Admin pageData={pageData} />;
       case 'page-analytics':
-        return <PageAnalytics />;
+        return <PageAnalytics pageData={pageData} />;
       case 'delete-page':
-        return <DeletePage />;
+        return <DeletePage pageData={pageData} pageId={pageId} />;
       default:
-        return <GeneralSettings />;
+        return <GeneralSettings formData={formData} handleChange={handleChange} />;
     }
   };
+
+  if (loading) {
+    return <Loader />;
+  }
+
+  if (error || !pageData) {
+    return (
+      <div className="min-h-screen bg-[#EDF6F9] flex items-center justify-center px-4">
+        <div className="text-center">
+          <p className="text-red-500 text-lg mb-4">Error: {error || 'Page not found'}</p>
+          <button
+            onClick={() => navigate('/pagescomp/mainpages')}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Back to Pages
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#EDF6F9] pt-8 overflow-x-hidden pb-8">
@@ -100,12 +285,17 @@ const MainPageSetting = () => {
         <div className="bg-gradient-to-l from-[rgba(96,161,249,1)] to-[rgba(17,83,231,1)] rounded-xl p-4 h-[200px] py-5 px-8 relative">
         <img src="/profilebg.svg" alt="profile bg" className='absolute bottom-0 right-0  w-1/4' />
           <div className="flex items-center gap-5">
-            <div className="size-[74px] bg-gray-800 rounded-full flex items-center justify-center" style={{ backgroundImage: "url('/perimg.png')", backgroundSize: "cover", backgroundPosition: "center" }}>
+            <div className="size-[74px] bg-gray-800 rounded-full flex items-center justify-center" style={{ backgroundImage: `url('${pageData?.avatar_url || '/perimg.png'}')`, backgroundSize: "cover", backgroundPosition: "center" }}>
 
             </div>
             <div>
-              <h1 className="text-white text-xl font-semibold">Just Bhuvan Things ✓</h1>
-              <p className="text-orange-100 text-sm">Category : HIP-HOP Music</p>
+              <h1 className="text-white text-xl font-semibold">
+                {pageData?.page_name || pageData?.page_title || 'Page Name'} 
+                {pageData?.verified && ' ✓'}
+              </h1>
+              <p className="text-orange-100 text-sm">
+                Category : {pageData?.category_name || pageData?.category || 'N/A'}
+              </p>
             </div>
           </div>
           <div className='absolute top-8 right-6 block md:hidden text-white cursor-pointer font-semibold z-50'>
@@ -167,6 +357,29 @@ const MainPageSetting = () => {
           {/* Content Area */}
           <div className="flex-1 min-w-0 pl-1 pr-2 relative">
             {renderActiveComponent()}
+            
+            {/* Single Save Button - Always Visible */}
+            <div className="mt-6 flex justify-center sticky bottom-4 z-20">
+              <button
+                onClick={handleSaveAll}
+                disabled={saving}
+                className="px-8 py-3 bg-gradient-to-l from-[rgba(96,161,249,1)] to-[rgba(17,83,231,1)] text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {saving ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Save Changes
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>
