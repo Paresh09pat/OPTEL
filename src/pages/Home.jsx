@@ -91,6 +91,7 @@ const Home = () => {
   const lastFilterRef = useRef(null); // Track the last filter type
   const lastCallTimeRef = useRef(0); // Track the last API call time for debouncing
   const currentFilterRef = useRef(null); // Track current filter for pagination
+  const [feedType, setFeedType] = useState('all'); // 'all' or 'following'
 
   // Request location access when component mounts
   useEffect(() => {
@@ -168,7 +169,7 @@ const Home = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  const getNewFeeds = useCallback(async (type, page = 1) => {
+  const getNewFeeds = useCallback(async (type, page = 1, customFeedType = null) => {
     const now = Date.now();
 
     // Prevent multiple simultaneous API calls
@@ -199,6 +200,9 @@ const Home = () => {
       setError(null);
       const accessToken = localStorage.getItem("access_token");
 
+      // Determine which feed type to use
+      const activeFeedType = customFeedType !== null ? customFeedType : feedType;
+
       // Build query parameters
       const params = new URLSearchParams();
       params.append('per_page', '10');
@@ -211,7 +215,12 @@ const Home = () => {
         params.append('filter', type);
       }
 
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/v1/new-feed?${params.toString()}`, {
+      // Choose API endpoint based on feed type
+      const apiEndpoint = activeFeedType === 'following' 
+        ? `${import.meta.env.VITE_API_URL}/api/v1/people-follow/feed?${params.toString()}`
+        : `${import.meta.env.VITE_API_URL}/api/v1/new-feed?${params.toString()}`;
+
+      const response = await axios.get(apiEndpoint, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken}`,
@@ -269,13 +278,19 @@ const Home = () => {
       setLoadingMore(false);
       isFetchingRef.current = false;
     }
-  }, []);
+  }, [feedType]);
 
 
   useEffect(() => {
     getNewFeeds();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Refetch feeds when feed type changes
+  useEffect(() => {
+    getNewFeeds(currentFilterRef.current, 1, feedType);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [feedType]);
 
   // Infinite scroll handler
   useEffect(() => {
@@ -296,14 +311,14 @@ const Home = () => {
           !isFetchingRef.current
         ) {
           const nextPage = pagination.current_page + 1;
-          getNewFeeds(currentFilterRef.current, nextPage);
+          getNewFeeds(currentFilterRef.current, nextPage, feedType);
         }
       }
     };
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [pagination, loadingMore, getNewFeeds]);
+  }, [pagination, loadingMore, getNewFeeds, feedType]);
 
   const posts = [];
 
@@ -1177,7 +1192,32 @@ const Home = () => {
 
             {/* Fixed sticky positioning issue */}
             <div className="sticky top-0 z-30 bg-[#EDF6F9] py-2 -mx-2 md:-mx-4">
-              <div className="mx-2 md:mx-4">
+              <div className="mx-2 md:mx-4 space-y-3">
+                {/* Feed Type Filter */}
+                <div className="bg-white rounded-2xl shadow-sm border border-[#d3d1d1] py-2 px-4">
+                  <div className="flex items-center justify-center space-x-2">
+                    <button
+                      onClick={() => setFeedType('all')}
+                      className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                        feedType === 'all'
+                          ? 'bg-blue-500 text-white shadow-md'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      All Posts
+                    </button>
+                    <button
+                      onClick={() => setFeedType('following')}
+                      className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                        feedType === 'following'
+                          ? 'bg-blue-500 text-white shadow-md'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      Following
+                    </button>
+                  </div>
+                </div>
                 <QuickActionsSection fetchNewFeeds={getNewFeeds} />
               </div>
             </div>

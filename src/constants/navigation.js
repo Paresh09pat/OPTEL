@@ -12,6 +12,7 @@ import articleIcon from '/icons/article.png'
 import jobsIcon from '/icons/job.png'
 import offerIcon from '/icons/job.png' // Using job icon as placeholder, can be replaced later
 import moreIcon from '/icons/more.png'
+import marketIcon from '/icons/market.svg'
 
 export const navigationItems = [
   {
@@ -86,6 +87,13 @@ export const navigationItems = [
     path: '/offers',
     icon: offerIcon,
     color: 'bg-gray-100', // Default background color for icon
+  },
+  {
+    id: 'market',
+    name: 'Market',
+    path: '/market',
+    icon: marketIcon,
+    color: 'bg-purple-100', // Default background color for icon
   },
   // {
   //   id: 'more',

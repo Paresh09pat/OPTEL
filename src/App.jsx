@@ -16,6 +16,8 @@ import Blog from "./pages/Blog";
 import Article from "./pages/Article";
 import Jobs from "./pages/Jobs";
 import Offers from "./pages/Offers";
+import Market from "./pages/Market";
+import ProductDetail from "./pages/ProductDetail";
 import More from "./pages/More";
 import ChatDetailed from "./pages/ChatDetailed";
 import MyAlbums from "./pages/MyAlbums";
@@ -92,6 +94,8 @@ function App() {
             <Route path="/jobs/create" element={<CreateJob />} />
             <Route path="/offers" element={<Offers />} />
             <Route path="/offers/:offerId" element={<OfferDetailed />} />
+            <Route path="/market" element={<Market />} />
+            <Route path="/market/:productId" element={<ProductDetail />} />
             <Route path="/more" element={<More />} />
             <Route path="/chat-detailed/:chatId" element={<ChatDetailed />} />
             <Route path="/my-albums" element={<MyAlbums />} />
