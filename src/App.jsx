@@ -81,6 +81,7 @@ function App() {
             <Route path="/forum/create" element={<CreateForum />} />
             <Route path="/PagesComp/MainPages" element={<MainPages />} />
             <Route path="/page/:pageId" element={<PageDetailed />} />
+            <Route path="/page/:pageId/settings" element={<MainPageSetting />} />
             <Route path="/my-groups" element={<MyGroups />} />
             <Route path="/group/:groupId" element={<GroupDetailed />} />
             <Route path="/my-pages" element={<MyPages />} />
@@ -105,7 +106,6 @@ function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/:userId" element={<Profile />} />
             <Route path="/profile-settings" element={<MainProfileSetting />} />
-            <Route path="/pagescomp/mainpages/pagesetting/mainpagesetting" element={<MainPageSetting />} />
             <Route path="/PageProfile" element={<PageProfile />} />
           </Route>
         </Route>

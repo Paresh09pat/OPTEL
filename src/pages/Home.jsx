@@ -92,6 +92,7 @@ const Home = () => {
   const lastCallTimeRef = useRef(0); // Track the last API call time for debouncing
   const currentFilterRef = useRef(null); // Track current filter for pagination
   const [feedType, setFeedType] = useState('all'); // 'all' or 'following'
+  const [activeFilter, setActiveFilter] = useState(null); // Track active filter for UI
 
   // Request location access when component mounts
   useEffect(() => {
@@ -193,6 +194,7 @@ const Home = () => {
       lastFilterRef.current = type;
       lastCallTimeRef.current = now;
         currentFilterRef.current = type;
+        setActiveFilter(type); // Set active filter for UI
         setLoading(true);
       } else {
         setLoadingMore(true);
@@ -1218,7 +1220,7 @@ const Home = () => {
                     </button>
                   </div>
                 </div>
-                <QuickActionsSection fetchNewFeeds={getNewFeeds} />
+                <QuickActionsSection fetchNewFeeds={getNewFeeds} activeFilter={activeFilter} />
               </div>
             </div>
 

@@ -1,28 +1,26 @@
 // PageManagementSystem.js
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 // Import all components
-import GeneralSettings from './GeneralSettings';
-import PageInformation from './PageInformation';
-import SocialLinks from './SocialLinks';
-import ProfilePictureAndCover from './ProfilePictureAndCover';
-import Design from './Design';
-import Admin from './Admin';
-import PageAnalytics from './PageAnalytics';
-import DeletePage from './DeletePage';
+import { MenuIcon, XIcon } from 'lucide-react';
 import { FiSettings } from 'react-icons/fi';
 import { GoLink } from "react-icons/go";
+import { MdOutlineAddPhotoAlternate, MdOutlineDelete } from "react-icons/md";
 import { RiShieldUserLine } from "react-icons/ri";
-import { MdOutlineDelete } from "react-icons/md";
-import { CiBurger } from 'react-icons/ci';
-import { MenuIcon, XIcon } from 'lucide-react';
-import { MdOutlineAddPhotoAlternate } from "react-icons/md";
 import { Link } from 'react-router-dom';
-import { baseUrl } from '../../utils/constant';
 import Loader from '../../components/loading/Loader';
+import { baseUrl } from '../../utils/constant';
+import Admin from './Admin';
+import DeletePage from './DeletePage';
+import Design from './Design';
+import GeneralSettings from './GeneralSettings';
+import PageAnalytics from './PageAnalytics';
+import PageInformation from './PageInformation';
+import ProfilePictureAndCover from './ProfilePictureAndCover';
+import SocialLinks from './SocialLinks';
 
 const MainPageSetting = () => {
   const { pageId } = useParams();
@@ -97,7 +95,7 @@ const MainPageSetting = () => {
         const data = response.data.data;
         setPageData(data);
         
-        // Initialize unified form data
+        // Initialize unified form data with proper mapping
         setFormData({
           // General Settings
           pageName: data.page_name || '',
@@ -108,11 +106,11 @@ const MainPageSetting = () => {
           pageUrl: data.url || data.website || '',
           canPost: data.can_post || 'disable',
           // Page Information
-          companyName: data.page_title || data.page_name || '',
+          companyName: data.page_title || '',
           phone: data.phone || '',
           location: data.address || '',
           websiteUrl: data.website || '',
-          about: data.about || data.page_description || '',
+          about: data.about || '',
           // Social Links
           facebook: data.facebook || '',
           twitter: data.twitter || '',
@@ -146,30 +144,37 @@ const MainPageSetting = () => {
       setSaving(true);
       const accessToken = localStorage.getItem('access_token');
       
+      // Build update data matching the API requirements
       const updateData = {
         page_name: formData.pageName,
         page_title: formData.companyName,
         page_description: formData.about,
         about: formData.about,
-        page_category: parseInt(formData.category) || null,
-        website: formData.websiteUrl || formData.pageUrl,
+        website: formData.websiteUrl,
         phone: formData.phone,
         address: formData.location,
-        facebook: formData.facebook,
-        twitter: formData.twitter,
-        instagram: formData.instagram,
-        vkontakte: formData.vkontakte,
-        linkedin: formData.linkedin,
-        youtube: formData.youtube,
       };
+
+      // Add page_category only if it's a valid number
+      if (formData.category && !isNaN(parseInt(formData.category))) {
+        updateData.page_category = parseInt(formData.category);
+      }
 
       // Add optional fields only if they exist
       if (formData.subCategory) updateData.sub_category = formData.subCategory;
       if (formData.callToAction) updateData.call_to_action = formData.callToAction;
       if (formData.callToTargetUrl) updateData.call_to_target_url = formData.callToTargetUrl;
       if (formData.canPost) updateData.can_post = formData.canPost;
+      
+      // Add social links if they exist
+      if (formData.facebook) updateData.facebook = formData.facebook;
+      if (formData.twitter) updateData.twitter = formData.twitter;
+      if (formData.instagram) updateData.instagram = formData.instagram;
+      if (formData.vkontakte) updateData.vkontakte = formData.vkontakte;
+      if (formData.linkedin) updateData.linkedin = formData.linkedin;
+      if (formData.youtube) updateData.youtube = formData.youtube;
 
-      console.log('Saving all page data:', updateData);
+      console.log('Saving page data:', updateData);
       
       const response = await axios.put(
         `${baseUrl}/api/v1/pages/${pageId}`,
@@ -186,14 +191,15 @@ const MainPageSetting = () => {
 
       if (response.data.api_status === 200 || response.data.ok === true) {
         toast.success('Page updated successfully!');
-        // Refresh page data
+        // Refresh page data to show updated values
         await fetchPageData();
       } else {
         toast.error(response.data.message || 'Failed to update page');
       }
     } catch (err) {
       console.error('Error updating page:', err);
-      toast.error(err.response?.data?.message || 'Error updating page');
+      const errorMessage = err.response?.data?.message || err.response?.data?.error || 'Error updating page';
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }

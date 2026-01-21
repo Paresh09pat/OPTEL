@@ -10,7 +10,7 @@ import { useUser } from '../../../context/UserContext';
 import { toast } from 'react-toastify';
 
 
-const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
+const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost = false }) => {
     const { userData } = useUser();
     const [postText, setPostText] = useState('');
     const [showPopup, setShowPopup] = useState(false);
@@ -735,6 +735,12 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
                 formData.append('group_id', groupId.trim());
             }
 
+            // Add page ID if this is a page post
+            if (isPagePost && pageId) {
+                formData.append('page_id', pageId);
+                formData.append('postPrivacy', '4'); // Page posts use privacy 4
+            }
+
             // Add location if provided
             if (location && location.trim()) {
                 formData.append('postLocation', location.trim());
@@ -899,7 +905,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
 
                     <input
                         type="text"
-                        placeholder={showPoll ? "Share something with a poll..." : "Share something"}
+                        placeholder={showPoll ? "Share something with a poll..." : isPagePost ? "Share something on this page..." : "Share something"}
                         value={postText}
                         onChange={(e) => setPostText(e.target.value)}
                         onKeyDown={(e) => {
@@ -1192,6 +1198,9 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification }) => {
                 setSelectedColorBg={setSelectedColorBg}
                 coloredPostText={coloredPostText}
                 setColoredPostText={setColoredPostText}
+                // Page post props
+                isPagePost={isPagePost}
+                pageId={pageId}
             />
         </>
     );
@@ -1220,7 +1229,9 @@ const CreatePostPopup = ({
     selectedActivity, setSelectedActivity, createActivityPost,
     // Colored backgrounds props
     coloredBackgrounds, fetchColoredBackgrounds, showColoredPostModal, setShowColoredPostModal,
-    selectedColorBg, setSelectedColorBg, coloredPostText, setColoredPostText
+    selectedColorBg, setSelectedColorBg, coloredPostText, setColoredPostText,
+    // Page post props
+    isPagePost = false, pageId
 }) => {
     const { userData } = useUser();
     const [postText, setPostText] = useState('');
@@ -1401,6 +1412,7 @@ const CreatePostPopup = ({
                             showPoll ? "What's on your mind? (Poll will be included)" :
                             selectedActivity ? `${selectedActivity.label}...` :
                             selectedFeeling ? `Feeling ${selectedFeeling.label}...` :
+                            isPagePost ? "Share something on this page..." :
                             "What's on your mind?"
                         }
                         className="w-full resize-none border-none outline-none text-lg placeholder-gray-500 min-h-[120px]"

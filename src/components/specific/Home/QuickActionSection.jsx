@@ -2,7 +2,7 @@ import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 
-const QuickActionsSection = ({ className = '', fetchNewFeeds }) => {
+const QuickActionsSection = ({ className = '', fetchNewFeeds, activeFilter = null }) => {
 
 
   const actions = [
@@ -51,21 +51,29 @@ const QuickActionsSection = ({ className = '', fetchNewFeeds }) => {
   ];
 
   return (
-            <div className={`bg-white rounded-2xl shadow-sm border border-[#d3d1d1] py-[8px] px-3 ${className}`}>
-      <div className="flex items-center justify-between overflow-hidden space-x-1 md:space-x-2">
-        {actions.map((action, index) => (
-
-          <button key={index}
-            className={`flex flex-col items-center space-y-1 md:space-y-2`}
-            title={action.tooltip}
-            onClick={() => fetchNewFeeds(action.name)}
-          >
-            <div className={`w-7 h-7  rounded-xl ${action.bg} flex items-center justify-center cursor-pointer`}>
-              <action.icon />
-            </div>
-          </button>
-
-        ))}
+            <div className={`bg-white rounded-2xl shadow-sm border border-[#d3d1d1] py-3 px-4 ${className}`}>
+      <div className="flex items-center justify-between space-x-1 md:space-x-2">
+        {actions.map((action, index) => {
+          const isActive = activeFilter === action.name;
+          return (
+            <button 
+              key={index}
+              className={`flex flex-col items-center space-y-1 md:space-y-2 transition-all duration-200 ${
+                isActive ? 'scale-110' : 'hover:scale-105'
+              }`}
+              title={action.tooltip}
+              onClick={() => fetchNewFeeds(action.name)}
+            >
+              <div className={`w-7 h-7 rounded-xl ${action.bg} flex items-center justify-center cursor-pointer transition-all duration-200 ${
+                isActive 
+                  ? 'ring-2 ring-blue-500 ring-offset-2 shadow-lg' 
+                  : 'hover:shadow-md'
+              }`}>
+                <action.icon />
+              </div>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

@@ -108,10 +108,15 @@ const MyPages = () => {
             }
 
             const data = await response.json();
-           if(data.data.length=== 0) 
-            setNoData(true);
+            
+            if(data.data.length === 0) {
+                setNoData(true);
+            } else {
+                setNoData(false);
+            }
+            
             // Transform API data to match component structure
-            if (data) {
+            if (data && data.data) {
                 console.log('Raw page data from API:', data.data);
                 const transformedData = data.data.map(page => {
                     console.log('Processing page:', page.page_name, 'with category ID:', page.category);
@@ -119,12 +124,13 @@ const MyPages = () => {
                         id: page.page_id,
                         name: page.page_name || page.name,
                         category: getCategoryNameById(page.category),
-                        categoryId: page.category, // Keep the original ID for reference
+                        categoryId: page.category,
                         likes: page.likes || "0",
-                        comments: "0", // Not in API response
+                        comments: "0",
                         posts: page.users_post || "0",
                         avatar: page.avatar,
-                        verified: page.verified === "1",
+                        avatar_url: page.avatar_url,
+                        verified: page.verified === "1" || page.verified === true,
                         pageTitle: page.page_title,
                         description: page.page_description,
                         url: page.url,
@@ -133,16 +139,10 @@ const MyPages = () => {
                 });
                 console.log('Transformed data:', transformedData);
                 setMyPages(transformedData);
-            } else {
-                console.log('Using fallback data - unexpected API response structure');
-                setMyPages(fallbackData);
             }
         } catch (error) {
             console.error("Error fetching pages:", error);
             setError(error.message);
-            
-            // Use fallback data in case of error
-            setMyPages(fallbackData);
         } finally {
             setLoading(false);
         }

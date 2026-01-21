@@ -26,15 +26,6 @@ const ProfilePictureAndCover = () => {
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Profile Picture & Cover Data:', {
-      profilePicture,
-      coverPicture
-    });
-    // Handle form submission here
-  };
-
   const FileUploadArea = ({ type, image, onChange }) => (
     <div className=" border border-[#212121] rounded-3xl p-8 text-center hover:border-orange-400 transition-colors">
       <input
@@ -71,42 +62,31 @@ const ProfilePictureAndCover = () => {
     <div className="bg-white rounded-xl p-3.5 px-9 border border-[#808080]">
       <h2 className="text-xl font-semibold text-[#808080] text-center border-b border-[#808080] pb-2 mb-2">Profile Picture & Cover</h2>
       
-      <form onSubmit={handleSubmit}>
-        <div className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Profile Picture :</label>
-            <FileUploadArea 
-              type="profile" 
-              image={profilePicture} 
-              onChange={handleFileChange} 
-            />
-            <p className="text-xs text-gray-500 mt-2">
-              Recommended size: 400x400px. Maximum file size: 2MB.
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Cover :</label>
-            <FileUploadArea 
-              type="cover" 
-              image={coverPicture} 
-              onChange={handleFileChange} 
-            />
-            <p className="text-xs text-gray-500 mt-2">
-              Recommended size: 1200x400px. Maximum file size: 5MB.
-            </p>
-          </div>
+      <div className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Profile Picture :</label>
+          <FileUploadArea 
+            type="profile" 
+            image={profilePicture} 
+            onChange={handleFileChange} 
+          />
+          <p className="text-xs text-gray-500 mt-2">
+            Recommended size: 400x400px. Maximum file size: 2MB.
+          </p>
         </div>
 
-        <div className="mt-8 grid place-items-center">
-          <button 
-            type="submit"
-            className="w-32 bg-gradient-to-l from-[rgba(96,161,249,1)] to-[rgba(17,83,231,1)] text-white py-2 px-4 rounded-lg hover:bg-orange-600 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500"
-          >
-            Save
-          </button>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Cover :</label>
+          <FileUploadArea 
+            type="cover" 
+            image={coverPicture} 
+            onChange={handleFileChange} 
+          />
+          <p className="text-xs text-gray-500 mt-2">
+            Recommended size: 1200x400px. Maximum file size: 5MB.
+          </p>
         </div>
-      </form>
+      </div>
     </div>
   );
 };

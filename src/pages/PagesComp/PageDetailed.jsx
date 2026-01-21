@@ -7,6 +7,7 @@ import { FaHeart, FaRegHeart, FaGlobe, FaPhone, FaMapMarkerAlt } from 'react-ico
 import { MdEdit } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import axios from 'axios';
+import CreatePostSection from '../../components/specific/Home/CreatePostSection';
 
 const DEFAULT_AVATAR = 'https://admin.ouptel.in/images/placeholders/page-avatar.svg';
 const DEFAULT_USER_AVATAR = 'https://admin.ouptel.in/images/placeholders/user-avatar.svg';
@@ -22,6 +23,8 @@ const PageDetailed = () => {
   const [avatarError, setAvatarError] = useState(false);
   const [coverError, setCoverError] = useState(false);
   const [ownerAvatarError, setOwnerAvatarError] = useState(false);
+  const [posts, setPosts] = useState([]);
+  const [loadingPosts, setLoadingPosts] = useState(false);
 
   const accessToken = useMemo(() => localStorage.getItem('access_token'), []);
 
@@ -59,9 +62,52 @@ const PageDetailed = () => {
     fetchPage();
   }, [pageId, accessToken]);
 
+  // Fetch page posts
+  const fetchPagePosts = async () => {
+    if (!pageId) return;
+    setLoadingPosts(true);
+
+    try {
+      const response = await axios.get(
+        `${baseUrl}/api/v1/pages/${pageId}/posts`,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Accept': 'application/json',
+          },
+        }
+      );
+
+      if (response.data?.api_status === 200 && response.data?.data) {
+        setPosts(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching page posts:', error);
+    } finally {
+      setLoadingPosts(false);
+    }
+  };
+
+  useEffect(() => {
+    if (pageId && accessToken) {
+      fetchPagePosts();
+    }
+  }, [pageId, accessToken]);
+
   const handleLikePage = async () => {
-    if (!page) return;
+    if (!page || liking) return;
     setLiking(true);
+
+    const previousLikedState = page.is_liked;
+    const previousLikesCount = page.likes_count || 0;
+
+    // Optimistic update
+    const isNowLiked = !previousLikedState;
+    setPage(prev => ({
+      ...prev,
+      is_liked: isNowLiked,
+      likes_count: isNowLiked ? previousLikesCount + 1 : Math.max(0, previousLikesCount - 1)
+    }));
 
     try {
       const response = await axios.post(
@@ -76,18 +122,24 @@ const PageDetailed = () => {
       );
 
       if (response.data?.api_status === 200 || response.data?.ok === true) {
-        const isNowLiked = !page.is_liked;
+        toast.success(isNowLiked ? 'Page liked successfully' : 'Page unliked successfully');
+      } else {
+        // Revert on failure
         setPage(prev => ({
           ...prev,
-          is_liked: isNowLiked,
-          likes_count: isNowLiked ? (prev.likes_count || 0) + 1 : Math.max(0, (prev.likes_count || 0) - 1)
+          is_liked: previousLikedState,
+          likes_count: previousLikesCount
         }));
-        toast.success(isNowLiked ? 'Page liked successfully' : 'Page unliked');
-      } else {
         toast.error(response.data?.message || 'Failed to update like status');
       }
     } catch (error) {
-      console.error('Error liking page:', error);
+      console.error('Error liking/unliking page:', error);
+      // Revert on error
+      setPage(prev => ({
+        ...prev,
+        is_liked: previousLikedState,
+        likes_count: previousLikesCount
+      }));
       toast.error(error.response?.data?.message || 'Failed to update like status');
     } finally {
       setLiking(false);
@@ -243,6 +295,24 @@ const PageDetailed = () => {
             </div>
           </div>
         </div>
+
+        {/* Create Post Section - Only show if user can post or is owner */}
+        {(page.is_owner || page.can_post === 'enable') && (
+          <div className="mb-6">
+            <CreatePostSection 
+              fetchNewFeeds={fetchPagePosts}
+              showNotification={(message, type) => {
+                if (type === 'success') {
+                  toast.success(message);
+                } else {
+                  toast.error(message);
+                }
+              }}
+              pageId={pageId}
+              isPagePost={true}
+            />
+          </div>
+        )}
 
         {/* About Section */}
         {(page.about || page.page_description) && (
