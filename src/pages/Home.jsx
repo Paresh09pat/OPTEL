@@ -93,6 +93,7 @@ const Home = () => {
   const currentFilterRef = useRef(null); // Track current filter for pagination
   const [feedType, setFeedType] = useState('all'); // 'all' or 'following'
   const [activeFilter, setActiveFilter] = useState(null); // Track active filter for UI
+  const loadMoreTriggerRef = useRef(null); // Ref for intersection observer
 
   // Request location access when component mounts
   useEffect(() => {
@@ -294,32 +295,51 @@ const Home = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feedType]);
 
-  // Infinite scroll handler
+  // Infinite scroll handler using Intersection Observer
   useEffect(() => {
-    const handleScroll = () => {
-      // Check if we're near the bottom of the page
-      const scrollHeight = document.documentElement.scrollHeight;
-      const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
-      const clientHeight = document.documentElement.clientHeight;
-
-      // Load more when user is within 300px of the bottom
-      if (scrollHeight - scrollTop - clientHeight < 300) {
-        // Check if there are more pages to load
-        if (
-          pagination &&
-          pagination.has_more &&
-          pagination.current_page < pagination.last_page &&
-          !loadingMore &&
-          !isFetchingRef.current
-        ) {
-          const nextPage = pagination.current_page + 1;
-          getNewFeeds(currentFilterRef.current, nextPage, feedType);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const target = entries[0];
+        
+        // When the trigger element is visible
+        if (target.isIntersecting) {
+          console.log('Load more trigger visible');
+          
+          // Check if there are more pages to load
+          if (
+            pagination &&
+            pagination.has_more &&
+            pagination.current_page < pagination.last_page &&
+            !loadingMore &&
+            !isFetchingRef.current
+          ) {
+            const nextPage = pagination.current_page + 1;
+            console.log('Loading next page:', nextPage, {
+              currentPage: pagination.current_page,
+              lastPage: pagination.last_page,
+              hasMore: pagination.has_more
+            });
+            getNewFeeds(currentFilterRef.current, nextPage, feedType);
+          }
         }
+      },
+      {
+        root: null, // viewport
+        rootMargin: '400px', // Start loading 400px before reaching the element
+        threshold: 0.1
+      }
+    );
+
+    const currentTrigger = loadMoreTriggerRef.current;
+    if (currentTrigger) {
+      observer.observe(currentTrigger);
+    }
+
+    return () => {
+      if (currentTrigger) {
+        observer.unobserve(currentTrigger);
       }
     };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
   }, [pagination, loadingMore, getNewFeeds, feedType]);
 
   const posts = [];
@@ -1294,6 +1314,16 @@ const Home = () => {
                     <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                     <span className="text-gray-600 font-medium">Loading more posts...</span>
                   </div>
+                </div>
+              )}
+
+              {/* Intersection Observer Trigger - This element triggers loading more posts */}
+              {pagination && pagination.has_more && !loadingMore && (
+                <div 
+                  ref={loadMoreTriggerRef} 
+                  className="h-20 flex items-center justify-center"
+                >
+                  <div className="text-gray-400 text-sm">Scroll for more...</div>
                 </div>
               )}
 

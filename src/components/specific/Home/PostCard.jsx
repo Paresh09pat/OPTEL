@@ -236,9 +236,9 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
     }
     try {
       const response = await axios.get(
-        `${baseUrl}/api/v1/posts/${post_id}/comments`,
+        `${baseUrl}/api/v1/posts/${post_id}/comments?per_page=20&include_replies=true&include_replies_data=true`,
         {
-          params: { per_page: 20 },
+          // params: { per_page: 20 },
           headers: buildAuthHeaders()
         }
       );

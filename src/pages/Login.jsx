@@ -13,6 +13,9 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -55,6 +58,38 @@ const Login = () => {
       console.log("error>>>", error?.response?.data?.message || error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setForgotLoading(true);
+    try {
+      const response = await axios.post(
+        'https://admin.ouptel.in/api/v1/password/forgot',
+        {
+          email: forgotEmail,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (response.data.api_status === "200") {
+        toast.success(response.data.message || 'Password reset link sent to your email!');
+        setShowForgotPassword(false);
+        setForgotEmail('');
+      } else {
+        toast.error(response.data.message || 'Failed to send reset link. Please try again.');
+      }
+    } catch (error) {
+      const errorMsg = error?.response?.data?.message || 'Network error. Please try again.';
+      toast.error(errorMsg);
+      console.log("Forgot password error:", error?.response?.data?.message || error.message);
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -161,6 +196,17 @@ const Login = () => {
                   </button>
                 </div>
 
+                {/* Forgot Password Link */}
+                <div className="text-right">
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPassword(true)}
+                    className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+
                 {/* Login button */}
                 <button
                   type="submit"
@@ -204,6 +250,82 @@ const Login = () => {
         <div className="absolute -z-10 -top-4 -left-4 w-8 h-8 bg-blue-200 rounded-full opacity-60"></div>
         <div className="absolute -z-10 -bottom-6 -right-6 w-12 h-12 bg-purple-200 rounded-full opacity-40"></div>
       </div>
+
+      {/* Forgot Password Modal */}
+      {showForgotPassword && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative animate-fadeIn">
+            {/* Close button */}
+            <button
+              onClick={() => {
+                setShowForgotPassword(false);
+                setForgotEmail('');
+              }}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Modal header */}
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+                <FaLock className="w-8 h-8 text-blue-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Forgot Password?</h2>
+              <p className="text-gray-600 text-sm">
+                Enter your email address and we'll send you a link to reset your password.
+              </p>
+            </div>
+
+            {/* Forgot password form */}
+            <form onSubmit={handleForgotPassword} className="space-y-5">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <input
+                  type="email"
+                  placeholder="Enter your email"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  required
+                  className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-800 placeholder-gray-400"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={forgotLoading}
+                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3.5 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                {forgotLoading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2"></div>
+                    Sending...
+                  </div>
+                ) : (
+                  'Send Reset Link'
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForgotPassword(false);
+                  setForgotEmail('');
+                }}
+                className="w-full text-gray-600 hover:text-gray-800 py-2 text-sm font-medium transition-colors"
+              >
+                Back to Login
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

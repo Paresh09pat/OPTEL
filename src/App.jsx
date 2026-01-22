@@ -44,6 +44,7 @@ import CreateForum from "./pages/CreateForum";
 import PostDetail from "./pages/PostDetail";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsAndConditions from "./pages/TermsAndConditions";
 import NotFound404 from "./pages/NotFound404";
 import GroupDetailed from "./pages/GroupDetailed";
 import ForumDetailed from "./pages/ForumDetailed";
@@ -68,6 +69,7 @@ function App() {
           <Route path="/tell-us-about-you" element={<TellUsAboutYou />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
           <Route path="*" element={<NotFound404 />} />
 
           {/* Protected / Layout Routes */}

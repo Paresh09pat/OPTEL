@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react'
-import { FaPlus, FaUser, FaUsers } from 'react-icons/fa'
+import { FaPlus, FaUser, FaUserFriends, FaUsers } from 'react-icons/fa'
 import { CiCircleMore } from 'react-icons/ci'
 import { BiBell } from 'react-icons/bi'
 import { FaTimes } from 'react-icons/fa'
@@ -12,6 +12,7 @@ import StoryCreateModal from './StoryCreateModal';
 import StoryViewer from './StoryViewer';
 import Notifications from './Notifications';
 import GlobalSearch from './GlobalSearch';
+import FriendRequests from './FriendRequests';
 
 
 
@@ -25,6 +26,8 @@ const Chatbox = ({ onClose, isMobile = false }) => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+  const [friendRequestsOpen, setFriendRequestsOpen] = useState(false);
+  const [friendRequestsCount, setFriendRequestsCount] = useState(0);
   const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
   const [storyModalOpen, setStoryModalOpen] = useState(false);
   const [storyViewerOpen, setStoryViewerOpen] = useState(false);
@@ -57,12 +60,21 @@ const Chatbox = ({ onClose, isMobile = false }) => {
   const toggleSearch = () => {
     setSearchOpen(!searchOpen);
     setNotificationsOpen(false);
+    setFriendRequestsOpen(false);
     setMoreOptionsOpen(false);
   };
 
   const toggleNotifications = () => {
     setNotificationsOpen(!notificationsOpen);
     setSearchOpen(false);
+    setFriendRequestsOpen(false);
+    setMoreOptionsOpen(false);
+  };
+
+  const toggleFriendRequests = () => {
+    setFriendRequestsOpen(!friendRequestsOpen);
+    setSearchOpen(false);
+    setNotificationsOpen(false);
     setMoreOptionsOpen(false);
   };
 
@@ -70,11 +82,13 @@ const Chatbox = ({ onClose, isMobile = false }) => {
     setMoreOptionsOpen(!moreOptionsOpen);
     setSearchOpen(false);
     setNotificationsOpen(false);
+    setFriendRequestsOpen(false);
   };
 
   const closeAllPopups = () => {
     setSearchOpen(false);
     setNotificationsOpen(false);
+    setFriendRequestsOpen(false);
     setMoreOptionsOpen(false);
   };
 
@@ -187,10 +201,7 @@ const Chatbox = ({ onClose, isMobile = false }) => {
     getallgroupchats();
     fetchUserStories();
     fetchNotificationCount();
-
-    // Poll for notifications every 30 seconds
-    const interval = setInterval(fetchNotificationCount, 30000);
-    return () => clearInterval(interval);
+    fetchFriendRequestsCount();
   }, []);
 
   // Re-fetch stories when storyUpdateTrigger changes (story created/deleted)
@@ -222,6 +233,26 @@ const Chatbox = ({ onClose, isMobile = false }) => {
       }
     } catch (error) {
       console.error('Error fetching notification count:', error);
+    }
+  };
+
+  const fetchFriendRequestsCount = async () => {
+    try {
+      const accessToken = localStorage.getItem("access_token");
+      const response = await fetch('https://admin.ouptel.in/api/v1/friends/requests?per_page=1', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      if (data?.ok) {
+        setFriendRequestsCount(data.meta?.total || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching friend requests count:', error);
     }
   };
 
@@ -416,6 +447,19 @@ const Chatbox = ({ onClose, isMobile = false }) => {
                 )}
               </div>
 
+              {/* Friend Requests Icon */}
+              <div className="relative">
+                <FaUserFriends
+                  className={`text-gray-500 size-[25px] cursor-pointer transition-colors hover:text-blue-500 ${friendRequestsOpen ? 'text-blue-500' : ''}`}
+                  onClick={toggleFriendRequests}
+                />
+                {friendRequestsCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white shadow-sm">
+                    {friendRequestsCount > 99 ? '99+' : friendRequestsCount}
+                  </span>
+                )}
+              </div>
+
               {/* More Options Icon */}
               <div className="relative">
                 <CiCircleMore
@@ -485,6 +529,12 @@ const Chatbox = ({ onClose, isMobile = false }) => {
             onClose={toggleNotifications}
             containerRect={containerRect}
             refreshCount={fetchNotificationCount}
+          />
+          {/* Friend Requests drawer */}
+          <FriendRequests
+            isOpen={friendRequestsOpen}
+            onClose={toggleFriendRequests}
+            containerRect={containerRect}
           />
         </div>
       </div>
@@ -700,8 +750,8 @@ const Chatbox = ({ onClose, isMobile = false }) => {
           </div>
           <div className="flex flex-col gap-1.5 ">
             <a href="">Languages</a>
-            <a href="">Terms & Condition</a>
-            <a href="">Privacy Policy</a>
+            <Link to="/terms-and-conditions">Terms & Condition</Link>
+            <Link to="/terms-and-conditions">Privacy Policy</Link>
           </div>
         </div>
       </div>
