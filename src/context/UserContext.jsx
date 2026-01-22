@@ -17,6 +17,8 @@ export const UserProvider = ({ children }) => {
   const [following, setFollowing] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [hasActiveStories, setHasActiveStories] = useState(false); // Track if user has active stories
+  const [storyUpdateTrigger, setStoryUpdateTrigger] = useState(0); // Trigger for story updates
 
   // Get user ID from localStorage 
   const userId = localStorage.getItem('user_id') // Default fallback
@@ -67,9 +69,48 @@ export const UserProvider = ({ children }) => {
     setUserData(prev => ({ ...prev, ...newData }));
   };
 
+  // Notify that a story was created/deleted
+  const notifyStoryUpdate = (hasStories = true) => {
+    setHasActiveStories(hasStories);
+    setStoryUpdateTrigger(prev => prev + 1); // Increment to trigger re-renders
+  };
+
+  // Check if user has active stories
+  const checkUserStories = async () => {
+    try {
+      const accessToken = localStorage.getItem('access_token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/stories/user-stories`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          limit: 20,
+          offset: 0
+        }),
+      });
+
+      const data = await response.json();
+      if (data?.api_status === 200 && data?.stories && data.stories.length > 0) {
+        const currentUserId = localStorage.getItem('user_id');
+        const userStories = data.stories.find(
+          (storyGroup) => storyGroup.user_id.toString() === currentUserId.toString()
+        );
+        setHasActiveStories(userStories && userStories.stories && userStories.stories.length > 0);
+      } else {
+        setHasActiveStories(false);
+      }
+    } catch (error) {
+      console.error('Error checking user stories:', error);
+      setHasActiveStories(false);
+    }
+  };
+
   useEffect(() => {
     if (userId) {
       fetchUserData();
+      checkUserStories(); // Check stories on mount
     } else {
       setLoading(false);
     }
@@ -95,7 +136,11 @@ export const UserProvider = ({ children }) => {
     error,
     refreshUserData,
     updateUserData,
-    userId
+    userId,
+    hasActiveStories,
+    notifyStoryUpdate,
+    storyUpdateTrigger,
+    checkUserStories
   };
 
   return (

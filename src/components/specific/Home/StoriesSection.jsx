@@ -12,7 +12,7 @@ const StoriesSection = ({
   onStoryCreated,
   currentUserId 
 }) => {
-  const { userData } = useUser();
+  const { userData, storyUpdateTrigger } = useUser();
   const [currentUserStories, setCurrentUserStories] = useState([]);
   const [storyModalOpen, setStoryModalOpen] = useState(false);
   const [storyViewerOpen, setStoryViewerOpen] = useState(false);
@@ -63,6 +63,13 @@ const StoriesSection = ({
     fetchUserStories();
   }, []);
 
+  // Re-fetch stories when storyUpdateTrigger changes (story created/deleted)
+  useEffect(() => {
+    if (storyUpdateTrigger > 0) {
+      fetchUserStories();
+    }
+  }, [storyUpdateTrigger]);
+
   // Handle current user story click - show stories if exist, otherwise show create modal
   const handleCurrentUserStoryClick = () => {
     if (currentUserStories && currentUserStories.length > 0) {
@@ -100,20 +107,25 @@ const StoriesSection = ({
     <>
       <ScrollableSection>
         {/* Current User Story - Always show first */}
-        <div className="relative flex-shrink-0">
+        <div className="relative flex-shrink-0 p-1">
           {/* Story indicator border - Instagram style gradient ring with click animation */}
           {hasCurrentUserStories && (
             <div 
-              className="absolute inset-[-3px] rounded-xl z-[-1]"
+              className="absolute inset-0 rounded-xl p-[3px]"
               style={{
-                background: 'conic-gradient(from 0deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%, #f09433 100%)',
-                animation: storyBorderAnimating ? 'spin-gradient-once 0.6s ease-out' : 'none',
+                background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+                animation: storyBorderAnimating ? 'pulse-border 0.6s ease-out' : 'none',
               }}
-            />
+            >
+              <div className="w-full h-full bg-[#EDF6F9] rounded-xl" />
+            </div>
           )}
           <div 
-            className="relative w-[120px] h-[160px] rounded-xl overflow-hidden cursor-pointer group"
+            className={`relative w-[120px] h-[160px] rounded-xl overflow-hidden cursor-pointer group ${
+              hasCurrentUserStories ? 'ring-0' : 'ring-2 ring-gray-300'
+            }`}
             onClick={handleCurrentUserStoryClick}
+            style={{ zIndex: 1 }}
           >
             {currentUserStoryImage ? (
               <img
@@ -197,14 +209,16 @@ const StoriesSection = ({
         />
       )}
 
-      {/* Add CSS animation for gradient spin */}
+      {/* Add CSS animation for gradient pulse */}
       <style>{`
-        @keyframes spin-gradient-once {
-          0% {
-            transform: rotate(0deg);
+        @keyframes pulse-border {
+          0%, 100% {
+            opacity: 1;
+            transform: scale(1);
           }
-          100% {
-            transform: rotate(360deg);
+          50% {
+            opacity: 0.8;
+            transform: scale(1.05);
           }
         }
       `}</style>

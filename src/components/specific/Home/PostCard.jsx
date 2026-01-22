@@ -13,7 +13,7 @@ import Avatar from '../../Avatar';
 import SharePopup from './SharePopup';
 import Poll from './Poll';
 import ReactionDetailsModal from './ReactionDetailsModal';
-const PostCard = ({ user, content, image, video, audio, file, likes, comments, shares, saves, timeAgo, post_id, handleLike, handleDislike, isLiked, commentsData, savePost, isSaved, blog, multipleImages, hasMultipleImages, reportPost, hidePost, iframelink, postfile, postFileName, getNewsFeed, openImagePopup, handleReaction, postReaction, postReactionCounts, currentReaction, userReaction, postType, pollOptions, handlePollVote, isPollLoading }) => {
+const PostCard = ({ user, content, image, video, audio, file, likes, comments, shares, saves, timeAgo, post_id, handleLike, handleDislike, isLiked, commentsData, savePost, isSaved, blog, multipleImages, hasMultipleImages, reportPost, hidePost, iframelink, postfile, postFileName, getNewsFeed, openImagePopup, handleReaction, postReaction, postReactionCounts, currentReaction, userReaction, postType, pollOptions, handlePollVote, isPollLoading, colorId, colorData }) => {
   const navigate = useNavigate();
   const { userData } = useUser();
   const [clickedComments, setClickedComments] = useState(false);
@@ -959,8 +959,8 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
     setLoading(true);
     try {
       const response = await axios.post(
-        `${baseUrl}/api/v1/posts/${post_id}/comments`,
-        { text: reply, parent_id: comment_id },
+        `${baseUrl}/api/v1/comments/${comment_id}/replies`,
+        { text: reply },
         { headers: buildAuthHeaders() }
       );
       const data = response.data;
@@ -976,10 +976,11 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
       }
     } catch (error) {
       console.error('Error adding comment reply:', error);
+      toast.error(error?.response?.data?.message || 'Error posting reply. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [post_id, buildAuthHeaders, fetchPostComments, fetchReply]);
+  }, [buildAuthHeaders, fetchPostComments, fetchReply]);
 
   const handleSubmitReply = useCallback(async (commentId) => {
     if (!replyInput.trim()) return;
@@ -1138,19 +1139,55 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
 
       {content && (
         <div className="px-4 pb-3">
-          <div
-            className="text-gray-800 prose prose-sm max-w-none"
-            style={{
-              wordBreak: 'break-word',
-              overflowWrap: 'break-word'
-            }}
-            dangerouslySetInnerHTML={{
-              __html: content.replace(
-                /<a\s+href="([^"]+)"[^>]*>([^<]+)<\/a>/g,
-                '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline break-all" style="word-break: break-all; overflow-wrap: break-word;">$2</a>'
-              )
-            }}
-          />
+          {/* Colored Post - WhatsApp-like status */}
+          {colorId && colorData && !image && !video && !audio && !multipleImages && !iframelink && !postfile ? (
+            <div
+              className="relative rounded-2xl overflow-hidden min-h-[300px] flex items-center justify-center p-8"
+              style={{
+                background: `linear-gradient(135deg, ${colorData.color_1 || '#b11b1b'} 0%, ${colorData.color_2 || '#d44616'} 100%)`,
+                minHeight: '300px',
+                maxHeight: '400px'
+              }}
+            >
+              <div
+                className="text-center w-full px-4"
+                style={{
+                  color: colorData.text_color || '#f5f5f5',
+                  textShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }}
+              >
+                <div
+                  className="text-xl md:text-2xl font-medium leading-relaxed"
+                  style={{
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
+                    color: colorData.text_color || '#f5f5f5'
+                  }}
+                  dangerouslySetInnerHTML={{
+                    __html: content.replace(
+                      /<a\s+href="([^"]+)"[^>]*>([^<]+)<\/a>/g,
+                      `<a href="$1" target="_blank" rel="noopener noreferrer" class="underline break-all" style="word-break: break-all; overflow-wrap: break-word; color: ${colorData.text_color || '#f5f5f5'};">$2</a>`
+                    )
+                  }}
+                />
+              </div>
+            </div>
+          ) : (
+            /* Regular text post */
+            <div
+              className="text-gray-800 prose prose-sm max-w-none"
+              style={{
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word'
+              }}
+              dangerouslySetInnerHTML={{
+                __html: content.replace(
+                  /<a\s+href="([^"]+)"[^>]*>([^<]+)<\/a>/g,
+                  '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline break-all" style="word-break: break-all; overflow-wrap: break-word;">$2</a>'
+                )
+              }}
+            />
+          )}
           {blog && <img src={blog?.thumbnail} alt="Post content" className="w-full h-auto object-cover cursor-pointer" onClick={() => navigate(`/blog/${blog?.id}`)} />}
         </div>
       )}

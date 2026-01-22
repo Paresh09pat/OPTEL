@@ -1,16 +1,17 @@
 // src/components/layout/SideMenu.js
-import React, { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { FaEllipsisV, FaTimes } from 'react-icons/fa'
-import { FiLogOut } from 'react-icons/fi'
 import { Icon } from '@iconify/react'
 import { navigationItems } from '../../constants/navigation'
 import { useUser } from '../../context/UserContext'
+import { useCreatePost } from '../../context/CreatePostContext'
 
 const SideMenu = ({ onClose, isMobile = false }) => {
   const location = useLocation()
   const navigate = useNavigate()
   const { userData, loading } = useUser()
+  const { openCreatePost } = useCreatePost()
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const profileMenuRef = useRef(null)
   
@@ -108,7 +109,7 @@ const SideMenu = ({ onClose, isMobile = false }) => {
       {/* Create Post Button */}
 
       <button
-        onClick={handleLinkClick}
+        onClick={openCreatePost}
         className="  bg-transparent  text-[#212121] font-semibold text-xl py-3.5 px-6 rounded-full flex items-center justify-between transition-colors cursor-pointer border border-[#d3d1d1] mx-auto w-[90%]"
       >
         <span>Create post</span>

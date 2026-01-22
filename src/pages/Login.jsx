@@ -75,104 +75,127 @@ const Login = () => {
       </div>
 
       {/* Login container */}
-      <div className="relative w-full max-w-md">
-        {/* Glassmorphism card */}
-        <div className={`bg-white/80 backdrop-blur-xl shadow-2xl rounded-3xl p-8 border border-white/20 relative overflow-hidden ${loading ? 'opacity-75 pointer-events-none' : ''}`}>
+      <div className="relative w-full max-w-5xl">
+        {/* Glassmorphism card with split layout */}
+        <div className={`bg-white/80 backdrop-blur-xl shadow-2xl rounded-3xl overflow-hidden border border-white/20 relative ${loading ? 'opacity-75 pointer-events-none' : ''}`}>
           {/* Subtle gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none"></div>
           
-          {/* Content */}
-          <div className="relative z-10">
-            {/* Logo and branding */}
-            <div className="text-center mb-8">
+          <div className="flex flex-col md:flex-row">
+            {/* Left side - Image */}
+            <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-blue-500 to-purple-600 p-12 items-center justify-center relative overflow-hidden">
+              {/* Decorative circles */}
+              <div className="absolute top-10 left-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+              <div className="absolute bottom-10 right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
               
-                <img src="/op_logo.png" alt="logo" className=' w-1/3 mx-auto my-4' />
-             
-            
-              <h1 className="text-xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-2">
-                Welcome Back
-              </h1>
-              <p className="text-gray-500 text-sm">Sign in to your account</p>
+              {/* Image container */}
+              <div className="relative z-10 w-full max-w-md">
+                <img 
+                  src="/login_img.png" 
+                  alt="Login illustration" 
+                  className="w-full h-auto drop-shadow-2xl"
+                  onError={(e) => {
+                    e.target.src = '/op_logo.png';
+                  }}
+                />
+                
+                {/* Welcome text */}
+                <div className="mt-8 text-center">
+                  <h2 className="text-3xl font-bold text-white mb-3">Welcome to OPTEL</h2>
+                  <p className="text-white/80 text-lg">Connect, Share, and Explore</p>
+                </div>
+              </div>
             </div>
 
-            {/* Login form */}
-            <form onSubmit={handleLogin} className="space-y-6">
-              {/* Username field */}
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <FaUser className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Username or email"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
-                  className="w-full pl-12 pr-4 py-4 bg-gray-50/80 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-800 placeholder-gray-400"
-                />
+            {/* Right side - Form */}
+            <div className="w-full md:w-1/2 p-8 md:p-12 relative z-10">
+              {/* Logo for mobile */}
+              <div className="md:hidden text-center mb-6">
+                <img src="/op_logo.png" alt="logo" className='w-1/3 mx-auto mb-4' />
               </div>
 
-              {/* Password field */}
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <FaLock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full pl-12 pr-12 py-4 bg-gray-50/80 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-800 placeholder-gray-400"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  {showPassword ? <FaEyeSlash className="h-5 w-5" /> : <FaEye className="h-5 w-5" />}
-                </button>
+              {/* Form header */}
+              <div className="mb-8">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-2">
+                  Welcome Back
+                </h1>
+                <p className="text-gray-500">Sign in to continue to your account</p>
               </div>
 
-              {/* Remember me and forgot password */}
-              {/* <div className="flex items-center justify-between text-sm">
-                <label className="flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                  />
-                  <span className="ml-2 text-gray-600">Remember me</span>
-                </label>
-                <a href="#" className="text-blue-600 hover:text-blue-800 transition-colors">
-                  Forgot password?
-                </a>
-              </div> */}
-
-              {/* Login button */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full cursor-pointer bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
-              >
-                {loading ? (
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2"></div>
-                    Signing in...
+              {/* Login form */}
+              <form onSubmit={handleLogin} className="space-y-5">
+                {/* Username field */}
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <FaUser className="h-5 w-5 text-gray-400" />
                   </div>
-                ) : (
-                  'Sign In'
-                )}
-              </button>
-            </form>
+                  <input
+                    type="text"
+                    placeholder="Username or email"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    required
+                    className="w-full pl-12 pr-4 py-3.5 bg-gray-50/80 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-800 placeholder-gray-400"
+                  />
+                </div>
 
-            {/* Sign up link */}
-            <div className="mt-8 text-center">
-              <p className="text-gray-600 text-sm">
-                Don't have an account?{' '}
-                <Link to="/signup" className="text-blue-600 hover:text-blue-800 font-medium transition-colors">
-                  Sign up here
-                </Link>
-              </p>
+                {/* Password field */}
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <FaLock className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="w-full pl-12 pr-12 py-3.5 bg-gray-50/80 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-800 placeholder-gray-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    {showPassword ? <FaEyeSlash className="h-5 w-5" /> : <FaEye className="h-5 w-5" />}
+                  </button>
+                </div>
+
+                {/* Login button */}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full cursor-pointer bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3.5 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none mt-6"
+                >
+                  {loading ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2"></div>
+                      Signing in...
+                    </div>
+                  ) : (
+                    'Sign In'
+                  )}
+                </button>
+              </form>
+
+              {/* Sign up link */}
+              <div className="mt-8 text-center">
+                <p className="text-gray-600 text-sm">
+                  Don't have an account?{' '}
+                  <Link to="/signup" className="text-blue-600 hover:text-blue-800 font-medium transition-colors">
+                    Sign up 
+                  </Link>
+                  <span> here</span>
+                </p>
+              </div>
+
+              {/* Mobile welcome text */}
+              <div className="md:hidden mt-8 text-center">
+                <h2 className="text-xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent mb-2">
+                  Welcome to OPTEL
+                </h2>
+                <p className="text-gray-500 text-sm">Connect, Share, and Explore</p>
+              </div>
             </div>
           </div>
         </div>

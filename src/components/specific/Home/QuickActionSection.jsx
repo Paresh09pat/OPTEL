@@ -51,14 +51,14 @@ const QuickActionsSection = ({ className = '', fetchNewFeeds, activeFilter = nul
   ];
 
   return (
-            <div className={`bg-white rounded-2xl shadow-sm border border-[#d3d1d1] py-3 px-4 ${className}`}>
-      <div className="flex items-center justify-between space-x-1 md:space-x-2">
+    <div className={`bg-white rounded-2xl shadow-sm border border-[#d3d1d1] py-5 px-6 ${className}`}>
+      <div className="flex items-center justify-between gap-3 md:gap-4">
         {actions.map((action, index) => {
           const isActive = activeFilter === action.name;
           return (
             <button 
               key={index}
-              className={`flex flex-col items-center space-y-1 md:space-y-2 transition-all duration-200 ${
+              className={`flex flex-col items-center transition-all duration-200 ${
                 isActive ? 'scale-110' : 'hover:scale-105'
               }`}
               title={action.tooltip}

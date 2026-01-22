@@ -7,11 +7,13 @@ import { BarChart3, MapPin, Send, Smile, X } from 'lucide-react';
 import { Palette } from 'lucide-react';
 import axios from 'axios';
 import { useUser } from '../../../context/UserContext';
+import { useCreatePost } from '../../../context/CreatePostContext';
 import { toast } from 'react-toastify';
 
 
 const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost = false }) => {
     const { userData } = useUser();
+    const { isCreatePostOpen, closeCreatePost } = useCreatePost();
     const [postText, setPostText] = useState('');
     const [showPopup, setShowPopup] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState([]);
@@ -67,6 +69,13 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
         setShowPoll(true);
         setShowPopup(true);
     };
+
+    // Sync context state with local showPopup state
+    useEffect(() => {
+        if (isCreatePostOpen) {
+            setShowPopup(true);
+        }
+    }, [isCreatePostOpen]);
 
     // Fetch colored backgrounds from API
     const fetchColoredBackgrounds = useCallback(async () => {
@@ -368,6 +377,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
                 setPostText("");
                 setSelectedFiles([]);
                 setShowPopup(false);
+                closeCreatePost();
                 setSelectedGif(null);
                 setSelectedFeeling(null);
                 setSelectedActivity(null);
@@ -474,6 +484,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
                 setPostText("");
                 setSelectedFiles([]);
                 setShowPopup(false);
+                closeCreatePost();
                 setSelectedGif(null);
                 setShowGifSearch(false);
 
@@ -595,6 +606,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
                 setPostText("");
                 setSelectedFiles([]);
                 setShowPopup(false);
+                closeCreatePost();
 
                 // Reset additional features
                 setPostLink("");
@@ -843,6 +855,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
                 setPostText("");
                 setSelectedFiles([]);
                 setShowPopup(false);
+                closeCreatePost();
 
                 // Reset additional features
                 setPostLink("");
@@ -1127,7 +1140,10 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
 
             <CreatePostPopup
                 isOpen={showPopup}
-                onClose={() => setShowPopup(false)}
+                onClose={() => {
+                    setShowPopup(false);
+                    closeCreatePost();
+                }}
                 createNewPost={createNewPost}
                 setShowPopup={setShowPopup}
                 showPoll={showPoll}

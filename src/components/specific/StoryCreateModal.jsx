@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FaTimes, FaImage, FaUpload } from 'react-icons/fa';
 import { toast } from 'react-toastify';
+import { useUser } from '../../context/UserContext';
 
 const StoryCreateModal = ({ isOpen, onClose, onStoryCreated }) => {
+  const { notifyStoryUpdate } = useUser();
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [storyTitle, setStoryTitle] = useState('');
@@ -121,6 +123,10 @@ const StoryCreateModal = ({ isOpen, onClose, onStoryCreated }) => {
 
       if (response.ok && data.ok !== false) {
         toast.success('Story created successfully!');
+        
+        // Notify context that user now has active stories
+        notifyStoryUpdate(true);
+        
         // Callback to refresh stories
         if (onStoryCreated) {
           onStoryCreated();

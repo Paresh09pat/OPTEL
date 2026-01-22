@@ -5,8 +5,10 @@ import { ThumbsUp, Eye } from 'lucide-react';
 import DeleteStoryModal from './DeleteStoryModal';
 import { baseUrl } from '../../utils/constant';
 import axios from 'axios';
+import { useUser } from '../../context/UserContext';
 
 const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, isCurrentUserStories = false }) => {
+  const { notifyStoryUpdate } = useUser();
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const progressIntervalRef = useRef(null);
@@ -403,6 +405,12 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
         // Handle navigation before refreshing
         const currentIdx = currentStoryIndex;
         const willBeLastStory = currentIdx === stories.length - 1;
+
+        // Check if user will have no more stories after deletion
+        const willHaveNoStories = stories.length === 1;
+        
+        // Notify context about story deletion
+        notifyStoryUpdate(!willHaveNoStories);
 
         // Call callback to refresh stories (this will update the stories prop)
         if (onStoryDeleted) {

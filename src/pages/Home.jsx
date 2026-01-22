@@ -1281,6 +1281,8 @@ const Home = () => {
                     pollOptions={post?.poll_options}
                     handlePollVote={(optionId) => handlePollVote(postId, optionId)}
                     isPollLoading={loading}
+                    colorId={post?.color_id}
+                    colorData={post?.color}
                   />
                 );
               })}
