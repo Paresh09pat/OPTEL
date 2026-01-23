@@ -3,6 +3,7 @@ import { baseUrl } from '../../utils/constant';
 import { FaUserPlus, FaBell, FaComment, FaHeart, FaUserFriends, FaExclamationCircle } from 'react-icons/fa';
 import { BiMessageDetail } from 'react-icons/bi';
 import { HiOutlineTrash } from 'react-icons/hi';
+import { toast } from 'react-toastify';
 
 const Notifications = ({ isOpen, onClose, containerRect, refreshCount }) => {
     const [notifications, setNotifications] = useState([]);
@@ -51,7 +52,7 @@ const Notifications = ({ isOpen, onClose, containerRect, refreshCount }) => {
         try {
             const accessToken = localStorage.getItem("access_token");
 
-            const response = await fetch(`${baseUrl}/api/v1/notifications/get`, {
+            const response = await fetch(`${baseUrl}/api/v1/notifications/mark-as-read`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -59,20 +60,24 @@ const Notifications = ({ isOpen, onClose, containerRect, refreshCount }) => {
                     'X-Requested-With': 'XMLHttpRequest',
                     "Accept": "application/json"
                 },
-                body: JSON.stringify({
-                    seen: 1
-                }),
+                body: JSON.stringify({}),
             });
 
             const data = await response.json();
 
-            if (data?.api_status === 200) {
-                // Refresh notifications after marking as read
-                fetchNotifications();
+            if (data?.api_status === 200 || data?.ok === true) {
+                // Update local state to mark all as read
+                setNotifications(prev => prev.map(notif => ({ ...notif, seen: 1 })));
+                // Refresh count in parent
                 if (refreshCount) refreshCount();
+                // Show success toast
+                toast.success(data?.message || data?.message_data || 'All notifications marked as read');
+            } else {
+                toast.error(data?.message || data?.message_data || 'Failed to mark notifications as read');
             }
         } catch (error) {
             console.error('Error marking notifications as read:', error);
+            toast.error('Failed to mark notifications as read');
         }
     };
 
@@ -80,6 +85,8 @@ const Notifications = ({ isOpen, onClose, containerRect, refreshCount }) => {
     useEffect(() => {
         if (isOpen) {
             fetchNotifications(); // Fetch all notifications
+            // Also refresh the count when opening
+            if (refreshCount) refreshCount();
         }
     }, [isOpen]);
 
@@ -128,12 +135,16 @@ const Notifications = ({ isOpen, onClose, containerRect, refreshCount }) => {
             if (data?.api_status === 200) {
                 // Remove notification from local state
                 setNotifications(prev => prev.filter(notif => notif.id !== notificationId));
+                // Refresh count in parent
                 if (refreshCount) refreshCount();
+                // Show success toast
+                toast.success(data?.message_data || data?.message || 'Notification deleted successfully');
             } else {
-                console.error('Failed to delete notification:', data);
+                toast.error(data?.message_data || data?.message || 'Failed to delete notification');
             }
         } catch (error) {
             console.error('Error deleting notification:', error);
+            toast.error('Failed to delete notification');
         }
     };
 

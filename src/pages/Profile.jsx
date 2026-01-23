@@ -9,6 +9,7 @@ import Avatar from '../components/Avatar'
 import axios from 'axios'
 import Loader from '../components/loading/Loader'
 import FollowersFollowingModal from '../components/specific/Profile/FollowersFollowingModal'
+import ConfirmModal from '../components/ConfirmModal'
 import { toast } from 'react-toastify'
 
 const Profile = () => {
@@ -22,8 +23,14 @@ const Profile = () => {
     const [modalType, setModalType] = useState(null); // 'followers', 'following', or 'posts'
     const [isFollowing, setIsFollowing] = useState(false);
     const [isFollowLoading, setIsFollowLoading] = useState(false);
-    const [isFriend, setIsFriend] = useState(false);
+    const [friendStatus, setFriendStatus] = useState({
+        is_friend: false,
+        friend_request_sent: false,
+        friend_request_received: false,
+        can_follow: true
+    });
     const [isFriendLoading, setIsFriendLoading] = useState(false);
+    const [showUnfriendModal, setShowUnfriendModal] = useState(false);
     const navigate = useNavigate();
     const { userId: urlUserId } = useParams();
 
@@ -64,9 +71,14 @@ const Profile = () => {
                         localStorage.setItem('user_username', data.user_data.username);
                     }
                     // Update follow status based on is_following from API response
-                    setIsFollowing(data.user_data?.is_following === true && !isOwnProfile);
-                    // Update friend status based on is_friend from API response
-                    setIsFriend(data.user_data?.is_friend === 1 || data.user_data?.is_friend === true);
+                    setIsFollowing(data.user_data?.is_following === 1 && !isOwnProfile);
+                    // Update friend status based on all friend-related fields from API response
+                    setFriendStatus({
+                        is_friend: data.user_data?.is_friend === 1 || data.user_data?.is_friend === true,
+                        friend_request_sent: data.user_data?.friend_request_sent === 1 || data.user_data?.friend_request_sent === true,
+                        friend_request_received: data.user_data?.friend_request_received === 1 || data.user_data?.friend_request_received === true,
+                        can_follow: data.user_data?.can_follow === 1 || data.user_data?.can_follow === true
+                    });
                 } else {
                     throw new Error(data.api_text || 'Failed to fetch user data');
                 }
@@ -215,9 +227,14 @@ const Profile = () => {
                 if (refreshResponse.data.api_status === '200') {
                     setUserData(refreshResponse.data);
                     // Update follow status after refresh using is_following
-                    setIsFollowing(refreshResponse.data.user_data?.is_following === true && !isOwnProfile);
+                    setIsFollowing(refreshResponse.data.user_data?.is_following === 1 && !isOwnProfile);
                     // Update friend status after refresh
-                    setIsFriend(refreshResponse.data.user_data?.is_friend === 1 || refreshResponse.data.user_data?.is_friend === true);
+                    setFriendStatus({
+                        is_friend: refreshResponse.data.user_data?.is_friend === 1 || refreshResponse.data.user_data?.is_friend === true,
+                        friend_request_sent: refreshResponse.data.user_data?.friend_request_sent === 1 || refreshResponse.data.user_data?.friend_request_sent === true,
+                        friend_request_received: refreshResponse.data.user_data?.friend_request_received === 1 || refreshResponse.data.user_data?.friend_request_received === true,
+                        can_follow: refreshResponse.data.user_data?.can_follow === 1 || refreshResponse.data.user_data?.can_follow === true
+                    });
                 }
             } else {
                 // Handle error response
@@ -266,9 +283,14 @@ const Profile = () => {
                 if (refreshResponse.data.api_status === '200') {
                     setUserData(refreshResponse.data);
                     // Update follow status after refresh using is_following
-                    setIsFollowing(refreshResponse.data.user_data?.is_following === true && !isOwnProfile);
+                    setIsFollowing(refreshResponse.data.user_data?.is_following === 1 && !isOwnProfile);
                     // Update friend status after refresh
-                    setIsFriend(refreshResponse.data.user_data?.is_friend === 1 || refreshResponse.data.user_data?.is_friend === true);
+                    setFriendStatus({
+                        is_friend: refreshResponse.data.user_data?.is_friend === 1 || refreshResponse.data.user_data?.is_friend === true,
+                        friend_request_sent: refreshResponse.data.user_data?.friend_request_sent === 1 || refreshResponse.data.user_data?.friend_request_sent === true,
+                        friend_request_received: refreshResponse.data.user_data?.friend_request_received === 1 || refreshResponse.data.user_data?.friend_request_received === true,
+                        can_follow: refreshResponse.data.user_data?.can_follow === 1 || refreshResponse.data.user_data?.can_follow === true
+                    });
                 }
             } else {
                 // Handle error response
@@ -284,7 +306,7 @@ const Profile = () => {
     };
 
     const handleSendFriendRequest = async () => {
-        if (isOwnProfile || userData?.user_data?.is_friend === 1 || userData?.user_data?.is_friend === true) return;
+        if (isOwnProfile || friendStatus.is_friend || friendStatus.friend_request_sent) return;
         
         setIsFriendLoading(true);
         try {
@@ -305,7 +327,7 @@ const Profile = () => {
             
             // Check for successful friend request response
             if (data?.api_status === 200) {
-                setIsFriend(true);
+                setFriendStatus(prev => ({ ...prev, friend_request_sent: true }));
                 toast.success(data?.message || 'Friend request sent successfully!');
                 // Refresh user data to get updated friend status
                 const refreshResponse = await axios.get(
@@ -320,7 +342,12 @@ const Profile = () => {
                 if (refreshResponse.data.api_status === '200') {
                     setUserData(refreshResponse.data);
                     // Update friend status after refresh
-                    setIsFriend(refreshResponse.data.user_data?.is_friend === 1 || refreshResponse.data.user_data?.is_friend === true);
+                    setFriendStatus({
+                        is_friend: refreshResponse.data.user_data?.is_friend === 1 || refreshResponse.data.user_data?.is_friend === true,
+                        friend_request_sent: refreshResponse.data.user_data?.friend_request_sent === 1 || refreshResponse.data.user_data?.friend_request_sent === true,
+                        friend_request_received: refreshResponse.data.user_data?.friend_request_received === 1 || refreshResponse.data.user_data?.friend_request_received === true,
+                        can_follow: refreshResponse.data.user_data?.can_follow === 1 || refreshResponse.data.user_data?.can_follow === true
+                    });
                 }
             } else {
                 // Handle error response
@@ -335,8 +362,123 @@ const Profile = () => {
         }
     };
 
+    const handleAcceptFriendRequest = async () => {
+        if (isOwnProfile || !friendStatus.friend_request_received) return;
+        
+        setIsFriendLoading(true);
+        try {
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_URL}/api/v1/friends/accept-request`,
+                {
+                    user_id: userId.toString()
+                },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`,
+                    }
+                }
+            );
+            
+            const data = response.data;
+            
+            // Check for successful accept response
+            if (data?.api_status === 200 || data?.ok === true) {
+                setFriendStatus(prev => ({ ...prev, is_friend: true, friend_request_received: false }));
+                toast.success(data?.message || 'Friend request accepted!');
+                // Refresh user data
+                const refreshResponse = await axios.get(
+                    `${import.meta.env.VITE_API_URL}/api/v1/profile/user-data?user_profile_id=${userId}&fetch=user_data,followers,following`,
+                    {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`,
+                        }
+                    }
+                );
+                if (refreshResponse.data.api_status === '200') {
+                    setUserData(refreshResponse.data);
+                    setFriendStatus({
+                        is_friend: refreshResponse.data.user_data?.is_friend === 1 || refreshResponse.data.user_data?.is_friend === true,
+                        friend_request_sent: refreshResponse.data.user_data?.friend_request_sent === 1 || refreshResponse.data.user_data?.friend_request_sent === true,
+                        friend_request_received: refreshResponse.data.user_data?.friend_request_received === 1 || refreshResponse.data.user_data?.friend_request_received === true,
+                        can_follow: refreshResponse.data.user_data?.can_follow === 1 || refreshResponse.data.user_data?.can_follow === true
+                    });
+                }
+            } else {
+                toast.error(data?.message || 'Failed to accept friend request. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error accepting friend request:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to accept friend request. Please try again later.';
+            toast.error(errorMessage);
+        } finally {
+            setIsFriendLoading(false);
+        }
+    };
+
+    const handleCancelFriendRequest = async () => {
+        if (isOwnProfile || !friendStatus.friend_request_sent) return;
+        
+        setIsFriendLoading(true);
+        try {
+            // Use the same send-request API - it will cancel if already sent
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_URL}/api/v1/friends/send-request`,
+                {
+                    user_id: userId.toString()
+                },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`,
+                    }
+                }
+            );
+            
+            const data = response.data;
+            
+            // Check for successful cancel response
+            if (data?.api_status === 200) {
+                setFriendStatus(prev => ({ ...prev, friend_request_sent: false }));
+                toast.success(data?.message || 'Friend request cancelled!');
+                // Refresh user data
+                const refreshResponse = await axios.get(
+                    `${import.meta.env.VITE_API_URL}/api/v1/profile/user-data?user_profile_id=${userId}&fetch=user_data,followers,following`,
+                    {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`,
+                        }
+                    }
+                );
+                if (refreshResponse.data.api_status === '200') {
+                    setUserData(refreshResponse.data);
+                    setFriendStatus({
+                        is_friend: refreshResponse.data.user_data?.is_friend === 1 || refreshResponse.data.user_data?.is_friend === true,
+                        friend_request_sent: refreshResponse.data.user_data?.friend_request_sent === 1 || refreshResponse.data.user_data?.friend_request_sent === true,
+                        friend_request_received: refreshResponse.data.user_data?.friend_request_received === 1 || refreshResponse.data.user_data?.friend_request_received === true,
+                        can_follow: refreshResponse.data.user_data?.can_follow === 1 || refreshResponse.data.user_data?.can_follow === true
+                    });
+                }
+            } else {
+                toast.error(data?.message || 'Failed to cancel friend request. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error cancelling friend request:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to cancel friend request. Please try again later.';
+            toast.error(errorMessage);
+        } finally {
+            setIsFriendLoading(false);
+        }
+    };
+
+    const handleUnfriendClick = () => {
+        setShowUnfriendModal(true);
+    };
+
     const handleUnfriend = async () => {
-        if (isOwnProfile || !(userData?.user_data?.is_friend === 1 || userData?.user_data?.is_friend === true)) return;
+        if (isOwnProfile || !friendStatus.is_friend) return;
         
         setIsFriendLoading(true);
         try {
@@ -354,7 +496,8 @@ const Profile = () => {
             
             // Check for successful unfriend response
             if (data?.ok === true || data?.api_status === 200) {
-                setIsFriend(false);
+                setFriendStatus(prev => ({ ...prev, is_friend: false }));
+                setShowUnfriendModal(false);
                 toast.success(data?.message || 'Successfully unfriended user!');
                 // Refresh user data to get updated friend status
                 const refreshResponse = await axios.get(
@@ -369,7 +512,12 @@ const Profile = () => {
                 if (refreshResponse.data.api_status === '200') {
                     setUserData(refreshResponse.data);
                     // Update friend status after refresh
-                    setIsFriend(refreshResponse.data.user_data?.is_friend === 1 || refreshResponse.data.user_data?.is_friend === true);
+                    setFriendStatus({
+                        is_friend: refreshResponse.data.user_data?.is_friend === 1 || refreshResponse.data.user_data?.is_friend === true,
+                        friend_request_sent: refreshResponse.data.user_data?.friend_request_sent === 1 || refreshResponse.data.user_data?.friend_request_sent === true,
+                        friend_request_received: refreshResponse.data.user_data?.friend_request_received === 1 || refreshResponse.data.user_data?.friend_request_received === true,
+                        can_follow: refreshResponse.data.user_data?.can_follow === 1 || refreshResponse.data.user_data?.can_follow === true
+                    });
                 }
             } else {
                 // Handle error response
@@ -927,61 +1075,93 @@ const Profile = () => {
 
                     {/* Action Buttons - Below Stats (Mobile) */}
                     {!isOwnProfile && (
-                        <div className="flex flex-row gap-2 justify-end">
+                        <div className="flex flex-col gap-2">
                             {/* Follow/Unfollow Button */}
-                            {userData?.user_data?.is_following ? (
-                                <button
-                                    onClick={handleUnfollow}
-                                    disabled={isFollowLoading}
-                                    className="px-6 py-2 border border-blue-500 text-blue-500 bg-transparent rounded-lg font-medium hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                                >
-                                    {isFollowLoading ? (
-                                        <>
-                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                                            <span>Unfollowing...</span>
-                                        </>
-                                    ) : (
-                                        'Unfollow'
-                                    )}
-                                </button>
-                            ) : (
-                                <button
-                                    onClick={handleFollow}
-                                    disabled={isFollowLoading}
-                                    className="px-6 py-2 border border-blue-500 text-blue-500 bg-transparent rounded-lg font-medium hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                                >
-                                    {isFollowLoading ? (
-                                        <>
-                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                                            <span>Following...</span>
-                                        </>
-                                    ) : (
-                                        'Follow'
-                                    )}
-                                </button>
+                            {friendStatus.can_follow && (
+                                userData?.user_data?.is_following ? (
+                                    <button
+                                        onClick={handleUnfollow}
+                                        disabled={isFollowLoading}
+                                        className="w-full px-6 py-2 border border-blue-500 text-blue-500 bg-transparent rounded-lg font-medium hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    >
+                                        {isFollowLoading ? (
+                                            <>
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                                <span>Unfollowing...</span>
+                                            </>
+                                        ) : (
+                                            'Unfollow'
+                                        )}
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={handleFollow}
+                                        disabled={isFollowLoading}
+                                        className="w-full px-6 py-2 border border-blue-500 text-blue-500 bg-transparent rounded-lg font-medium hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    >
+                                        {isFollowLoading ? (
+                                            <>
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                                <span>Following...</span>
+                                            </>
+                                        ) : (
+                                            'Follow'
+                                        )}
+                                    </button>
+                                )
                             )}
                             
-                            {/* Friend Request/Unfriend Button */}
-                            {userData?.user_data?.is_friend === 1 || userData?.user_data?.is_friend === true ? (
+                            {/* Friend Request Buttons */}
+                            {friendStatus.is_friend ? (
+                                // Already Friends - Show Unfriend button
                                 <button
-                                    onClick={handleUnfriend}
+                                    onClick={handleUnfriendClick}
                                     disabled={isFriendLoading}
-                                    className="px-6 py-2 border border-blue-500 text-blue-500 bg-transparent rounded-lg font-medium hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                    className="w-full px-6 py-2 border border-gray-300 text-gray-700 bg-white rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                >
+                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                                    </svg>
+                                    Friends
+                                </button>
+                            ) : friendStatus.friend_request_received ? (
+                                // Received Friend Request - Show Accept button
+                                <button
+                                    onClick={handleAcceptFriendRequest}
+                                    disabled={isFriendLoading}
+                                    className="w-full px-6 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                 >
                                     {isFriendLoading ? (
                                         <>
-                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                                            <span>Unfriending...</span>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                            <span>Accepting...</span>
                                         </>
                                     ) : (
-                                        'Unfriend'
+                                        'Accept Friend Request'
+                                    )}
+                                </button>
+                            ) : friendStatus.friend_request_sent ? (
+                                // Sent Friend Request - Show Cancel button
+                                <button
+                                    onClick={handleCancelFriendRequest}
+                                    disabled={isFriendLoading}
+                                    className="w-full px-6 py-2 border border-gray-300 text-gray-700 bg-white rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                >
+                                    {isFriendLoading ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                                            <span>Cancelling...</span>
+                                        </>
+                                    ) : (
+                                        'Cancel Request'
                                     )}
                                 </button>
                             ) : (
+                                // No relationship - Show Add Friend button
                                 <button
                                     onClick={handleSendFriendRequest}
                                     disabled={isFriendLoading}
-                                    className="px-6 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                    className="w-full px-6 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                 >
                                     {isFriendLoading ? (
                                         <>
@@ -1064,55 +1244,87 @@ const Profile = () => {
                 {!isOwnProfile && (
                     <div className="hidden sm:flex items-center gap-3 mt-4 justify-end">
                         {/* Follow/Unfollow Button */}
-                        {userData?.user_data?.is_following ? (
-                            <button
-                                onClick={handleUnfollow}
-                                disabled={isFollowLoading}
-                                className="px-6 py-2 border border-blue-500 text-blue-500 bg-transparent rounded-lg font-medium hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                            >
-                                {isFollowLoading ? (
-                                    <>
-                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                                        <span>Unfollowing...</span>
-                                    </>
-                                ) : (
-                                    'Unfollow'
-                                )}
-                            </button>
-                        ) : (
-                            <button
-                                onClick={handleFollow}
-                                disabled={isFollowLoading}
-                                className="px-6 py-2 border border-blue-500 text-blue-500 bg-transparent rounded-lg font-medium hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                            >
-                                {isFollowLoading ? (
-                                    <>
-                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                                        <span>Following...</span>
-                                    </>
-                                ) : (
-                                    'Follow'
-                                )}
-                            </button>
+                        {friendStatus.can_follow && (
+                            userData?.user_data?.is_following ? (
+                                <button
+                                    onClick={handleUnfollow}
+                                    disabled={isFollowLoading}
+                                    className="px-6 py-2 border border-blue-500 text-blue-500 bg-transparent rounded-lg font-medium hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                >
+                                    {isFollowLoading ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                            <span>Unfollowing...</span>
+                                        </>
+                                    ) : (
+                                        'Unfollow'
+                                    )}
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={handleFollow}
+                                    disabled={isFollowLoading}
+                                    className="px-6 py-2 border border-blue-500 text-blue-500 bg-transparent rounded-lg font-medium hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                >
+                                    {isFollowLoading ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                            <span>Following...</span>
+                                        </>
+                                    ) : (
+                                        'Follow'
+                                    )}
+                                </button>
+                            )
                         )}
                         
-                        {/* Friend Request/Unfriend Button */}
-                        {userData?.user_data?.is_friend === 1 || userData?.user_data?.is_friend === true ? (
+                        {/* Friend Request Buttons */}
+                        {friendStatus.is_friend ? (
+                            // Already Friends - Show Unfriend button
                             <button
-                                onClick={handleUnfriend}
+                                onClick={handleUnfriendClick}
                                 disabled={isFriendLoading}
-                                className="px-6 py-2 border border-blue-500 text-blue-500 bg-transparent rounded-lg font-medium hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                className="px-6 py-2 border border-gray-300 text-gray-700 bg-white rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            >
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                                </svg>
+                                Friends
+                            </button>
+                        ) : friendStatus.friend_request_received ? (
+                            // Received Friend Request - Show Accept button
+                            <button
+                                onClick={handleAcceptFriendRequest}
+                                disabled={isFriendLoading}
+                                className="px-6 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                             >
                                 {isFriendLoading ? (
                                     <>
-                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                                        <span>Unfriending...</span>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                        <span>Accepting...</span>
                                     </>
                                 ) : (
-                                    'Unfriend'
+                                    'Accept Friend Request'
+                                )}
+                            </button>
+                        ) : friendStatus.friend_request_sent ? (
+                            // Sent Friend Request - Show Cancel button
+                            <button
+                                onClick={handleCancelFriendRequest}
+                                disabled={isFriendLoading}
+                                className="px-6 py-2 border border-gray-300 text-gray-700 bg-white rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            >
+                                {isFriendLoading ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                                        <span>Cancelling...</span>
+                                    </>
+                                ) : (
+                                    'Cancel Request'
                                 )}
                             </button>
                         ) : (
+                            // No relationship - Show Add Friend button
                             <button
                                 onClick={handleSendFriendRequest}
                                 disabled={isFriendLoading}
@@ -1265,6 +1477,22 @@ const Profile = () => {
             users={getModalUsers()}
             loading={loading}
         />
+
+        {/* Unfriend Confirmation Modal */}
+        {showUnfriendModal && (
+            <ConfirmModal
+                title="Remove Friend"
+                message={`Are you sure you want to remove ${userData?.user_data?.first_name || ''} ${userData?.user_data?.last_name || ''} from your friends? You can always send a friend request again later.`}
+                onConfirm={handleUnfriend}
+                onCancel={() => setShowUnfriendModal(false)}
+                loading={isFriendLoading}
+                confirmText="Remove Friend"
+                cancelText="Cancel"
+                confirmButtonClass="bg-red-600 hover:bg-red-700"
+                iconColor="red"
+                loadingText="Removing..."
+            />
+        )}
 
         {/* Image Popup/Modal */}
         {imagePopup.show && (

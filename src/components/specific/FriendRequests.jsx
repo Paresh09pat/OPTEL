@@ -3,7 +3,7 @@ import { FaTimes, FaUserFriends } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 
-const FriendRequests = ({ isOpen, onClose }) => {
+const FriendRequests = ({ isOpen, onClose, onRequestHandled }) => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState({});
@@ -49,8 +49,8 @@ const FriendRequests = ({ isOpen, onClose }) => {
     try {
       const accessToken = localStorage.getItem('access_token');
       const response = await axios.post(
-        'https://admin.ouptel.in/api/v1/friends/accept',
-        { user_id: userId },
+        `${import.meta.env.VITE_API_URL}/api/v1/friends/requests/${requestId}/accept`,
+        {},
         {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -59,16 +59,20 @@ const FriendRequests = ({ isOpen, onClose }) => {
         }
       );
 
-      if (response.data.ok) {
-        toast.success('Friend request accepted!');
-        setRequests(prev => prev.filter(req => req.id !== requestId));
-        setTotalRequests(prev => prev - 1);
+      if (response.data.ok || response.data.api_status === 200) {
+        toast.success(response.data.message || 'Friend request accepted!');
+        // Refetch the friend requests list
+        await fetchFriendRequests();
+        // Notify parent component to refresh count
+        if (onRequestHandled) {
+          onRequestHandled();
+        }
       } else {
         toast.error(response.data.message || 'Failed to accept request');
       }
     } catch (error) {
       console.error('Error accepting friend request:', error);
-      toast.error('Failed to accept friend request');
+      toast.error(error.response?.data?.message || 'Failed to accept friend request');
     } finally {
       setActionLoading(prev => ({ ...prev, [`accept_${requestId}`]: false }));
     }
@@ -79,8 +83,8 @@ const FriendRequests = ({ isOpen, onClose }) => {
     try {
       const accessToken = localStorage.getItem('access_token');
       const response = await axios.post(
-        'https://admin.ouptel.in/api/v1/friends/decline',
-        { user_id: userId },
+        `${import.meta.env.VITE_API_URL}/api/v1/friends/requests/${requestId}/decline`,
+        {},
         {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -89,20 +93,25 @@ const FriendRequests = ({ isOpen, onClose }) => {
         }
       );
 
-      if (response.data.ok) {
-        toast.success('Friend request declined');
-        setRequests(prev => prev.filter(req => req.id !== requestId));
-        setTotalRequests(prev => prev - 1);
+      if (response.data.ok || response.data.api_status === 200) {
+        toast.success(response.data.message || 'Friend request declined');
+        // Refetch the friend requests list
+        await fetchFriendRequests();
+        // Notify parent component to refresh count
+        if (onRequestHandled) {
+          onRequestHandled();
+        }
       } else {
         toast.error(response.data.message || 'Failed to decline request');
       }
     } catch (error) {
       console.error('Error declining friend request:', error);
-      toast.error('Failed to decline friend request');
+      toast.error(error.response?.data?.message || 'Failed to decline friend request');
     } finally {
       setActionLoading(prev => ({ ...prev, [`decline_${requestId}`]: false }));
     }
   };
+
 
   if (!isOpen) return null;
 
