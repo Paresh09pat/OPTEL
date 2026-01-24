@@ -57,16 +57,94 @@ const PostDetail = () => {
       );
 
       const data = response.data;
+      
+      console.log('PostDetail API Response:', data);
+      console.log('Post Data:', data?.post_data);
 
       if (data?.api_status === 200 && data?.post_data) {
-        setPostData(data.post_data);
+        // Map the API response to match the format expected by PostCard
+        const mappedPost = {
+          ...data.post_data,
+          // Ensure all necessary fields are present
+          id: data.post_data.id || data.post_data.post_id,
+          post_id: data.post_data.id || data.post_data.post_id,
+          postText: data.post_data.postText || data.post_data.post_text || data.post_data.Orginaltext,
+          post_text: data.post_data.postText || data.post_data.post_text || data.post_data.Orginaltext,
+          
+          // Reactions
+          reactions_count: data.post_data.reactions_count || data.post_data.post_likes || 0,
+          post_likes: data.post_data.reactions_count || data.post_data.post_likes || 0,
+          reaction_counts: data.post_data.reaction_counts || {},
+          user_reaction: data.post_data.user_reaction || data.post_data.current_reaction,
+          current_reaction: data.post_data.current_reaction || data.post_data.user_reaction,
+          is_liked: data.post_data.is_liked || data.post_data.is_post_liked,
+          
+          // Comments
+          comments_count: data.post_data.comments_count || data.post_data.post_comments || 0,
+          post_comments: data.post_data.comments_count || data.post_data.post_comments || 0,
+          
+          // Shares
+          shares_count: data.post_data.shares_count || data.post_data.post_shares || 0,
+          post_shares: data.post_data.shares_count || data.post_data.post_shares || 0,
+          
+          // Save status
+          is_post_saved: data.post_data.is_post_saved || data.post_data.saved_post,
+          
+          // Media
+          postPhoto: data.post_data.postPhoto || data.post_data.post_photo,
+          post_photo: data.post_data.postPhoto || data.post_data.post_photo,
+          post_photo_url: data.post_data.post_photo_url || data.post_data.postPhoto,
+          postFile: data.post_data.postFile || data.post_data.post_file,
+          post_file: data.post_data.postFile || data.post_data.post_file,
+          postFile_full: data.post_data.postFile_full || data.post_data.post_file_full,
+          postFileName: data.post_data.postFileName || data.post_data.post_file_name,
+          postYoutube: data.post_data.postYoutube || data.post_data.post_youtube,
+          post_youtube: data.post_data.postYoutube || data.post_data.post_youtube,
+          post_record: data.post_data.post_record,
+          post_record_url: data.post_data.post_record_url,
+          album_images: data.post_data.album_images || data.post_data.photo_album,
+          photo_multi: data.post_data.photo_multi || data.post_data.photo_album,
+          
+          // Post type
+          postType: data.post_data.postType || data.post_data.post_type,
+          post_type: data.post_data.postType || data.post_data.post_type,
+          
+          // Poll
+          poll_options: data.post_data.poll_options || data.post_data.options,
+          
+          // Colored post
+          color_id: data.post_data.color_id || data.post_data.colorId,
+          color_data: data.post_data.color_data || data.post_data.colorData || (data.post_data.color_id ? {
+            color_1: data.post_data.color_1,
+            color_2: data.post_data.color_2,
+            text_color: data.post_data.text_color
+          } : null),
+          
+          // Feeling
+          feeling: data.post_data.feeling || (data.post_data.postFeeling ? {
+            key: data.post_data.postFeeling,
+            label: data.post_data.postFeeling.charAt(0).toUpperCase() + data.post_data.postFeeling.slice(1)
+          } : null),
+          postFeeling: data.post_data.postFeeling || data.post_data.feeling?.key,
+          
+          // Publisher/User
+          publisher: data.post_data.publisher || data.post_data.user_data,
+          
+          // Time
+          time: data.post_data.time || data.post_data.post_time,
+          
+          // Blog
+          blog: data.post_data.blog
+        };
+        
+        setPostData(mappedPost);
         setPostComments(data.post_comments || []);
         
         // Update saved posts if post is saved
-        if (data.post_data.is_post_saved) {
+        if (mappedPost.is_post_saved) {
           setSavedPosts(prev => {
             const newSet = new Set(prev);
-            newSet.add(data.post_data.id);
+            newSet.add(mappedPost.id);
             localStorage.setItem("saved_posts", JSON.stringify([...newSet]));
             return newSet;
           });
@@ -541,6 +619,10 @@ const PostDetail = () => {
               pollOptions={post?.poll_options}
               handlePollVote={(optionId) => handlePollVote(postIdNum, optionId)}
               isPollLoading={loading}
+              colorId={post?.color_id}
+              colorData={post?.color_data}
+              feeling={post?.feeling}
+              isFeelingPost={post?.post_type === 'feeling' || !!post?.feeling}
             />
           </div>
         </div>

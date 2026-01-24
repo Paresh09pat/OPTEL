@@ -297,50 +297,67 @@ const Home = () => {
 
   // Infinite scroll handler using Intersection Observer
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const target = entries[0];
-        
-        // When the trigger element is visible
-        if (target.isIntersecting) {
-          console.log('Load more trigger visible');
+    // Cleanup function to disconnect observer
+    let observer = null;
+
+    const setupObserver = () => {
+      // Create new observer
+      observer = new IntersectionObserver(
+        (entries) => {
+          const target = entries[0];
           
-          // Check if there are more pages to load
-          if (
-            pagination &&
-            pagination.has_more &&
-            pagination.current_page < pagination.last_page &&
-            !loadingMore &&
-            !isFetchingRef.current
-          ) {
-            const nextPage = pagination.current_page + 1;
-            console.log('Loading next page:', nextPage, {
-              currentPage: pagination.current_page,
-              lastPage: pagination.last_page,
-              hasMore: pagination.has_more
+          // When the trigger element is visible
+          if (target.isIntersecting) {
+            console.log('Load more trigger visible', {
+              pagination,
+              loadingMore,
+              isFetching: isFetchingRef.current
             });
-            getNewFeeds(currentFilterRef.current, nextPage, feedType);
+            
+            // Check if there are more pages to load
+            if (
+              pagination &&
+              pagination.has_more &&
+              pagination.current_page < pagination.last_page &&
+              !loadingMore &&
+              !isFetchingRef.current
+            ) {
+              const nextPage = pagination.current_page + 1;
+              console.log('Loading next page:', nextPage, {
+                currentPage: pagination.current_page,
+                lastPage: pagination.last_page,
+                hasMore: pagination.has_more
+              });
+              getNewFeeds(currentFilterRef.current, nextPage, feedType);
+            }
           }
+        },
+        {
+          root: null, // viewport
+          rootMargin: '400px', // Start loading 400px before reaching the element
+          threshold: 0.1
         }
-      },
-      {
-        root: null, // viewport
-        rootMargin: '400px', // Start loading 400px before reaching the element
-        threshold: 0.1
-      }
-    );
+      );
 
-    const currentTrigger = loadMoreTriggerRef.current;
-    if (currentTrigger) {
-      observer.observe(currentTrigger);
-    }
-
-    return () => {
+      // Observe the trigger element
+      const currentTrigger = loadMoreTriggerRef.current;
       if (currentTrigger) {
-        observer.unobserve(currentTrigger);
+        console.log('Observing load more trigger');
+        observer.observe(currentTrigger);
       }
     };
-  }, [pagination, loadingMore, getNewFeeds, feedType]);
+
+    // Setup observer after a small delay to ensure DOM is ready
+    const timeoutId = setTimeout(setupObserver, 100);
+
+    // Cleanup function
+    return () => {
+      clearTimeout(timeoutId);
+      if (observer) {
+        observer.disconnect();
+      }
+    };
+  }, [pagination, loadingMore, getNewFeeds, feedType, newFeeds.length]); // Added newFeeds.length to re-trigger when posts are loaded
 
   const posts = [];
 
@@ -1303,6 +1320,8 @@ const Home = () => {
                     isPollLoading={loading}
                     colorId={post?.color_id}
                     colorData={post?.color}
+                    feeling={post?.feeling}
+                    isFeelingPost={post?.is_feeling_post}
                   />
                 );
               })}

@@ -1252,7 +1252,7 @@ const CreatePostPopup = ({
     const { userData } = useUser();
     const [postText, setPostText] = useState('');
     const [showSharing, setShowSharing] = useState(false);
-    const [commentsEnabled, setCommentsEnabled] = useState(true);
+    const [commentsEnabled, setCommentsEnabled] = useState(false);
     const [showColorSection, setShowColorSection] = useState(false);
 
     const [selectedFiles, setSelectedFiles] = useState([]);
@@ -1938,203 +1938,19 @@ const CreatePostPopup = ({
                         </div>
                     </div>
 
-                    {/* Additional Features */}
-                    <div className="mt-6 space-y-4">
-                        {/* Link Input */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Add Link
-                            </label>
-                            <input
-                                type="url"
-                                value={postLink}
-                                onChange={(e) => setPostLink(e.target.value)}
-                                placeholder="https://example.com"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                            {postLink && (
-                                <div className="mt-2 space-y-2">
-                                    <input
-                                        type="text"
-                                        value={postLinkTitle}
-                                        onChange={(e) => setPostLinkTitle(e.target.value)}
-                                        placeholder="Link title (optional)"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
-                                    <textarea
-                                        value={postLinkContent}
-                                        onChange={(e) => setPostLinkContent(e.target.value)}
-                                        placeholder="Link description (optional)"
-                                        rows="2"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
-                                </div>
-                            )}
-                        </div>
 
-                        {/* YouTube Link Input */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                YouTube Video
-                            </label>
-                            <input
-                                type="url"
-                                value={youtubeLink}
-                                onChange={(e) => setYoutubeLink(e.target.value)}
-                                placeholder="https://youtube.com/watch?v=..."
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-
-                        {/* Location Input */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Location
-                            </label>
-                            <input
-                                type="text"
-                                value={location}
-                                onChange={(e) => setLocation(e.target.value)}
-                                placeholder="Where are you?"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-
-                        {/* Feeling Display (if selected) */}
-                        {selectedFeeling && (
-                            <div className="p-3 bg-teal-50 rounded-lg border border-teal-200">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-2xl">{selectedFeeling.emoji}</span>
-                                        <div>
-                                            <p className="text-sm font-medium text-gray-700">Feeling</p>
-                                            <p className="text-gray-800 font-semibold">{selectedFeeling.label}</p>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={() => {
-                                            setSelectedFeeling(null);
-                                            setFeeling("");
-                                        }}
-                                        className="p-1 text-teal-600 hover:text-teal-800 hover:bg-teal-100 rounded-full transition-colors"
-                                        title="Remove Feeling"
-                                    >
-                                        <X className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Background Color */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Background Color
-                            </label>
-                            <div className="flex space-x-2">
-                                <input
-                                    type="color"
-                                    value={backgroundColor}
-                                    onChange={(e) => setBackgroundColor(e.target.value)}
-                                    className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
-                                />
-                                <input
-                                    type="text"
-                                    value={backgroundColor}
-                                    onChange={(e) => setBackgroundColor(e.target.value)}
-                                    placeholder="#ffffff"
-                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Album Name */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Album Name
-                            </label>
-                            <input
-                                type="text"
-                                value={albumName}
-                                onChange={(e) => setAlbumName(e.target.value)}
-                                placeholder="My Album Name"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-
-                        {/* Group ID */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Group ID
-                            </label>
-                            <input
-                                type="number"
-                                value={groupId}
-                                onChange={(e) => setGroupId(e.target.value)}
-                                placeholder="Group ID (for group posts)"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-
-                        {/* Post Type Selection */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Post Type
-                            </label>
-                            <select
-                                value={postType}
-                                onChange={(e) => setPostType(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="text">Text</option>
-                                <option value="photo">Photo</option>
-                                <option value="video">Video</option>
-                                <option value="link">Link</option>
-                                <option value="file">File</option>
-                                <option value="audio">Audio</option>
-                                <option value="album">Album</option>
-                            </select>
-                        </div>
-
-                        {/* Privacy Selection */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Privacy
-                            </label>
-                            <select
-                                value={postPrivacy}
-                                onChange={(e) => setPostPrivacy(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="0">Public</option>
-                                <option value="1">Friends</option>
-                                <option value="2">Only Me</option>
-                                <option value="4">Group</option>
-                            </select>
-                        </div>
-                    </div>
 
                     {/* Settings */}
                     <div className="mt-6 space-y-4">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-                            <div className="flex items-center space-x-2">
-                                <span className="text-gray-700 font-medium">Sharing</span>
-                                <button
-                                    onClick={() => setShowSharing(!showSharing)}
-                                    className="text-blue-500 hover:text-blue-600"
-                                >
-                                    <Icon icon="mdi:chevron-down" className={`w-5 h-5 transition-transform ${showSharing ? 'rotate-180' : ''}`} />
-                                </button>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <input
-                                    type="checkbox"
-                                    id="comments"
-                                    checked={commentsEnabled}
-                                    onChange={(e) => setCommentsEnabled(e.target.checked)}
-                                    className="w-4 h-4 text-blue-600 rounded"
-                                />
-                                <label htmlFor="comments" className="text-gray-700">Turn Off Comments</label>
-                            </div>
+                        <div className="flex items-center space-x-2">
+                            <input
+                                type="checkbox"
+                                id="comments"
+                                checked={commentsEnabled}
+                                onChange={(e) => setCommentsEnabled(e.target.checked)}
+                                className="w-4 h-4 text-blue-600 rounded"
+                            />
+                            <label htmlFor="comments" className="text-gray-700">Turn Off Comments</label>
                         </div>
                     </div>
                 </div>

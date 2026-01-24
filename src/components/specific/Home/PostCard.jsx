@@ -13,7 +13,7 @@ import Avatar from '../../Avatar';
 import SharePopup from './SharePopup';
 import Poll from './Poll';
 import ReactionDetailsModal from './ReactionDetailsModal';
-const PostCard = ({ user, content, image, video, audio, file, likes, comments, shares, saves, timeAgo, post_id, handleLike, handleDislike, isLiked, commentsData, savePost, isSaved, blog, multipleImages, hasMultipleImages, reportPost, hidePost, iframelink, postfile, postFileName, getNewsFeed, openImagePopup, handleReaction, postReaction, postReactionCounts, currentReaction, userReaction, postType, pollOptions, handlePollVote, isPollLoading, colorId, colorData }) => {
+const PostCard = ({ user, content, image, video, audio, file, likes, comments, shares, saves, timeAgo, post_id, handleLike, handleDislike, isLiked, commentsData, savePost, isSaved, blog, multipleImages, hasMultipleImages, reportPost, hidePost, iframelink, postfile, postFileName, getNewsFeed, openImagePopup, handleReaction, postReaction, postReactionCounts, currentReaction, userReaction, postType, pollOptions, handlePollVote, isPollLoading, colorId, colorData, feeling, isFeelingPost }) => {
   const navigate = useNavigate();
   const { userData } = useUser();
   const [clickedComments, setClickedComments] = useState(false);
@@ -354,6 +354,30 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
     return labels[reactionType] || 'Liked';
   };
 
+  // Get feeling emoji based on feeling key
+  const getFeelingEmoji = (feelingKey) => {
+    const feelings = {
+      'happy': '😊',
+      'loved': '😍',
+      'sad': '😢',
+      'angry': '😠',
+      'confused': '😕',
+      'hot': '🥵',
+      'broken': '💔',
+      'expressionless': '😑',
+      'cool': '😎',
+      'funny': '😄',
+      'tired': '😫',
+      'lovely': '🥰',
+      'blessed': '🙏',
+      'shocked': '😲',
+      'sleepy': '😴',
+      'pretty': '😊',
+      'bored': '😒'
+    };
+    return feelings[feelingKey] || '😊';
+  };
+
   // Get total reaction count - use likes prop which contains reactions_count from API
   const getTotalReactionCount = () => {
     // If postReactionCounts exists, calculate from it (for detailed breakdown)
@@ -512,7 +536,8 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
       );
       const data = response.data;
       if (data?.api_status === 200 || data?.ok === true) {
-        toast.success(data?.message || 'Post hidden successfully');
+        // Show a more user-friendly success message
+        toast.success('Post hidden successfully! You won\'t see this post in your feed anymore.');
         // Refetch the news feed to update the UI
         if (getNewsFeed && typeof getNewsFeed === 'function') {
           getNewsFeed();
@@ -1087,7 +1112,19 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
           />
           <div>
             <h3 className="font-semibold text-gray-900">{user?.name}</h3>
-            <p className="text-sm text-gray-500">{timeAgo}</p>
+            <div className="flex items-center space-x-1">
+              <p className="text-sm text-gray-500">{timeAgo}</p>
+              {isFeelingPost && feeling && (
+                <>
+                  <span className="text-sm text-gray-500">•</span>
+                  <div className="flex items-center space-x-1">
+                    <span className="text-sm text-gray-500">feeling</span>
+                    <span className="text-base leading-none">{getFeelingEmoji(feeling.key)}</span>
+                    <span className="text-sm font-medium text-gray-700">{feeling.label}</span>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
         <div className="relative">
@@ -1156,6 +1193,13 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                   textShadow: '0 2px 4px rgba(0,0,0,0.2)'
                 }}
               >
+                {/* Show feeling in colored post */}
+                {isFeelingPost && feeling && (
+                  <div className="mb-4 flex items-center justify-center space-x-2">
+                    <span className="text-3xl">{getFeelingEmoji(feeling.key)}</span>
+                    <span className="text-lg font-medium opacity-90">Feeling {feeling.label}</span>
+                  </div>
+                )}
                 <div
                   className="text-xl md:text-2xl font-medium leading-relaxed"
                   style={{
@@ -1174,19 +1218,28 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
             </div>
           ) : (
             /* Regular text post */
-            <div
-              className="text-gray-800 prose prose-sm max-w-none"
-              style={{
-                wordBreak: 'break-word',
-                overflowWrap: 'break-word'
-              }}
-              dangerouslySetInnerHTML={{
-                __html: content.replace(
-                  /<a\s+href="([^"]+)"[^>]*>([^<]+)<\/a>/g,
-                  '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline break-all" style="word-break: break-all; overflow-wrap: break-word;">$2</a>'
-                )
-              }}
-            />
+            <>
+              {/* Show feeling in regular post */}
+              {isFeelingPost && feeling && (
+                <div className="mb-3 flex items-center space-x-2 text-gray-600">
+                  <span className="text-2xl">{getFeelingEmoji(feeling.key)}</span>
+                  <span className="text-base font-medium">Feeling {feeling.label}</span>
+                </div>
+              )}
+              <div
+                className="text-gray-800 prose prose-sm max-w-none"
+                style={{
+                  wordBreak: 'break-word',
+                  overflowWrap: 'break-word'
+                }}
+                dangerouslySetInnerHTML={{
+                  __html: content.replace(
+                    /<a\s+href="([^"]+)"[^>]*>([^<]+)<\/a>/g,
+                    '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline break-all" style="word-break: break-all; overflow-wrap: break-word;">$2</a>'
+                  )
+                }}
+              />
+            </>
           )}
           {blog && <img src={blog?.thumbnail} alt="Post content" className="w-full h-auto object-cover cursor-pointer" onClick={() => navigate(`/blog/${blog?.id}`)} />}
         </div>
@@ -1194,15 +1247,23 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
 
       {/* Handle multiple images */}
       {multipleImages && multipleImages.length > 0 && (
-        <div className="px-4 pb-3">
-          <div className={`grid gap-1 ${multipleImages.length === 1 ? 'grid-cols-1' : multipleImages.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`} style={{ gridTemplateRows: 'repeat(auto-fit, minmax(150px, 1fr))', maxHeight: '400px', width: '100%', height: 'auto', display: 'grid' }}>
+        <div className="w-full bg-gray-50">
+          <div className={`grid gap-1 ${multipleImages.length === 1 ? 'grid-cols-1' : multipleImages.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`} style={{ width: '100%', height: 'auto', display: 'grid' }}>
             {multipleImages.map((img, index) => (
-              <div key={img.id || index} className={`relative overflow-hidden ${multipleImages.length === 1 ? 'col-span-1' : multipleImages.length === 2 ? 'col-span-1' : index === 0 ? 'col-span-2 row-span-2' : 'col-span-1'}`}>
+              <div key={img.id || index} className={`relative overflow-hidden ${multipleImages.length === 1 ? 'col-span-1' : multipleImages.length === 2 ? 'col-span-1' : index === 0 ? 'col-span-2 row-span-2' : 'col-span-1'}`} style={{ minHeight: '200px', maxHeight: multipleImages.length === 1 ? '600px' : '400px' }}>
                 <img
                   src={img.image || img.image_org}
                   alt={`Post image ${index + 1}`}
-                  className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-200"
-                  style={{ objectFit: 'cover', minHeight: '150px', maxHeight: '300px', width: '100%', height: '100%', display: 'block', maxWidth: '100%' }}
+                  className="w-full h-full cursor-pointer hover:scale-105 transition-transform duration-200"
+                  style={{ 
+                    objectFit: multipleImages.length === 1 ? 'contain' : 'cover',
+                    minHeight: '200px',
+                    maxHeight: multipleImages.length === 1 ? '600px' : '400px',
+                    width: '100%',
+                    height: '100%',
+                    display: 'block',
+                    maxWidth: '100%'
+                  }}
                   onClick={() => {
                     if (openImagePopup && multipleImages) {
                       openImagePopup(multipleImages, index);
@@ -1231,26 +1292,36 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
       )}
 
       {/* Handle single image */}
-      {image && !multipleImages && <img
-        src={image}
-        alt="Post content"
-        className="w-full h-auto object-cover cursor-pointer hover:opacity-90 transition-opacity duration-200"
-        style={{ objectFit: 'cover', minHeight: '200px', maxHeight: '400px', width: '100%', height: 'auto', display: 'block' }}
-        onClick={() => {
-          if (openImagePopup) {
-            openImagePopup([{ image, image_org: image }], 0);
-          }
-        }}
-        onLoad={() => {
-          // console.log('Single image loaded successfully:', image);
-        }}
-        onError={(e) => {
-          console.error('Single image failed to load:', image);
-          // Show a placeholder instead of hiding the image
-          e.target.src = '/perimg.png';
-          e.target.className = 'w-full h-auto object-cover opacity-50';
-        }}
-      />}
+      {image && !multipleImages && (
+        <div className="w-full bg-gray-50">
+          <img
+            src={image}
+            alt="Post content"
+            className="w-full h-auto cursor-pointer hover:opacity-90 transition-opacity duration-200"
+            style={{ 
+              objectFit: 'contain',
+              maxHeight: '600px',
+              width: '100%',
+              height: 'auto',
+              display: 'block'
+            }}
+            onClick={() => {
+              if (openImagePopup) {
+                openImagePopup([{ image, image_org: image }], 0);
+              }
+            }}
+            onLoad={() => {
+              // console.log('Single image loaded successfully:', image);
+            }}
+            onError={(e) => {
+              console.error('Single image failed to load:', image);
+              // Show a placeholder instead of hiding the image
+              e.target.src = '/perimg.png';
+              e.target.className = 'w-full h-auto object-cover opacity-50';
+            }}
+          />
+        </div>
+      )}
 
       {/* Handle video */}
       {video && <video className="w-full h-auto object-cover" controls src={video}></video>}
