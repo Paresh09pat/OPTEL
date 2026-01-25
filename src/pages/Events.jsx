@@ -257,13 +257,10 @@ const Events = () => {
             </div>
 
             <div className="w-[90%] lg:w-full mx-auto flex flex-col gap-4 bg-white ">
-              <div
-                style={{ backgroundSize: "cover" }}
-                className='w-full h-[10rem] md:h-[18rem] bg-[url("/eventsformbgimg.svg")] bg-no-repeat bg-top rounded-lg'
-              >
-                <div className="w-full flex items-end justify-end p-6 md:p-16">
-                  <h2 className="text-3xl text-white font-bold">Create Event</h2>
-                </div>
+              <div className="relative w-full h-[10rem] md:h-[18rem] flex items-start justify-end p-6 md:p-16 rounded-lg overflow-hidden">
+                {/* Wave SVG */}
+                <img src="/Vectorgroup.svg" alt="vector" className='absolute bottom-0 right-0 top-0 w-full h-full object-cover' />
+                <h2 className="text-3xl text-white font-bold z-10">Create Event</h2>
               </div>
 
               <form
@@ -460,7 +457,7 @@ const Events = () => {
                   <button
                     type="submit"
                     disabled={formLoading}
-                    className="w-[20rem] cursor-pointer h-[50px] border border-[#F25E4E] text-[#F25E4E] font-semibold text-[20px] py-2 px-8 rounded-lg hover:bg-[#F25E4E] transition hover:text-[#fff] disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-[20rem] cursor-pointer h-[50px] border border-[#4A90E2] text-[#4A90E2] font-semibold text-[20px] py-2 px-8 rounded-lg hover:bg-[#4A90E2] transition hover:text-[#fff] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {formLoading ? "Creating Event..." : "Publish Event"}
                   </button>

@@ -83,6 +83,17 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
   useEffect(() => {
     if (!isRefetchingRef.current && commentsData && Array.isArray(commentsData)) {
       setLocalCommentsData(commentsData);
+      
+      // If comments have replies in them, populate commentReplies state
+      const repliesMap = {};
+      commentsData.forEach(comment => {
+        if (comment.has_replies && comment.replies && Array.isArray(comment.replies) && comment.replies.length > 0) {
+          repliesMap[comment.id] = comment.replies;
+        }
+      });
+      if (Object.keys(repliesMap).length > 0) {
+        setCommentReplies(prev => ({ ...prev, ...repliesMap }));
+      }
     }
   }, [commentsData]);
 
@@ -253,6 +264,18 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
           [];
         if (Array.isArray(fetched)) {
           setLocalCommentsData(fetched);
+          
+          // If comments have replies in them, populate commentReplies state
+          const repliesMap = {};
+          fetched.forEach(comment => {
+            if (comment.has_replies && comment.replies && Array.isArray(comment.replies) && comment.replies.length > 0) {
+              repliesMap[comment.id] = comment.replies;
+            }
+          });
+          if (Object.keys(repliesMap).length > 0) {
+            setCommentReplies(prev => ({ ...prev, ...repliesMap }));
+          }
+          
           return fetched;
         } else {
           console.warn('Fetched comments is not an array:', fetched);
@@ -699,6 +722,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
 
   // Define fetchReply function first
   const fetchReply = useCallback(async (comment_id) => {
+    // If replies are already loaded, toggle them (hide)
     if (commentReplies[comment_id]) {
       setCommentReplies(prev => {
         const newReplies = { ...prev };
@@ -708,6 +732,18 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
       return;
     }
 
+    // Check if the comment already has replies in localCommentsData
+    const comment = localCommentsData.find(c => c.id === comment_id);
+    if (comment && comment.has_replies && comment.replies && Array.isArray(comment.replies) && comment.replies.length > 0) {
+      // Use the replies that came with the comment
+      setCommentReplies(prev => ({
+        ...prev,
+        [comment_id]: comment.replies
+      }));
+      return;
+    }
+
+    // Otherwise, fetch replies from API
     setLoadingReplies(prev => ({ ...prev, [comment_id]: true }));
 
     try {
@@ -732,7 +768,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
     } finally {
       setLoadingReplies(prev => ({ ...prev, [comment_id]: false }));
     }
-  }, [commentReplies, buildAuthHeaders]);
+  }, [commentReplies, buildAuthHeaders, localCommentsData]);
 
   const sendCommentReaction = useCallback(async ({ targetId, reactionType, loadingKey, refreshRepliesFor = null }) => {
     setCommentActionLoading(prev => ({ ...prev, [loadingKey]: true }));
@@ -1760,6 +1796,38 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                               <MessageCircle className="w-4 h-4" />
                               <span className="text-xs">Reply</span>
                             </button>
+
+                            {/* View Replies Button - Show if comment has replies */}
+                            {comment.has_replies && (comment.replies_count > 0 || (comment.replies && comment.replies.length > 0)) && (
+                              <button
+                                className="flex items-center space-x-1 text-blue-500 hover:text-blue-700 cursor-pointer transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  fetchReply(comment.id);
+                                }}
+                                disabled={loadingReplies[comment.id]}
+                              >
+                                {loadingReplies[comment.id] ? (
+                                  <div className="w-4 h-4 border border-current border-t-transparent rounded-full animate-spin"></div>
+                                ) : (
+                                  <>
+                                    {commentReplies[comment.id] ? (
+                                      <>
+                                        <ChevronUp className="w-4 h-4" />
+                                        <span className="text-xs">Hide Replies</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <ChevronDown className="w-4 h-4" />
+                                        <span className="text-xs">
+                                          View {comment.replies_count || comment.replies?.length || 0} {(comment.replies_count || comment.replies?.length || 0) === 1 ? 'Reply' : 'Replies'}
+                                        </span>
+                                      </>
+                                    )}
+                                  </>
+                                )}
+                              </button>
+                            )}
 
                             {/* Edit Button - Only show for current user's comments */}
                             {isCommentAuthor(comment) && (

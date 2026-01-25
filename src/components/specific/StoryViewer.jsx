@@ -6,9 +6,11 @@ import DeleteStoryModal from './DeleteStoryModal';
 import { baseUrl } from '../../utils/constant';
 import axios from 'axios';
 import { useUser } from '../../context/UserContext';
+import { useNavigate } from 'react-router-dom';
 
 const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, isCurrentUserStories = false }) => {
   const { notifyStoryUpdate } = useUser();
+  const navigate = useNavigate();
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const progressIntervalRef = useRef(null);
@@ -70,7 +72,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
   // Handle progress bar
   const startProgress = useCallback(() => {
     stopProgress();
-    if (isPaused) return;
+    if (isPaused || deleteModalOpen) return;
 
     const duration = 5000; // 5 seconds per story
     const interval = 50; // Update every 50ms for smoother animation
@@ -86,7 +88,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
         return newProgress;
       });
     }, interval);
-  }, [isPaused, stopProgress, nextStory]);
+  }, [isPaused, deleteModalOpen, stopProgress, nextStory]);
 
   // Build auth headers
   const buildAuthHeaders = useCallback(() => {
@@ -324,7 +326,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
   // Restart progress when story index changes and mark story as seen
   useEffect(() => {
 
-    if (isOpen && stories && stories.length > 0 && !isPaused) {
+    if (isOpen && stories && stories.length > 0 && !isPaused && !deleteModalOpen) {
       setProgress(0);
       setShowReactionPopup(false); // Close reaction popup when story changes
 
@@ -356,7 +358,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
     return () => {
       stopProgress();
     };
-  }, [currentStoryIndex, isOpen, isPaused, startProgress, stopProgress, stories, markStoryAsSeen]);
+  }, [currentStoryIndex, isOpen, isPaused, deleteModalOpen, startProgress, stopProgress, stories, markStoryAsSeen]);
 
   const handleMouseDown = () => {
     setIsPaused(true);
@@ -373,8 +375,9 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
   // Open delete confirmation modal
   const handleDeleteClick = () => {
     if (!currentStory?.id) return;
+    setIsPaused(true); // Pause the story
+    stopProgress(); // Stop the progress timer
     setDeleteModalOpen(true);
-    stopProgress();
   };
 
   // Delete story function
@@ -482,10 +485,28 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
   return (
     <div
       className="fixed inset-0 z-[60] bg-black flex items-center justify-center"
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
-      onTouchStart={handleMouseDown}
-      onTouchEnd={handleMouseUp}
+      onMouseDown={(e) => {
+        // Don't pause if clicking on delete modal
+        if (!deleteModalOpen) {
+          handleMouseDown();
+        }
+      }}
+      onMouseUp={(e) => {
+        // Don't resume if delete modal is open
+        if (!deleteModalOpen) {
+          handleMouseUp();
+        }
+      }}
+      onTouchStart={(e) => {
+        if (!deleteModalOpen) {
+          handleMouseDown();
+        }
+      }}
+      onTouchEnd={(e) => {
+        if (!deleteModalOpen) {
+          handleMouseUp();
+        }
+      }}
     >
       {/* Close Button */}
       <button
@@ -538,7 +559,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
                       : index === currentStoryIndex
                         ? `${progress}%`
                         : '0%',
-                    transition: index === currentStoryIndex && !isPaused
+                    transition: index === currentStoryIndex && !isPaused && !deleteModalOpen
                       ? 'width 0.05s linear'
                       : index < currentStoryIndex
                         ? 'width 0.3s ease-out'
@@ -586,7 +607,17 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
 
           {/* Story Info Overlay */}
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6">
-            <div className="flex items-center gap-3 mb-3">
+            <div 
+              className="flex items-center gap-3 mb-3 cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => {
+                // Navigate to user profile
+                const userId = currentUser?.user_id || currentUser?.id;
+                if (userId) {
+                  onClose(); // Close story viewer first
+                  navigate(`/profile/${userId}`);
+                }
+              }}
+            >
               {currentUser?.avatar_url && (
                 <img
                   src={currentUser.avatar_url}
@@ -701,8 +732,9 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
         isOpen={deleteModalOpen}
         onClose={() => {
           setDeleteModalOpen(false);
-          // Resume progress if modal is closed without deleting
-          if (isOpen && stories && stories.length > 0 && !isPaused) {
+          // Resume progress when modal is closed without deleting
+          setIsPaused(false);
+          if (isOpen && stories && stories.length > 0) {
             startProgress();
           }
         }}
@@ -759,7 +791,18 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
               ) : (
                 <div className="divide-y divide-gray-100">
                   {storyViews.map((view, index) => (
-                    <div key={index} className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors">
+                    <div 
+                      key={index} 
+                      className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                      onClick={() => {
+                        const userId = view.user_id || view.id;
+                        if (userId) {
+                          setShowViewsModal(false);
+                          onClose(); // Close story viewer
+                          navigate(`/profile/${userId}`);
+                        }
+                      }}
+                    >
                       <img
                         src={view.avatar || view.avatar_url || '/default-avatar.png'}
                         alt={view.name || view.username}

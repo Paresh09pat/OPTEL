@@ -17,6 +17,9 @@ const Wallet = () => {
   const [selectedRecipient, setSelectedRecipient] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [friendsPage, setFriendsPage] = useState(1);
+  const [hasMoreFriends, setHasMoreFriends] = useState(false);
+  const [allFriends, setAllFriends] = useState([]);
 
   useEffect(() => {
     fetchWalletBalance();
@@ -105,17 +108,12 @@ const Wallet = () => {
 
   const quickAmounts = [10, 25, 50, 100, 500];
 
-  // Search for users to send money
-  const searchUsers = async (query) => {
-    if (!query || query.trim().length < 2) {
-      setSearchResults([]);
-      return;
-    }
-
+  // Fetch friends list for sending money
+  const fetchFriends = async (page = 1, append = false) => {
     setIsSearching(true);
     try {
       const accessToken = localStorage.getItem('access_token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/search/users?query=${encodeURIComponent(query)}&limit=10`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/friends?type=all&per_page=12&page=${page}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -125,15 +123,48 @@ const Wallet = () => {
 
       const data = await response.json();
       if (data?.ok && data?.data) {
-        setSearchResults(data.data);
+        if (append) {
+          setAllFriends(prev => [...prev, ...data.data]);
+        } else {
+          setAllFriends(data.data);
+        }
+        setHasMoreFriends(data?.meta?.has_more || false);
+        setFriendsPage(page);
       } else {
-        setSearchResults([]);
+        if (!append) {
+          setAllFriends([]);
+        }
+        setHasMoreFriends(false);
       }
     } catch (err) {
-      console.error('Error searching users:', err);
-      setSearchResults([]);
+      console.error('Error fetching friends:', err);
+      if (!append) {
+        setAllFriends([]);
+      }
+      setHasMoreFriends(false);
     } finally {
       setIsSearching(false);
+    }
+  };
+
+  // Filter friends based on search query
+  const getFilteredFriends = () => {
+    if (!recipientSearch || recipientSearch.trim().length === 0) {
+      return allFriends;
+    }
+    
+    const query = recipientSearch.toLowerCase();
+    return allFriends.filter(friend => 
+      friend.name?.toLowerCase().includes(query) ||
+      friend.username?.toLowerCase().includes(query) ||
+      friend.email?.toLowerCase().includes(query)
+    );
+  };
+
+  // Load more friends
+  const loadMoreFriends = () => {
+    if (!isSearching && hasMoreFriends) {
+      fetchFriends(friendsPage + 1, true);
     }
   };
 
@@ -149,8 +180,8 @@ const Wallet = () => {
       return;
     }
 
-    if (parseFloat(sendAmount) > (walletData?.balance || 0)) {
-      toast.error('Insufficient balance');
+    if (parseFloat(sendAmount) > (walletData?.wallet || 0)) {
+      toast.error('Insufficient wallet balance');
       return;
     }
 
@@ -187,6 +218,9 @@ const Wallet = () => {
         setSelectedRecipient(null);
         setRecipientSearch('');
         setSearchResults([]);
+        setAllFriends([]);
+        setFriendsPage(1);
+        setHasMoreFriends(false);
         // Refresh balance to be sure
         fetchWalletBalance();
       } else {
@@ -199,16 +233,12 @@ const Wallet = () => {
     }
   };
 
-  // Debounce search
+  // Fetch friends when send money modal opens
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (recipientSearch) {
-        searchUsers(recipientSearch);
-      }
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [recipientSearch]);
+    if (showSendMoneyModal && allFriends.length === 0) {
+      fetchFriends(1, false);
+    }
+  }, [showSendMoneyModal]);
 
   if (loading) {
     return <Loader />;
@@ -357,6 +387,9 @@ const Wallet = () => {
                   setSelectedRecipient(null);
                   setRecipientSearch('');
                   setSearchResults([]);
+                  setAllFriends([]);
+                  setFriendsPage(1);
+                  setHasMoreFriends(false);
                 }}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
@@ -368,72 +401,40 @@ const Wallet = () => {
 
             {/* Current Balance Display */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <p className="text-sm text-blue-600 mb-1">Available Balance</p>
+              <p className="text-sm text-blue-600 mb-1">Wallet Balance</p>
               <p className="text-2xl font-bold text-blue-900">
-                ${walletData?.balance?.toFixed(2) || '0.00'}
+                ${walletData?.wallet?.toFixed(2) || '0.00'}
               </p>
             </div>
 
             {/* Recipient Search */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Search Recipient
+                Select Friend to Send Money
               </label>
-              <div className="relative">
+              <div className="relative mb-3">
                 <input
                   type="text"
                   value={recipientSearch}
                   onChange={(e) => {
                     setRecipientSearch(e.target.value);
-                    setSelectedRecipient(null);
                   }}
-                  placeholder="Search by name or username..."
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
+                  placeholder="Search friends by name or username..."
+                  className="w-full px-4 py-3 pl-10 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
                 />
-                {isSearching && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                  </div>
-                )}
+                <svg 
+                  className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
               </div>
 
-              {/* Search Results */}
-              {searchResults.length > 0 && !selectedRecipient && (
-                <div className="mt-2 border-2 border-gray-200 rounded-lg max-h-60 overflow-y-auto">
-                  {searchResults.map((user) => (
-                    <button
-                      key={user.user_id}
-                      onClick={() => {
-                        setSelectedRecipient(user);
-                        setRecipientSearch(user.name || user.username);
-                        setSearchResults([]);
-                      }}
-                      className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors text-left"
-                    >
-                      <img
-                        src={user.avatar_url || user.avatar || '/perimg.png'}
-                        alt={user.name}
-                        className="w-10 h-10 rounded-full object-cover"
-                        onError={(e) => {
-                          e.target.src = '/perimg.png';
-                        }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-900 truncate">
-                          {user.name}
-                        </p>
-                        <p className="text-sm text-gray-500 truncate">
-                          @{user.username}
-                        </p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-
               {/* Selected Recipient */}
-              {selectedRecipient && (
-                <div className="mt-3 p-3 bg-green-50 border-2 border-green-200 rounded-lg flex items-center gap-3">
+              {selectedRecipient ? (
+                <div className="p-3 bg-green-50 border-2 border-green-200 rounded-lg flex items-center gap-3">
                   <img
                     src={selectedRecipient.avatar_url || selectedRecipient.avatar || '/perimg.png'}
                     alt={selectedRecipient.name}
@@ -453,7 +454,6 @@ const Wallet = () => {
                   <button
                     onClick={() => {
                       setSelectedRecipient(null);
-                      setRecipientSearch('');
                     }}
                     className="text-red-500 hover:text-red-700"
                   >
@@ -462,6 +462,84 @@ const Wallet = () => {
                     </svg>
                   </button>
                 </div>
+              ) : (
+                <>
+                  {/* Friends List */}
+                  <div className="border-2 border-gray-200 rounded-lg max-h-64 overflow-y-auto">
+                    {isSearching && allFriends.length === 0 ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="ml-2 text-gray-500">Loading friends...</span>
+                      </div>
+                    ) : getFilteredFriends().length > 0 ? (
+                      <>
+                        {getFilteredFriends().map((friend) => (
+                          <button
+                            key={friend.user_id}
+                            onClick={() => {
+                              setSelectedRecipient(friend);
+                            }}
+                            className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors text-left border-b border-gray-100 last:border-b-0"
+                          >
+                            <img
+                              src={friend.avatar_url || friend.avatar || '/perimg.png'}
+                              alt={friend.name}
+                              className="w-10 h-10 rounded-full object-cover"
+                              onError={(e) => {
+                                e.target.src = '/perimg.png';
+                              }}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-gray-900 truncate">
+                                {friend.name}
+                              </p>
+                              <p className="text-sm text-gray-500 truncate">
+                                @{friend.username}
+                              </p>
+                            </div>
+                            {friend.verified && (
+                              <svg className="w-5 h-5 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                          </button>
+                        ))}
+                        
+                        {/* Load More Button */}
+                        {!recipientSearch && hasMoreFriends && (
+                          <button
+                            onClick={loadMoreFriends}
+                            disabled={isSearching}
+                            className="w-full p-3 text-blue-600 hover:bg-blue-50 transition-colors font-medium text-sm flex items-center justify-center gap-2"
+                          >
+                            {isSearching ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                                Loading...
+                              </>
+                            ) : (
+                              <>
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                                Load More Friends
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <svg className="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        <p className="text-sm">
+                          {recipientSearch ? 'No friends found matching your search' : 'No friends found'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
             </div>
 
@@ -481,11 +559,11 @@ const Wallet = () => {
                   placeholder="0.00"
                   min="0"
                   step="0.01"
-                  max={walletData?.balance || 0}
+                  max={walletData?.wallet || 0}
                   className="w-full pl-8 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-lg font-semibold"
                 />
               </div>
-              {sendAmount && parseFloat(sendAmount) > (walletData?.balance || 0) && (
+              {sendAmount && parseFloat(sendAmount) > (walletData?.wallet || 0) && (
                 <p className="text-red-500 text-sm mt-1">Insufficient balance</p>
               )}
             </div>
@@ -500,7 +578,7 @@ const Wallet = () => {
                   <button
                     key={amount}
                     onClick={() => setSendAmount(amount.toString())}
-                    disabled={amount > (walletData?.balance || 0)}
+                    disabled={amount > (walletData?.wallet || 0)}
                     className={`py-3 px-4 rounded-lg border-2 font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                       sendAmount === amount.toString()
                         ? 'border-blue-500 bg-blue-50 text-blue-600'
@@ -522,6 +600,9 @@ const Wallet = () => {
                   setSelectedRecipient(null);
                   setRecipientSearch('');
                   setSearchResults([]);
+                  setAllFriends([]);
+                  setFriendsPage(1);
+                  setHasMoreFriends(false);
                 }}
                 className="flex-1 py-3 px-4 border-2 border-gray-200 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
               >
@@ -534,7 +615,7 @@ const Wallet = () => {
                   !selectedRecipient || 
                   !sendAmount || 
                   parseFloat(sendAmount) <= 0 ||
-                  parseFloat(sendAmount) > (walletData?.balance || 0)
+                  parseFloat(sendAmount) > (walletData?.wallet || 0)
                 }
                 className="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >

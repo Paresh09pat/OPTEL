@@ -371,7 +371,7 @@ const CreateForum = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-[16rem] md:w-[20rem] h-[50px] border border-[#A3D36C] text-[#76B82A] font-semibold text-[18px] md:text-[20px] py-2 px-8 rounded-lg hover:bg-[#8BC34B] hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-[16rem] md:w-[20rem] h-[50px] border border-[#4A90E2] text-[#4A90E2] font-semibold text-[18px] md:text-[20px] py-2 px-8 rounded-lg hover:bg-[#4A90E2] hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {loading ? 'Creating...' : 'Create Forum'}
                         </button>

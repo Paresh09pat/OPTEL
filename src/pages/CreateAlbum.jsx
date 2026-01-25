@@ -102,13 +102,10 @@ const CreateAlbum = () => {
         </div>
 
         <div className="w-full flex flex-col gap-4">
-          <div
-            style={{ backgroundSize: "100% 100%" }}
-            className='w-full h-[10rem] md:h-[18rem] bg-[url("/create-album.png")] bg-no-repeat bg-top'
-          >
-            <div className="w-full flex items-end justify-end p-6 md:p-16">
-              <h2 className="text-3xl text-white font-bold">Create Album</h2>
-            </div>
+          <div className="relative w-full h-[10rem] md:h-[18rem] flex items-start justify-end p-6 md:p-16">
+            {/* Wave SVG */}
+            <img src="/Vectorgroup.svg" alt="vector" className='absolute bottom-0 right-0 top-0 w-full h-full object-cover' />
+            <h2 className="text-3xl text-white font-bold z-10">Create Album</h2>
           </div>
 
           <form

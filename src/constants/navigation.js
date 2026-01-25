@@ -70,12 +70,6 @@ export const navigationItems = [
     icon: blogIcon,
   },
   {
-    id: 'article',
-    name: 'Article',
-    path: '/article',
-    icon: articleIcon,
-  },
-  {
     id: 'jobs',
     name: 'Jobs',
     path: '/jobs',

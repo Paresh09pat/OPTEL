@@ -1400,15 +1400,6 @@ const CreatePostPopup = ({
                         </div>
                     </div>
                     <div className="flex items-center space-x-2 md:space-x-4">
-                        <button className="p-2 hover:bg-gray-100 rounded-full">
-                            <MapPin className="w-5 h-5 text-gray-600" />
-                        </button>
-                        <button className="p-2 hover:bg-gray-100 rounded-full">
-                            <BarChart3 className="w-5 h-5 text-gray-600" />
-                        </button>
-                        <button className="p-2 hover:bg-gray-100 rounded-full">
-                            <Smile className="w-5 h-5 text-gray-600" />
-                        </button>
                         <button
                             onClick={handlePost}
                             className="bg-blue-500 hover:bg-blue-600 text-white px-4 md:px-6 py-2 rounded-full font-medium transition-colors"

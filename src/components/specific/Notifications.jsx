@@ -47,12 +47,12 @@ const Notifications = ({ isOpen, onClose, containerRect, refreshCount }) => {
         }
     };
 
-    // Mark all notifications as read
+    // Mark all notifications as seen
     const markAllAsRead = async () => {
         try {
             const accessToken = localStorage.getItem("access_token");
 
-            const response = await fetch(`${baseUrl}/api/v1/notifications/mark-as-read`, {
+            const response = await fetch(`${baseUrl}/api/v1/notifications/mark-all-seen`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -66,18 +66,18 @@ const Notifications = ({ isOpen, onClose, containerRect, refreshCount }) => {
             const data = await response.json();
 
             if (data?.api_status === 200 || data?.ok === true) {
-                // Update local state to mark all as read
+                // Update local state to mark all as seen
                 setNotifications(prev => prev.map(notif => ({ ...notif, seen: 1 })));
                 // Refresh count in parent
                 if (refreshCount) refreshCount();
                 // Show success toast
-                toast.success(data?.message || data?.message_data || 'All notifications marked as read');
+                toast.success(data?.message || data?.message_data || 'All notifications marked as seen');
             } else {
-                toast.error(data?.message || data?.message_data || 'Failed to mark notifications as read');
+                toast.error(data?.message || data?.message_data || 'Failed to mark notifications as seen');
             }
         } catch (error) {
-            console.error('Error marking notifications as read:', error);
-            toast.error('Failed to mark notifications as read');
+            console.error('Error marking notifications as seen:', error);
+            toast.error('Failed to mark notifications as seen');
         }
     };
 
