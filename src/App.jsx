@@ -51,6 +51,7 @@ import ForumDetailed from "./pages/ForumDetailed";
 import JobDetailed from "./pages/JobDetailed";
 import OfferDetailed from "./pages/OfferDetailed";
 import Wallet from "./pages/Wallet";
+import VerifyAccount from "./pages/VerifyAccount";
 import { ToastContainer } from "react-toastify";
 
 function App() {
@@ -112,6 +113,7 @@ function App() {
               <Route path="/profile/:userId" element={<Profile />} />
               <Route path="/profile-settings" element={<MainProfileSetting />} />
               <Route path="/wallet" element={<Wallet />} />
+              <Route path="/verify-account" element={<VerifyAccount />} />
               <Route path="/PageProfile" element={<PageProfile />} />
             </Route>
           </Route>

@@ -485,10 +485,10 @@ const Explore = () => {
                   {/* Action Buttons - Fixed position for consistent alignment */}
                   <div className="flex items-center gap-2 sm:gap-3 justify-end sm:justify-start">
                     <button
-                      onClick={() => window.open(user.profile_url, '_blank')}
-                      className="px-3 sm:px-4 py-1.5 bg-blue-600 text-white rounded-full text-xs sm:text-sm flex items-center gap-2 hover:bg-blue-700 transition-colors whitespace-nowrap"
+                      onClick={() => navigate(`/profile/${user.user_id}`)}
+                      className="px-3 sm:px-4 py-1.5 bg-blue-600 text-white rounded-full text-xs sm:text-sm flex items-center gap-2 hover:bg-blue-700 transition-colors whitespace-nowrap cursor-pointer"
                     >
-                      <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <User className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span>View Profile</span>
                     </button>
                   </div>
@@ -606,7 +606,7 @@ const Explore = () => {
                   {/* Action Button - Fixed position for consistent alignment */}
                   <div className="flex items-center gap-2 sm:gap-3 justify-end sm:justify-start">
                     <button
-                      onClick={() => navigate(`/page/${encodeURIComponent(page.slug)}`)}
+                      onClick={() => navigate(`/page/${page.page_id}`)}
                       className="px-3 cursor-pointer sm:px-4 py-1.5 bg-blue-600 text-white rounded-full text-xs sm:text-sm flex items-center gap-2 hover:bg-blue-700 transition-colors whitespace-nowrap"
                     >
                       <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
