@@ -25,6 +25,7 @@ const LocationSettings = () => {
   const [updateLoading, setUpdateLoading] = useState(false);
   const [updateSuccess, setUpdateSuccess] = useState(false);
   const [updateError, setUpdateError] = useState(null);
+  const [detectingLocation, setDetectingLocation] = useState(false);
 
   // Get user ID from localStorage
   const userId = localStorage.getItem('user_id') || '222102'; // Default fallback
@@ -268,6 +269,102 @@ const LocationSettings = () => {
     setIsModalOpen(true);
   };
 
+  // Function to get address from coordinates using reverse geocoding
+  const getAddressFromCoordinates = async (latitude, longitude) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+        {
+          headers: {
+            'User-Agent': 'Ouptel-App'
+          }
+        }
+      );
+      
+      const data = await response.json();
+      
+      if (data && data.address) {
+        return {
+          fullAddress: data.display_name || '',
+          country: data.address.country || '',
+          city: data.address.city || data.address.town || data.address.village || '',
+          zipCode: data.address.postcode || '',
+          street: data.address.road || data.address.street || ''
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error getting address:', error);
+      return null;
+    }
+  };
+
+  // Function to detect user's current location
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      setUpdateError('Geolocation is not supported by your browser.');
+      return;
+    }
+
+    setDetectingLocation(true);
+    setUpdateError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const location = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        };
+        
+        // Store coordinates in localStorage
+        localStorage.setItem('user_location', JSON.stringify(location));
+        
+        // Get address from coordinates
+        const addressData = await getAddressFromCoordinates(location.latitude, location.longitude);
+        
+        if (addressData) {
+          // Store full address in localStorage
+          localStorage.setItem('user_address', addressData.fullAddress);
+          
+          // Update form data with detected location
+          setFormData(prev => ({
+            ...prev,
+            country: addressData.country || prev.country,
+            city: addressData.city || prev.city,
+            zipCode: addressData.zipCode || prev.zipCode,
+            address: addressData.street || addressData.fullAddress || prev.address
+          }));
+          
+          setUpdateSuccess(true);
+          setTimeout(() => setUpdateSuccess(false), 3000);
+        } else {
+          setUpdateError('Could not convert location to address. Please enter manually.');
+        }
+        
+        setDetectingLocation(false);
+      },
+      (error) => {
+        setDetectingLocation(false);
+        
+        if (error.code === error.PERMISSION_DENIED) {
+          setUpdateError('Location access denied. Please enable location permissions in your browser settings.');
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          setUpdateError('Location information is unavailable.');
+        } else if (error.code === error.TIMEOUT) {
+          setUpdateError('Location request timed out.');
+        } else {
+          setUpdateError('Unable to retrieve your location.');
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
+  };
+
   return (
     <div className="bg-white rounded-xl p-6 border border-[#d3d1d1]">
       <h2 className="text-xl font-semibold text-white text-center border-b border-white/20 pb-2 mb-6 bg-gradient-to-l from-[rgba(96,161,249,1)] to-[rgba(17,83,231,1)] -m-6 px-6 py-4 rounded-t-xl">
@@ -437,15 +534,45 @@ const LocationSettings = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Address
+                  {localStorage.getItem('user_address') && (
+                    <span className="ml-2 text-xs text-green-600 font-normal">
+                      (Auto-detected)
+                    </span>
+                  )}
                 </label>
-                <textarea
-                  name="address"
-                  value={formData.address}
-                  placeholder="Enter your full address"
-                  onChange={handleChange}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-[#d3d1d1] rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
-                />
+                <div className="space-y-2">
+                  <textarea
+                    name="address"
+                    value={formData.address}
+                    placeholder="Enter your full address"
+                    onChange={handleChange}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-[#d3d1d1] rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleDetectLocation}
+                    disabled={detectingLocation}
+                    className={`w-full px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      detectingLocation ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-600 cursor-pointer'
+                    }`}
+                  >
+                    {detectingLocation ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>Detecting Location...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center gap-2">
+                        <FiMapPin className="text-lg" />
+                        <span>Detect My Current Location</span>
+                      </div>
+                    )}
+                  </button>
+                  <p className="text-xs text-gray-500">
+                    Click to automatically detect and fill your location details
+                  </p>
+                </div>
               </div>
 
               {updateError && (

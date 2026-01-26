@@ -95,6 +95,76 @@ const Home = () => {
   const [activeFilter, setActiveFilter] = useState(null); // Track active filter for UI
   const loadMoreTriggerRef = useRef(null); // Ref for intersection observer
 
+  // Function to get address from coordinates using reverse geocoding
+  const getAddressFromCoordinates = async (latitude, longitude) => {
+    try {
+      // Using OpenStreetMap Nominatim API for reverse geocoding (free, no API key needed)
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+        {
+          headers: {
+            'User-Agent': 'Ouptel-App' // Required by Nominatim
+          }
+        }
+      );
+      
+      const data = await response.json();
+      
+      if (data && data.display_name) {
+        return data.display_name;
+      } else if (data && data.address) {
+        // Build a more readable address from components
+        const addr = data.address;
+        const parts = [
+          addr.road || addr.street,
+          addr.city || addr.town || addr.village,
+          addr.state,
+          addr.country
+        ].filter(Boolean);
+        return parts.join(', ');
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error getting address:', error);
+      return null;
+    }
+  };
+
+  // Function to update user location in profile
+  const updateUserLocationInProfile = async (address) => {
+    try {
+      const accessToken = localStorage.getItem('access_token');
+      
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/v1/settings/update-user-data`,
+        {
+          type: "general_settings",
+          user_data: JSON.stringify({
+            address: address
+          })
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          }
+        }
+      );
+
+      const data = response.data;
+      
+      if (data.api_status === '200') {
+        console.log('Location updated in profile successfully');
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error updating location in profile:', error);
+      return false;
+    }
+  };
+
   // Request location access when component mounts
   useEffect(() => {
     const requestLocationAccess = () => {
@@ -110,13 +180,19 @@ const Home = () => {
       if (locationPermissionRequested) {
         // Permission was already requested, just get location if granted
         navigator.geolocation.getCurrentPosition(
-          (position) => {
+          async (position) => {
             const location = {
               latitude: position.coords.latitude,
               longitude: position.coords.longitude,
             };
             setUserLocation(location);
             localStorage.setItem('user_location', JSON.stringify(location));
+            
+            // Get and store address
+            const address = await getAddressFromCoordinates(location.latitude, location.longitude);
+            if (address) {
+              localStorage.setItem('user_address', address);
+            }
           },
           (error) => {
             // Silently handle error if permission was already requested
@@ -134,7 +210,7 @@ const Home = () => {
       // Request permission after showing info (browser will show its own permission dialog)
       setTimeout(() => {
         navigator.geolocation.getCurrentPosition(
-          (position) => {
+          async (position) => {
             const location = {
               latitude: position.coords.latitude,
               longitude: position.coords.longitude,
@@ -142,7 +218,24 @@ const Home = () => {
             setUserLocation(location);
             localStorage.setItem('user_location', JSON.stringify(location));
             localStorage.setItem('location_permission_requested', 'true');
-            toast.success('Location access granted!');
+            
+            // Get address from coordinates
+            const address = await getAddressFromCoordinates(location.latitude, location.longitude);
+            
+            if (address) {
+              localStorage.setItem('user_address', address);
+              
+              // Update user profile with location
+              const updated = await updateUserLocationInProfile(address);
+              
+              if (updated) {
+                toast.success('Location access granted and saved to your profile!');
+              } else {
+                toast.success('Location access granted!');
+              }
+            } else {
+              toast.success('Location access granted!');
+            }
           },
           (error) => {
             localStorage.setItem('location_permission_requested', 'true');

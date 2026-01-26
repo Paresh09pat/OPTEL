@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { FiUserX, FiUnlock } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 import Avatar from '../../components/Avatar';
+import { toast } from 'react-toastify';
 
 const BlockedUsers = () => {
+  const navigate = useNavigate();
   const [blockedUsers, setBlockedUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -29,7 +32,8 @@ const BlockedUsers = () => {
         const data = response.data;
         
         if (data.api_status === '200') {
-          setBlockedUsers(data.data || []);
+          // API returns blocked_users array
+          setBlockedUsers(data.blocked_users || []);
         } else {
           throw new Error(data.api_text || 'Failed to fetch blocked users');
         }
@@ -49,9 +53,10 @@ const BlockedUsers = () => {
       setUnblockLoading(prev => ({ ...prev, [userId]: true }));
       setError(null);
 
+      // Using POST method to unblock endpoint
       const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/v1/blocked-users/unblock`,
-        { user_id: userId },
+        `${import.meta.env.VITE_API_URL}/api/v1/friends/${userId}/unblock`,
+        {},
         {
           headers: {
             'Content-Type': 'application/json',
@@ -62,9 +67,11 @@ const BlockedUsers = () => {
 
       const data = response.data;
       
-      if (data.api_status === '200') {
+      // Check for successful unblock response
+      if (data.api_status === '200' || data.ok === true) {
         // Remove the unblocked user from the list
         setBlockedUsers(blockedUsers.filter(user => user.user_id !== userId));
+        toast.success('User unblocked successfully!');
         setSuccess(true);
         setTimeout(() => setSuccess(false), 3000);
       } else {
@@ -72,7 +79,9 @@ const BlockedUsers = () => {
       }
     } catch (err) {
       console.error('Error unblocking user:', err);
-      setError('Failed to unblock user. Please try again.');
+      const errorMsg = err.response?.data?.api_text || err.response?.data?.message || 'Failed to unblock user. Please try again.';
+      toast.error(errorMsg);
+      setError(errorMsg);
     } finally {
       setUnblockLoading(prev => ({ ...prev, [userId]: false }));
     }
@@ -95,7 +104,10 @@ const BlockedUsers = () => {
         <div className="space-y-4">
           {blockedUsers.map((user) => (
             <div key={user.user_id} className="flex items-center justify-between py-4 border-b border-gray-100 last:border-b-0">
-              <div className="flex items-center space-x-4 flex-1">
+              <div 
+                className="flex items-center space-x-4 flex-1 cursor-pointer hover:bg-gray-50 rounded-lg p-2 -ml-2 transition-colors"
+                onClick={() => navigate(`/profile/${user.user_id}`)}
+              >
                 {/* User Avatar */}
                 <Avatar
                   src={user.avatar_url}
@@ -114,9 +126,9 @@ const BlockedUsers = () => {
                   <p className="text-sm text-gray-600">
                     @{user.username || 'unknown'}
                   </p>
-                  {user.email && (
-                    <p className="text-sm text-gray-500">
-                      {user.email}
+                  {user.about && (
+                    <p className="text-sm text-gray-500 mt-1 line-clamp-1">
+                      {user.about}
                     </p>
                   )}
                 </div>

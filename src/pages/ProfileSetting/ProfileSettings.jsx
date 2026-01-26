@@ -20,6 +20,7 @@ const ProfileSettings = () => {
   const [userData, setUserData] = useState(null);
   const [userLoading, setUserLoading] = useState(true);
   const [updateLoading, setUpdateLoading] = useState(false);
+  const [detectingLocation, setDetectingLocation] = useState(false);
 
   // Get user ID from localStorage
   const userId = localStorage.getItem('user_id') || '222102'; // Default fallback
@@ -43,12 +44,17 @@ const ProfileSettings = () => {
         
         if (data.api_status === '200') {
           setUserData(data.user_data);
+          
+          // Get location from localStorage if available, otherwise use API data
+          const savedAddress = localStorage.getItem('user_address');
+          const locationToUse = savedAddress || data.user_data.address || '';
+          
           // Populate form with user data
           setFormData({
             firstName: data.user_data.first_name || '',
             lastName: data.user_data.last_name || '',
             aboutMe: data.user_data.about || '',
-            location: data.user_data.address || '',
+            location: locationToUse,
             school: data.user_data.school || '',
             schoolCompleted: false, // This field might not be in API, keeping default
             workingAt: data.user_data.working || '',
@@ -64,12 +70,16 @@ const ProfileSettings = () => {
       } catch (err) {
         console.error('Error fetching user data:', err);
         toast.error('Failed to load user data. Please try again.');
+        
+        // Get location from localStorage for fallback
+        const savedAddress = localStorage.getItem('user_address');
+        
         // Set fallback data to maintain UI
         setFormData({
           firstName: 'Aman',
           lastName: 'Shaikh',
           aboutMe: 'About me....',
-          location: 'Location',
+          location: savedAddress || 'Location',
           school: 'School',
           schoolCompleted: true,
           workingAt: 'Apple',
@@ -97,6 +107,100 @@ const ProfileSettings = () => {
       4: 'Widowed'
     };
     return relationships[relationshipId] || 'Single';
+  };
+
+  // Function to get address from coordinates using reverse geocoding
+  const getAddressFromCoordinates = async (latitude, longitude) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+        {
+          headers: {
+            'User-Agent': 'Ouptel-App'
+          }
+        }
+      );
+      
+      const data = await response.json();
+      
+      if (data && data.display_name) {
+        return data.display_name;
+      } else if (data && data.address) {
+        const addr = data.address;
+        const parts = [
+          addr.road || addr.street,
+          addr.city || addr.town || addr.village,
+          addr.state,
+          addr.country
+        ].filter(Boolean);
+        return parts.join(', ');
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error getting address:', error);
+      return null;
+    }
+  };
+
+  // Function to detect user's current location
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser.');
+      return;
+    }
+
+    setDetectingLocation(true);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const location = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        };
+        
+        // Store coordinates in localStorage
+        localStorage.setItem('user_location', JSON.stringify(location));
+        
+        // Get address from coordinates
+        const address = await getAddressFromCoordinates(location.latitude, location.longitude);
+        
+        if (address) {
+          // Store address in localStorage
+          localStorage.setItem('user_address', address);
+          
+          // Update form data
+          setFormData(prev => ({
+            ...prev,
+            location: address
+          }));
+          
+          toast.success('Location detected successfully!');
+        } else {
+          toast.error('Could not convert location to address. Please enter manually.');
+        }
+        
+        setDetectingLocation(false);
+      },
+      (error) => {
+        setDetectingLocation(false);
+        
+        if (error.code === error.PERMISSION_DENIED) {
+          toast.error('Location access denied. Please enable location permissions in your browser settings.');
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          toast.error('Location information is unavailable.');
+        } else if (error.code === error.TIMEOUT) {
+          toast.error('Location request timed out.');
+        } else {
+          toast.error('Unable to retrieve your location.');
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
   };
 
   const handleChange = (e) => {
@@ -246,15 +350,44 @@ const ProfileSettings = () => {
 
           {/* Location */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Location :</label>
-            <input
-              type="text"
-              name="location"
-              value={formData.location}
-              onChange={handleChange}
-              placeholder="Location"
-              className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Location :
+              {localStorage.getItem('user_address') && (
+                <span className="ml-2 text-xs text-green-600 font-normal">
+                  (Auto-detected from browser)
+                </span>
+              )}
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                name="location"
+                value={formData.location}
+                onChange={handleChange}
+                placeholder="Location"
+                className="flex-1 px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+              <button
+                type="button"
+                onClick={handleDetectLocation}
+                disabled={detectingLocation}
+                className={`px-4 py-2 bg-blue-500 text-white rounded-3xl text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 whitespace-nowrap ${
+                  detectingLocation ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-600 cursor-pointer'
+                }`}
+              >
+                {detectingLocation ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Detecting...</span>
+                  </div>
+                ) : (
+                  '📍 Detect'
+                )}
+              </button>
+            </div>
+            <p className="mt-1 text-xs text-gray-500">
+              Click "Detect" to automatically get your current location, or enter it manually.
+            </p>
           </div>
 
           {/* School */}
