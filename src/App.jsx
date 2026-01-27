@@ -52,6 +52,9 @@ import JobDetailed from "./pages/JobDetailed";
 import OfferDetailed from "./pages/OfferDetailed";
 import Wallet from "./pages/Wallet";
 import VerifyAccount from "./pages/VerifyAccount";
+import Contact from "./pages/Contact";
+import Developers from "./pages/Developers";
+import AboutUs from "./pages/AboutUs";
 import { ToastContainer } from "react-toastify";
 
 function App() {
@@ -72,6 +75,9 @@ function App() {
           <Route path="/terms-of-service" element={<TermsOfService />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/developers" element={<Developers />} />
+          <Route path="/about-us" element={<AboutUs />} />
           <Route path="*" element={<NotFound404 />} />
 
           {/* Protected / Layout Routes */}

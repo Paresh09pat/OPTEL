@@ -1,6 +1,6 @@
+import { Copy, X } from 'lucide-react';
 import { memo, useEffect } from 'react';
-import { Share, X } from 'lucide-react';
-import { FaFacebook, FaWhatsapp, FaLinkedin, FaChartBar, FaFlag, FaUsers, FaPaperPlane } from 'react-icons/fa';
+import { FaFacebook, FaLinkedin, FaWhatsapp } from 'react-icons/fa';
 
 const SharePopup = memo(({
     isOpen,
@@ -68,8 +68,13 @@ const SharePopup = memo(({
     // }
 
     return (
-        <div className="fixed top-0 left-0 right-0 bottom-0 w-screen h-screen bg-gradient-to-br from-white/10 via-white/5 to-white/15 backdrop-blur-lg flex items-center justify-center z-[9999] overflow-hidden">
-            <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/30 w-[95%] md:max-w-md mx-4 animate-in slide-in-from-bottom-4 duration-200">
+        <div 
+            className="fixed top-0 left-0 right-0 bottom-0 w-screen h-screen bg-gradient-to-br from-white/10 via-white/5 to-white/15 backdrop-blur-lg flex items-center justify-center z-[9999] overflow-hidden"
+        >
+            <div 
+                data-share-popup
+                className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/30 w-[95%] md:max-w-md mx-4 animate-in slide-in-from-bottom-4 duration-200"
+            >
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-[#d3d1d1]">
                     <h3 className="text-lg font-semibold text-gray-900">Share Post</h3>
@@ -83,45 +88,17 @@ const SharePopup = memo(({
 
                 {/* Share Options */}
                 <div className="p-4 space-y-3">
-                    {/* Share to Timeline */}
+                    {/* Copy Link */}
                     <button
-                        onClick={onShareToTimeline}
-                        className="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
+                        onClick={() => onSocialShare('copy')}
+                        className="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors cursor-pointer border border-gray-200"
                     >
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                            <Share className="w-5 h-5 text-blue-600" />
+                        <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                            <Copy className="w-5 h-5 text-gray-600" />
                         </div>
                         <div>
-                            <p className="font-medium text-gray-900">Share to Timeline</p>
-                            <p className="text-sm text-gray-500">Share this post on your timeline</p>
-                        </div>
-                    </button>
-
-                    {/* Share to Page */}
-                    <button
-                        onClick={() => shareOnPage(postId)}
-                        className="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
-                    >
-                        <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                            <FaFlag className="w-5 h-5 text-purple-600" />
-                        </div>
-                        <div>
-                            <p className="font-medium text-gray-900">Share to Page</p>
-                            <p className="text-sm text-gray-500">Share this post on a page you manage</p>
-                        </div>
-                    </button>
-
-                    {/* Share to Group */}
-                    <button
-                        onClick={onShareToGroup}
-                        className="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
-                    >
-                        <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                            <FaUsers className="w-5 h-5 text-green-600" />
-                        </div>
-                        <div>
-                            <p className="font-medium text-gray-900">Share to Group</p>
-                            <p className="text-sm text-gray-500">Share this post in a group</p>
+                            <p className="font-medium text-gray-900">Copy Link</p>
+                            <p className="text-sm text-gray-500">Copy post link to clipboard</p>
                         </div>
                     </button>
 

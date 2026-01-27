@@ -332,6 +332,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
             const requestData = {
                 postText: finalPostText,
                 postPrivacy: postPrivacy,
+                postType: activityType, // Send postType in body instead of query
             };
 
             // Add activity-specific field
@@ -352,7 +353,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
             console.log(`Creating ${activityType} post with data:`, requestData);
 
             const response = await axios.post(
-                `${import.meta.env.VITE_API_URL}/api/v1/posts?type=${activityType}`,
+                `${import.meta.env.VITE_API_URL}/api/v1/posts`,
                 requestData,
                 {
                     headers: {

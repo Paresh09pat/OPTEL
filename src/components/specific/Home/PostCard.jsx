@@ -584,17 +584,17 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
 
   const handleShareToTimeline = useCallback(() => {
     console.log('Share to timeline:', post_id);
-    setShowSharePopup(false);
+    // Don't close popup
   }, [post_id]);
 
   const handleShareToPage = useCallback(() => {
     console.log('Share to page:', post_id);
-    setShowSharePopup(false);
+    // Don't close popup
   }, [post_id]);
 
   const handleShareToGroup = useCallback(() => {
     console.log('Share to group:', post_id);
-    setShowSharePopup(false);
+    // Don't close popup
   }, [post_id]);
 
   const handleSocialShare = useCallback((platform) => {
@@ -604,20 +604,36 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
     let shareUrl = '';
     switch (platform) {
       case 'facebook':
-        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}&quote=${encodeURIComponent(postText)}`;
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`;
         break;
       case 'whatsapp':
-        shareUrl = `https://wa.me/?text=${encodeURIComponent(postText + ' ' + postUrl)}`;
+        // For mobile, use whatsapp:// protocol, for desktop use web.whatsapp.com
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobile) {
+          shareUrl = `whatsapp://send?text=${encodeURIComponent(postText + ' ' + postUrl)}`;
+        } else {
+          shareUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(postText + ' ' + postUrl)}`;
+        }
         break;
       case 'linkedin':
         shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(postUrl)}`;
         break;
+      case 'copy':
+        // Copy to clipboard
+        navigator.clipboard.writeText(postUrl).then(() => {
+          toast.success('Link copied to clipboard!');
+        }).catch((err) => {
+          console.error('Failed to copy:', err);
+          toast.error('Failed to copy link');
+        });
+        // Don't close popup after copying
+        return;
       default:
         return;
     }
 
     window.open(shareUrl, '_blank', 'width=600,height=400');
-    setShowSharePopup(false);
+    // Don't close popup after sharing
   }, [post_id, content]);
 
   const handleCommentPost = useCallback(async () => {
@@ -1214,6 +1230,39 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
     return String(authorId) === String(currentUserId);
   }, [currentUserId]);
 
+  // Helper function to convert plain text URLs to clickable links
+  const linkifyText = useCallback((text) => {
+    if (!text) return '';
+    
+    // URL regex pattern - matches http://, https://, www., and common TLDs
+    const urlPattern = /(https?:\/\/[^\s]+)|(www\.[^\s]+)|([a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[a-zA-Z]{2,}[^\s]*)/gi;
+    
+    // Replace URLs with anchor tags
+    let linkedText = text.replace(urlPattern, (match) => {
+      let url = match;
+      
+      // Add protocol if missing
+      if (!url.match(/^https?:\/\//i)) {
+        url = 'http://' + url;
+      }
+      
+      // If the text already contains an <a> tag with this URL, don't wrap it again
+      if (text.includes(`href="${url}"`) || text.includes(`href='${url}'`)) {
+        return match;
+      }
+      
+      return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline break-all" style="word-break: break-all; overflow-wrap: break-word;">${match}</a>`;
+    });
+    
+    // Also handle existing <a> tags to ensure they open in new tab
+    linkedText = linkedText.replace(
+      /<a\s+href="([^"]+)"(?![^>]*target=)[^>]*>([^<]+)<\/a>/gi,
+      '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline break-all" style="word-break: break-all; overflow-wrap: break-word;">$2</a>'
+    );
+    
+    return linkedText;
+  }, []);
+
 
 
   return (
@@ -1333,10 +1382,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                     color: colorData.text_color || '#f5f5f5'
                   }}
                   dangerouslySetInnerHTML={{
-                    __html: content.replace(
-                      /<a\s+href="([^"]+)"[^>]*>([^<]+)<\/a>/g,
-                      `<a href="$1" target="_blank" rel="noopener noreferrer" class="underline break-all" style="word-break: break-all; overflow-wrap: break-word; color: ${colorData.text_color || '#f5f5f5'};">$2</a>`
-                    )
+                    __html: linkifyText(content)
                   }}
                 />
               </div>
@@ -1358,10 +1404,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
                   overflowWrap: 'break-word'
                 }}
                 dangerouslySetInnerHTML={{
-                  __html: content.replace(
-                    /<a\s+href="([^"]+)"[^>]*>([^<]+)<\/a>/g,
-                    '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline break-all" style="word-break: break-all; overflow-wrap: break-word;">$2</a>'
-                  )
+                  __html: linkifyText(content)
                 }}
               />
             </>

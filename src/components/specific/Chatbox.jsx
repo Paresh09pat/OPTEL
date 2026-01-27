@@ -760,19 +760,21 @@ const Chatbox = ({ onClose, isMobile = false }) => {
       </div>
 
       {/* Who to Follow */}
-      <div className="py-4 px-6 mt-2.5 bg-white rounded-lg border border-[#d3d1d1]">
-        <img src="op_logo.png" alt="ouptel-logo" width={150} />
-        <div className="grid grid-cols-2 gap-11 text-black mt-3.5 text-[12px]">
+      <div className="py-4 px-6 mt-2.5 bg-[#a2a2a2] rounded-lg border border-[#d3d1d1]">
+        <Link to="/" className='cursor-pointer'>
+        <img src="op_logo.png" alt="ouptel-logo" width={100} />
+        </Link>
+        <div className="grid grid-cols-2 gap-11 text-white mt-3.5 text-[12px]">
           <div className="flex flex-col gap-1.5 ">
-            <a href="">About us</a>
-            <a href="">Blogs</a>
-            <a href="">Contact us</a>
-            <a href="">Developers</a>
+            <Link to="/about-us" className="hover:underline hover:text-gray-800 transition-colors">About us</Link>
+            <Link to="/blog" className="hover:underline hover:text-gray-800 transition-colors">Blogs</Link>
+            <Link to="/contact" className="hover:underline hover:text-gray-800 transition-colors">Contact us</Link>
+            <Link to="/developers" className="hover:underline hover:text-gray-800 transition-colors">Developers</Link>
           </div>
           <div className="flex flex-col gap-1.5 ">
-            <a href="">Languages</a>
-            <Link to="/terms-and-conditions">Terms & Condition</Link>
-            <Link to="/terms-and-conditions">Privacy Policy</Link>
+            <a href="" className="hover:underline hover:text-gray-800 transition-colors">Languages</a>
+            <Link to="/terms-and-conditions" className="hover:underline hover:text-gray-800 transition-colors">Terms & Condition</Link>
+            <Link to="/privacy-policy" className="hover:underline hover:text-gray-800 transition-colors">Privacy Policy</Link>
           </div>
         </div>
       </div>
