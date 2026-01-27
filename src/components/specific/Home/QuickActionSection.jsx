@@ -36,12 +36,7 @@ const QuickActionsSection = ({ className = '', fetchNewFeeds, activeFilter = nul
       name: "blogs",
       tooltip: 'Blogs'
     },
-    {
-      icon: () => <Icon icon="mingcute:news-fill" width="30" height="30" style={{ color: '#009DA0' }} />,
-      color: 'text-teal-500',
-      name: "articles",
-      tooltip: 'Articles'
-    },
+    
     {
       icon: () => <Icon icon="hugeicons:new-job" width="30" height="30" style={{ color: '#4CAF50' }} />,
       color: 'text-green-500',

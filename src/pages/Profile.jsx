@@ -33,6 +33,8 @@ const Profile = () => {
     const [showUnfriendModal, setShowUnfriendModal] = useState(false);
     const [showBlockModal, setShowBlockModal] = useState(false);
     const [isBlockLoading, setIsBlockLoading] = useState(false);
+    const [badgeInfo, setBadgeInfo] = useState(null);
+    const [badgeLoading, setBadgeLoading] = useState(false);
     const navigate = useNavigate();
     const { userId: urlUserId } = useParams();
 
@@ -40,6 +42,31 @@ const Profile = () => {
     const userId = urlUserId || localStorage.getItem('user_id') || '222102';
     const currentUserId = localStorage.getItem('user_id');
     const isOwnProfile = !urlUserId || urlUserId === currentUserId;
+
+    // Fetch badge information
+    const fetchBadgeInfo = async (targetUserId) => {
+        try {
+            setBadgeLoading(true);
+            const response = await axios.get(
+                `${import.meta.env.VITE_API_URL}/api/v1/users/${targetUserId}/badge`,
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`,
+                    }
+                }
+            );
+
+            const data = response.data;
+            if (data.api_status === 200 && data.data) {
+                setBadgeInfo(data.data);
+            }
+        } catch (err) {
+            console.error('Error fetching badge info:', err);
+        } finally {
+            setBadgeLoading(false);
+        }
+    };
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -81,6 +108,9 @@ const Profile = () => {
                         friend_request_received: data.user_data?.friend_request_received === 1 || data.user_data?.friend_request_received === true,
                         can_follow: data.user_data?.can_follow === 1 || data.user_data?.can_follow === true
                     });
+                    
+                    // Fetch badge information
+                    fetchBadgeInfo(userId);
                 } else {
                     throw new Error(data.api_text || 'Failed to fetch user data');
                 }
@@ -1097,6 +1127,14 @@ const Profile = () => {
                                 <h3 className='text-lg font-medium'>
                                     {loading ? 'Loading...' : `${userData?.user_data?.first_name || 'Aman'} ${userData?.user_data?.last_name || 'Shaikh'}`}
                                 </h3>
+                                {badgeInfo?.is_verified && badgeInfo?.badge_type && (
+                                    <img 
+                                        src="/icons/verified.png" 
+                                        alt="Verified Badge" 
+                                        className="w-5 h-5"
+                                        title={badgeInfo?.badge_info || 'Verified User'}
+                                    />
+                                )}
                                 {!isOwnProfile && (userData?.user_data?.is_following_me === 1 || userData?.user_data?.is_following_me === true) && (
                                     <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
                                         Follows you
@@ -1277,6 +1315,14 @@ const Profile = () => {
                                 <h3 className='text-lg lg:text-xl font-medium'>
                                     {loading ? 'Loading...' : `${userData?.user_data?.first_name || 'Aman'} ${userData?.user_data?.last_name || 'Shaikh'}`}
                                 </h3>
+                                {badgeInfo?.is_verified && badgeInfo?.badge_type && (
+                                    <img 
+                                        src="/icons/verified.png" 
+                                        alt="Verified Badge" 
+                                        className="w-5 h-5"
+                                        title={badgeInfo?.badge_info || 'Verified User'}
+                                    />
+                                )}
                                 {!isOwnProfile && (userData?.user_data?.is_following_me === 1 || userData?.user_data?.is_following_me === true) && (
                                     <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
                                         Follows you

@@ -879,6 +879,16 @@ const Home = () => {
       return `https://ouptel.com/${url.replace(/^\//, '')}`;
     };
 
+    // Handle video posts with post_file_url (NEW API - HIGHEST PRIORITY for video)
+    if (post?.post_type === 'video' && post?.post_file_url) {
+      return { video: ensureFullUrl(post.post_file_url) };
+    }
+
+    // Handle video posts with post_video_url
+    if (post?.post_video_url) {
+      return { video: ensureFullUrl(post.post_video_url) };
+    }
+
     // Handle audio posts with post_record_url (HIGHEST PRIORITY for audio)
     if (post?.post_record_url) {
       // Check if it's an audio file by URL pattern or post_type
@@ -946,7 +956,49 @@ const Home = () => {
       return { image: ensureFullUrl(post.postPhoto) };
     }
 
-    // Handle file attachments - but prioritize image detection
+    // Handle file attachments using post_file_url (NEW API)
+    if (post?.post_file_url) {
+      const url = ensureFullUrl(post.post_file_url);
+      const fileName = post.post_file || '';
+      const ext = fileName.split('.').pop()?.toLowerCase() || '';
+
+      // More comprehensive detection
+      const imageExtensions = ["jpg", "jpeg", "png", "gif", "webp", "bmp", "svg", "tiff", "tif"];
+      const videoExtensions = ["mp4", "mov", "avi", "mkv", "webm", "flv", "wmv", "m4v"];
+      const audioExtensions = ["mp3", "wav", "ogg", "aac", "flac", "wma", "m4a"];
+
+      // Check if URL contains patterns
+      const urlLooksLikeImage = /\.(jpg|jpeg|png|gif|webp|bmp|svg|tiff|tif)/i.test(url) ||
+        url.includes('image') ||
+        url.includes('photo');
+
+      const urlLooksLikeVideo = /\.(mp4|mov|avi|mkv|webm|flv|wmv|m4v)/i.test(url) ||
+        url.includes('video') ||
+        url.includes('posts/videos');
+
+      const urlLooksLikeAudio = /\.(mp3|wav|ogg|aac|flac|wma|m4a)/i.test(url) ||
+        url.includes('audio') ||
+        url.includes('sound') ||
+        url.includes('posts/audio');
+
+      if (imageExtensions.includes(ext) || urlLooksLikeImage) {
+        return { image: url };
+      } else if (videoExtensions.includes(ext) || urlLooksLikeVideo) {
+        return { video: url };
+      } else if (audioExtensions.includes(ext) || urlLooksLikeAudio) {
+        return { audio: url };
+      }
+      // Only show file download for non-media files
+      else if (!imageExtensions.includes(ext) && !videoExtensions.includes(ext) && !audioExtensions.includes(ext)) {
+        return { 
+          file: url,
+          postfile: url,
+          postFileName: fileName
+        };
+      }
+    }
+
+    // Handle file attachments - but prioritize image detection (LEGACY)
     if (post?.postFile_full) {
       const url = ensureFullUrl(post.postFile_full);
       const fileName = post.postFileName || '';

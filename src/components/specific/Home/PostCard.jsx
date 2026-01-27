@@ -58,6 +58,13 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
   // Add state for comment reaction popups
   const [showCommentReactionPopup, setShowCommentReactionPopup] = useState({});
   const [commentHoverTimeouts, setCommentHoverTimeouts] = useState({});
+  // Add state for video playing
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const videoRef = useRef(null);
+  // Add state for video mute
+  const [isVideoMuted, setIsVideoMuted] = useState(true);
+  // Add state for video progress
+  const [videoProgress, setVideoProgress] = useState(0);
   const buildAuthHeaders = useCallback(() => {
     const accessToken = localStorage.getItem("access_token");
     const headers = {
@@ -1108,6 +1115,88 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
     });
   }, [findParentCommentId, sendCommentReaction]);
 
+  // Video play/pause handler
+  const handleVideoClick = useCallback((e) => {
+    e.stopPropagation();
+    if (videoRef.current) {
+      if (isVideoPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play().catch(err => {
+          console.error('Error playing video:', err);
+        });
+      }
+    }
+  }, [isVideoPlaying]);
+
+  // Mute/unmute handler
+  const handleMuteToggle = useCallback((e) => {
+    e.stopPropagation();
+    if (videoRef.current) {
+      videoRef.current.muted = !isVideoMuted;
+      setIsVideoMuted(!isVideoMuted);
+    }
+  }, [isVideoMuted]);
+
+  // Handle video play/pause events and progress
+  useEffect(() => {
+    const videoElement = videoRef.current;
+    if (videoElement) {
+      const handlePlay = () => setIsVideoPlaying(true);
+      const handlePause = () => setIsVideoPlaying(false);
+      const handleEnded = () => setIsVideoPlaying(false);
+      const handleTimeUpdate = () => {
+        const progress = (videoElement.currentTime / videoElement.duration) * 100;
+        setVideoProgress(progress);
+      };
+      
+      videoElement.addEventListener('play', handlePlay);
+      videoElement.addEventListener('pause', handlePause);
+      videoElement.addEventListener('ended', handleEnded);
+      videoElement.addEventListener('timeupdate', handleTimeUpdate);
+      
+      return () => {
+        videoElement.removeEventListener('play', handlePlay);
+        videoElement.removeEventListener('pause', handlePause);
+        videoElement.removeEventListener('ended', handleEnded);
+        videoElement.removeEventListener('timeupdate', handleTimeUpdate);
+      };
+    }
+  }, [video]);
+
+  // Auto-play video when in view (Instagram-style)
+  useEffect(() => {
+    const videoElement = videoRef.current;
+    if (!videoElement) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            // Video is in view - auto play (muted for browser policy)
+            videoElement.muted = true;
+            setIsVideoMuted(true);
+            videoElement.play().catch(err => {
+              console.log('Auto-play prevented:', err);
+            });
+          } else {
+            // Video is out of view - pause
+            videoElement.pause();
+          }
+        });
+      },
+      {
+        threshold: 0.5, // Play when 50% of video is visible
+      }
+    );
+
+    observer.observe(videoElement);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [video]);
+
   const ownerid = localStorage.getItem('user_id');
   const currentUserId = userData?.user_id || userData?.id || userData?.userId || ownerid;
 
@@ -1360,7 +1449,74 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
       )}
 
       {/* Handle video */}
-      {video && <video className="w-full h-auto object-cover" controls src={video}></video>}
+      {video && (
+        <div className="relative w-full bg-gray-900 overflow-hidden" style={{ height: '500px', maxHeight: '500px' }}>
+          <video 
+            ref={videoRef}
+            className="w-full h-full object-contain cursor-pointer"
+            src={video}
+            onClick={handleVideoClick}
+            playsInline
+            loop
+            preload="metadata"
+            style={{ 
+              maxHeight: '500px',
+              backgroundColor: '#000'
+            }}
+          />
+          
+          {/* Play button overlay - only show when paused */}
+          {!isVideoPlaying && (
+            <div 
+              className="absolute inset-0 flex items-center justify-center cursor-pointer"
+              onClick={handleVideoClick}
+              style={{ backgroundColor: 'rgba(0, 0, 0, 0.3)' }}
+            >
+              <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white bg-opacity-90 flex items-center justify-center shadow-2xl hover:bg-opacity-100 transition-all duration-200 hover:scale-110">
+                <svg 
+                  className="w-8 h-8 md:w-10 md:h-10 text-gray-800 ml-1" 
+                  fill="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </div>
+            </div>
+          )}
+          
+          {/* Pause overlay - shows briefly when clicking to pause */}
+          {isVideoPlaying && (
+            <div 
+              className="absolute inset-0 cursor-pointer"
+              onClick={handleVideoClick}
+            />
+          )}
+
+          {/* Progress bar at bottom */}
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-700 bg-opacity-50">
+            <div 
+              className="h-full bg-white transition-all duration-100"
+              style={{ width: `${videoProgress}%` }}
+            />
+          </div>
+
+          {/* Mute/Unmute button - top right corner */}
+          <button
+            onClick={handleMuteToggle}
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black bg-opacity-60 hover:bg-opacity-80 flex items-center justify-center transition-all duration-200 z-10"
+          >
+            {isVideoMuted ? (
+              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+              </svg>
+            ) : (
+              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+              </svg>
+            )}
+          </button>
+        </div>
+      )}
       {iframelink && iframelink !== "" && <iframe src={`https://www.youtube.com/embed/${iframelink}`} className="w-full h-[300px] object-cover" controls></iframe>}
 
       {/* Handle audio */}

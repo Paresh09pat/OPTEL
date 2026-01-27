@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Loader from '../../components/loading/Loader';
 import { baseUrl } from '../../utils/constant';
@@ -8,6 +8,8 @@ import { MdEdit } from 'react-icons/md';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import CreatePostSection from '../../components/specific/Home/CreatePostSection';
+import Avatar from '../../components/Avatar';
+import PostCard from '../../components/specific/Home/PostCard';
 
 const DEFAULT_AVATAR = 'https://admin.ouptel.in/images/placeholders/page-avatar.svg';
 const DEFAULT_USER_AVATAR = 'https://admin.ouptel.in/images/placeholders/user-avatar.svg';
@@ -25,8 +27,155 @@ const PageDetailed = () => {
   const [ownerAvatarError, setOwnerAvatarError] = useState(false);
   const [posts, setPosts] = useState([]);
   const [loadingPosts, setLoadingPosts] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMorePosts, setHasMorePosts] = useState(true);
+  const [totalPosts, setTotalPosts] = useState(0);
 
   const accessToken = useMemo(() => localStorage.getItem('access_token'), []);
+
+  // Handler for post reactions
+  const handlePostReaction = useCallback(async (postId, reactionType) => {
+    try {
+      const response = await axios.post(
+        `${baseUrl}/api/v1/posts/${postId}/reactions`,
+        { reaction: reactionType },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+            'Accept': 'application/json',
+          },
+        }
+      );
+
+      if (response.data?.ok === true || response.data?.api_status === 200) {
+        toast.success(response.data?.message || 'Reaction added successfully');
+        // Refetch posts to update reaction counts
+        fetchPagePosts(currentPage, false);
+      } else {
+        toast.error(response.data?.message || 'Failed to add reaction');
+      }
+    } catch (error) {
+      console.error('Error adding reaction:', error);
+      toast.error(error?.response?.data?.message || 'Error adding reaction');
+    }
+  }, [accessToken, currentPage]);
+
+  // Handler for saving/unsaving posts
+  const handleSavePost = useCallback(async (postId) => {
+    try {
+      const response = await axios.post(
+        `${baseUrl}/api/v1/posts/save`,
+        { post_id: postId },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+            'Accept': 'application/json',
+          },
+        }
+      );
+
+      if (response.data?.ok === true || response.data?.api_status === 200) {
+        toast.success(response.data?.message || 'Post saved successfully');
+        // Refetch posts to update saved status
+        fetchPagePosts(currentPage, false);
+      } else {
+        toast.error(response.data?.message || 'Failed to save post');
+      }
+    } catch (error) {
+      console.error('Error saving post:', error);
+      toast.error(error?.response?.data?.message || 'Error saving post');
+    }
+  }, [accessToken, currentPage]);
+
+  // Handler for reporting posts
+  const handleReportPost = useCallback(async (postId) => {
+    try {
+      const response = await axios.post(
+        `${baseUrl}/api/v1/posts/report`,
+        { post_id: postId },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+            'Accept': 'application/json',
+          },
+        }
+      );
+
+      if (response.data?.ok === true || response.data?.api_status === 200) {
+        toast.success(response.data?.message || 'Post reported successfully');
+      } else {
+        toast.error(response.data?.message || 'Failed to report post');
+      }
+    } catch (error) {
+      console.error('Error reporting post:', error);
+      toast.error(error?.response?.data?.message || 'Error reporting post');
+    }
+  }, [accessToken]);
+
+  // Handler for hiding posts
+  const handleHidePost = useCallback(async (postId) => {
+    try {
+      const response = await axios.post(
+        `${baseUrl}/api/v1/posts/hide`,
+        { post_id: postId },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+            'Accept': 'application/json',
+          },
+        }
+      );
+
+      if (response.data?.ok === true || response.data?.api_status === 200) {
+        toast.success('Post hidden successfully');
+        // Refetch posts to remove hidden post
+        fetchPagePosts(currentPage, false);
+      } else {
+        toast.error(response.data?.message || 'Failed to hide post');
+      }
+    } catch (error) {
+      console.error('Error hiding post:', error);
+      toast.error(error?.response?.data?.message || 'Error hiding post');
+    }
+  }, [accessToken, currentPage]);
+
+  // Handler for poll voting
+  const handlePollVote = useCallback(async (postId, optionId) => {
+    try {
+      const response = await axios.post(
+        `${baseUrl}/api/v1/posts/${postId}/poll/vote`,
+        { option_id: optionId },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+            'Accept': 'application/json',
+          },
+        }
+      );
+
+      if (response.data?.ok === true || response.data?.api_status === 200) {
+        toast.success(response.data?.message || 'Vote recorded successfully');
+        // Refetch posts to update poll results
+        fetchPagePosts(currentPage, false);
+      } else {
+        toast.error(response.data?.message || 'Failed to vote');
+      }
+    } catch (error) {
+      console.error('Error voting on poll:', error);
+      toast.error(error?.response?.data?.message || 'Error voting on poll');
+    }
+  }, [accessToken, currentPage]);
+
+  // Handler for opening image popup (placeholder - implement if needed)
+  const handleOpenImagePopup = useCallback((images, index) => {
+    // TODO: Implement image popup/lightbox if needed
+    console.log('Open image popup:', images, index);
+  }, []);
 
   useEffect(() => {
     const fetchPage = async () => {
@@ -62,15 +211,20 @@ const PageDetailed = () => {
     fetchPage();
   }, [pageId, accessToken]);
 
-  // Fetch page posts
-  const fetchPagePosts = async () => {
+  // Fetch page posts with pagination
+  const fetchPagePosts = async (page = 1, append = false) => {
     if (!pageId) return;
     setLoadingPosts(true);
 
     try {
       const response = await axios.get(
-        `${baseUrl}/api/v1/pages/${pageId}/posts`,
+        `${baseUrl}/api/v1/pages`,
         {
+          params: {
+            include_posts: true,
+            page: page,
+            per_page: 10
+          },
           headers: {
             'Authorization': `Bearer ${accessToken}`,
             'Accept': 'application/json',
@@ -78,11 +232,35 @@ const PageDetailed = () => {
         }
       );
 
-      if (response.data?.api_status === 200 && response.data?.data) {
-        setPosts(response.data.data);
+      if (response.data?.data) {
+        // Find the current page in the response
+        const currentPageData = response.data.data.find(p => p.page_id === parseInt(pageId));
+        
+        if (currentPageData && currentPageData.posts) {
+          if (append) {
+            setPosts(prev => [...prev, ...currentPageData.posts]);
+          } else {
+            setPosts(currentPageData.posts);
+          }
+          
+          // Update pagination info
+          const meta = response.data.meta;
+          if (meta) {
+            setHasMorePosts(meta.current_page < meta.last_page);
+            setTotalPosts(currentPageData.posts_count || 0);
+          }
+        } else {
+          if (!append) {
+            setPosts([]);
+          }
+          setHasMorePosts(false);
+        }
       }
     } catch (error) {
       console.error('Error fetching page posts:', error);
+      if (!append) {
+        setPosts([]);
+      }
     } finally {
       setLoadingPosts(false);
     }
@@ -90,9 +268,30 @@ const PageDetailed = () => {
 
   useEffect(() => {
     if (pageId && accessToken) {
-      fetchPagePosts();
+      fetchPagePosts(1, false);
     }
   }, [pageId, accessToken]);
+
+  // Load more posts function
+  const loadMorePosts = useCallback(() => {
+    if (!loadingPosts && hasMorePosts) {
+      const nextPage = currentPage + 1;
+      setCurrentPage(nextPage);
+      fetchPagePosts(nextPage, true);
+    }
+  }, [loadingPosts, hasMorePosts, currentPage, pageId, accessToken]);
+
+  // Infinite scroll handler
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 500) {
+        loadMorePosts();
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [loadMorePosts]);
 
   const handleLikePage = async () => {
     if (!page || liking) return;
@@ -361,7 +560,7 @@ const PageDetailed = () => {
 
         {/* Owner Section */}
         {page.owner && (
-          <div className="bg-white rounded-2xl shadow-md p-6">
+          <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Page Owner</h2>
             <div 
               className="flex items-center gap-4 cursor-pointer hover:bg-gray-50 p-3 rounded-lg transition-colors -m-3"
@@ -393,6 +592,95 @@ const PageDetailed = () => {
             </div>
           </div>
         )}
+
+        {/* Posts Section */}
+        <div className="mt-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">
+            Posts {totalPosts > 0 && `(${totalPosts})`}
+          </h2>
+          {loadingPosts && posts.length === 0 ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+            </div>
+          ) : posts.length > 0 ? (
+            <div className="space-y-4">
+              {posts.map((post) => (
+                <PostCard
+                  key={post.post_id || post.id}
+                  user={post.author || post.publisher || {
+                    user_id: post.user_id,
+                    name: post.user_name || 'Unknown User',
+                    avatar_url: post.user_avatar_url,
+                    avatar: post.user_avatar
+                  }}
+                  content={post.post_text || post.Orginaltext || ''}
+                  image={post.post_photo_url || post.postPhoto}
+                  video={post.post_video_url || post.postVideo}
+                  audio={post.post_audio_url || post.postAudio}
+                  file={post.post_file_url || post.postFile}
+                  likes={post.reactions_count || post.post_likes || 0}
+                  comments={post.comments_count || post.post_comments || 0}
+                  shares={post.shares_count || post.post_shares || 0}
+                  saves={post.saves_count || 0}
+                  timeAgo={post.created_at_human || post.time_text || 'Just now'}
+                  post_id={post.post_id || post.id}
+                  handleLike={() => handlePostReaction(post.post_id || post.id, 1)}
+                  handleDislike={() => {}}
+                  isLiked={post.is_reacted || post.is_liked || false}
+                  commentsData={post.comments || []}
+                  savePost={handleSavePost}
+                  isSaved={post.is_saved || false}
+                  blog={post.blog}
+                  multipleImages={post.album_images || post.album || []}
+                  hasMultipleImages={post.album_images && post.album_images.length > 0}
+                  reportPost={handleReportPost}
+                  hidePost={handleHidePost}
+                  iframelink={post.youtube || post.iframe_link || ''}
+                  postfile={post.post_file_url || post.postFile || ''}
+                  postFileName={post.post_file_name || post.postFileName || ''}
+                  getNewsFeed={() => fetchPagePosts(currentPage, false)}
+                  openImagePopup={handleOpenImagePopup}
+                  handleReaction={handlePostReaction}
+                  postReaction={post.reaction || post.user_reaction}
+                  postReactionCounts={post.reaction_counts || {}}
+                  currentReaction={post.reaction || post.user_reaction}
+                  userReaction={post.reaction || post.user_reaction}
+                  postType={post.post_type || 'post'}
+                  pollOptions={post.poll_options || post.options || []}
+                  handlePollVote={(optionId) => handlePollVote(post.post_id || post.id, optionId)}
+                  isPollLoading={false}
+                  colorId={post.color_id}
+                  colorData={post.color_data}
+                  feeling={post.feeling}
+                  isFeelingPost={post.is_feeling_post || false}
+                />
+              ))}
+
+              {/* Loading more indicator */}
+              {loadingPosts && posts.length > 0 && (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                  <span className="ml-3 text-gray-600">Loading more posts...</span>
+                </div>
+              )}
+
+              {/* No more posts indicator */}
+              {!hasMorePosts && posts.length > 0 && (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No more posts to load</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl shadow-md p-8 text-center">
+              <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+              </svg>
+              <p className="text-gray-500 text-lg">No posts yet</p>
+              <p className="text-gray-400 text-sm mt-2">Be the first to post on this page!</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

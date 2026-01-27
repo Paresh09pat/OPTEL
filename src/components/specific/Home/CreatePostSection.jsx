@@ -220,10 +220,16 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
                         name: file.name,
                         type,
                         file,
+                        preview: URL.createObjectURL(file), // Create preview URL once
                     }));
                     setSelectedFiles((prev) => [...prev, ...newFiles]);
                 } else {
-                    setSelectedFiles([{ name: files[0].name, type, file: files[0] }]);
+                    setSelectedFiles([{ 
+                        name: files[0].name, 
+                        type, 
+                        file: files[0],
+                        preview: URL.createObjectURL(files[0]) // Create preview URL once
+                    }]);
                 }
             }
         };
@@ -236,8 +242,8 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
         setSelectedFiles((prev) => {
             const fileToRemove = prev[indexToRemove];
             // Revoke the object URL to prevent memory leaks
-            if (fileToRemove && fileToRemove.file) {
-                URL.revokeObjectURL(URL.createObjectURL(fileToRemove.file));
+            if (fileToRemove && fileToRemove.preview) {
+                URL.revokeObjectURL(fileToRemove.preview);
             }
             return prev.filter((_, i) => i !== indexToRemove);
         });
@@ -249,12 +255,12 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
     useEffect(() => {
         return () => {
             selectedFiles.forEach((fileObj) => {
-                if (fileObj && fileObj.file) {
-                    URL.revokeObjectURL(URL.createObjectURL(fileObj.file));
+                if (fileObj && fileObj.preview) {
+                    URL.revokeObjectURL(fileObj.preview);
                 }
             });
         };
-    }, [selectedFiles]);
+    }, []);
 
     // Function to detect post type based on content
     const detectPostType = (text, files, link, youtube, album) => {
@@ -812,7 +818,12 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
                 }
             });
             selectedFiles.forEach((fileObj) => {
-                if (fileObj.file && fileObj.file.type.startsWith("file/")) {
+                // Check if it's a file type (not image, video, or audio)
+                if (fileObj.file && fileObj.type === 'file' && 
+                    !fileObj.file.type.startsWith("image/") && 
+                    !fileObj.file.type.startsWith("video/") && 
+                    !fileObj.file.type.startsWith("audio/")) {
+                    console.log("Appending file:", fileObj.file.name, fileObj.file.type);
                     formData.append("postFile", fileObj.file);
                 }
             });
@@ -1022,10 +1033,10 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
                                     className="bg-[#EDF6F9] rounded-lg p-3 border border-gray-200"
                                 >
                                     {/* Image Preview */}
-                                    {fileObj.type === 'image' && fileObj.file && (
+                                    {fileObj.type === 'image' && fileObj.preview && (
                                         <div className="mb-2">
                                             <img
-                                                src={URL.createObjectURL(fileObj.file)}
+                                                src={fileObj.preview}
                                                 alt={fileObj.name}
                                                 className="w-full h-32 object-cover rounded-md border border-gray-300"
                                             />
@@ -1033,10 +1044,10 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
                                     )}
 
                                     {/* Video Preview */}
-                                    {fileObj.type === 'video' && fileObj.file && (
+                                    {fileObj.type === 'video' && fileObj.preview && (
                                         <div className="mb-2">
                                             <video
-                                                src={URL.createObjectURL(fileObj.file)}
+                                                src={fileObj.preview}
                                                 className="w-full h-32 object-cover rounded-md border border-gray-300"
                                                 controls={false}
                                                 muted
@@ -1289,6 +1300,7 @@ const CreatePostPopup = ({
                         name: file.name,
                         type,
                         file,
+                        preview: URL.createObjectURL(file), // Create preview URL once
                     }));
                     console.log("Popup adding image files:", newFiles);
                     setSelectedFiles((prev) => {
@@ -1298,7 +1310,12 @@ const CreatePostPopup = ({
                     });
                 } else {
                     // Replace existing for video/audio/file
-                    const newFile = { name: files[0].name, type, file: files[0] };
+                    const newFile = { 
+                        name: files[0].name, 
+                        type, 
+                        file: files[0],
+                        preview: URL.createObjectURL(files[0]) // Create preview URL once
+                    };
                     console.log("Popup replacing with file:", newFile);
                     setSelectedFiles([newFile]);
                 }
@@ -1312,8 +1329,8 @@ const CreatePostPopup = ({
         setSelectedFiles((prev) => {
             const fileToRemove = prev[index];
             // Revoke the object URL to prevent memory leaks
-            if (fileToRemove && fileToRemove.file) {
-                URL.revokeObjectURL(URL.createObjectURL(fileToRemove.file));
+            if (fileToRemove && fileToRemove.preview) {
+                URL.revokeObjectURL(fileToRemove.preview);
             }
             return prev.filter((_, i) => i !== index);
         });
@@ -1706,10 +1723,10 @@ const CreatePostPopup = ({
                                             className="bg-gray-50 border border-gray-200 rounded-lg p-3"
                                         >
                                             {/* Image Preview */}
-                                            {file.type === 'image' && file.file && (
+                                            {file.type === 'image' && file.preview && (
                                                 <div className="mb-2">
                                                     <img
-                                                        src={URL.createObjectURL(file.file)}
+                                                        src={file.preview}
                                                         alt={file.name}
                                                         className="w-full h-24 object-cover rounded-md border border-gray-300"
                                                     />
@@ -1717,10 +1734,10 @@ const CreatePostPopup = ({
                                             )}
 
                                             {/* Video Preview */}
-                                            {file.type === 'video' && file.file && (
+                                            {file.type === 'video' && file.preview && (
                                                 <div className="mb-2">
                                                     <video
-                                                        src={URL.createObjectURL(file.file)}
+                                                        src={file.preview}
                                                         className="w-full h-24 object-cover rounded-md border border-gray-300"
                                                         controls={false}
                                                         muted
