@@ -760,9 +760,9 @@ const Chatbox = ({ onClose, isMobile = false }) => {
       </div>
 
       {/* Who to Follow */}
-      <div className="py-4 px-6 mt-2.5 bg-[#808080] rounded-lg border border-[#d3d1d1]">
-        <img src="/logos/ouptelfootericon.svg" alt="ouptel-logo" />
-        <div className="grid grid-cols-2 gap-11 text-white mt-3.5 text-[12px]">
+      <div className="py-4 px-6 mt-2.5 bg-white rounded-lg border border-[#d3d1d1]">
+        <img src="op_logo.png" alt="ouptel-logo" width={150} />
+        <div className="grid grid-cols-2 gap-11 text-black mt-3.5 text-[12px]">
           <div className="flex flex-col gap-1.5 ">
             <a href="">About us</a>
             <a href="">Blogs</a>
