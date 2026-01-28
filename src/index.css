@@ -170,3 +170,17 @@ article::-webkit-scrollbar {
     transform: rotate(360deg);
   }
 }
+
+/* Subtle bounce animation for scroll-to-top button */
+@keyframes bounce-slow {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-bounce-slow {
+  animation: bounce-slow 2s ease-in-out infinite;
+}

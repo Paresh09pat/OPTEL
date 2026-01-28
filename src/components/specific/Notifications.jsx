@@ -10,7 +10,6 @@ const Notifications = ({ isOpen, onClose, containerRect, refreshCount }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    // Fetch notifications from API
     const fetchNotifications = async () => {
         setLoading(true);
         setError(null);
@@ -64,6 +63,7 @@ const Notifications = ({ isOpen, onClose, containerRect, refreshCount }) => {
             });
 
             const data = await response.json();
+            console.log('Mark all as seen response:', data);
 
             if (data?.api_status === 200 || data?.ok === true) {
                 // Update local state to mark all as seen
@@ -73,6 +73,7 @@ const Notifications = ({ isOpen, onClose, containerRect, refreshCount }) => {
                 // Show success toast
                 toast.success(data?.message || data?.message_data || 'All notifications marked as seen');
             } else {
+                console.error('Failed to mark as seen:', data);
                 toast.error(data?.message || data?.message_data || 'Failed to mark notifications as seen');
             }
         } catch (error) {

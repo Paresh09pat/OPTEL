@@ -387,7 +387,7 @@ const Chatbox = ({ onClose, isMobile = false }) => {
                 />
               )}
               <div
-                className="relative w-[58px] h-[58px] rounded-full bg-[#EDF6F9] border-[4px] border-inset border-[#ffffff] shadow-md shadow-fuchsia-400 cursor-pointer hover:opacity-90 transition-opacity z-10"
+                className="relative w-[58px] h-[58px] rounded-full bg-[#EDF6F9] border-[4px] border-inset border-[#ffffff] shadow-md shadow-blue-400 cursor-pointer hover:opacity-90 transition-opacity z-10"
                 onClick={handleProfileImageClick}
               >
                 {userData?.avatar_url ? (
@@ -405,7 +405,7 @@ const Chatbox = ({ onClose, isMobile = false }) => {
                   </div>
                 )}
                 <div
-                  className="grid place-items-center absolute -right-1 -bottom-1 bg-black w-5 h-5 rounded-full border-inset border-[2px] shadow-2xl shadow-fuchsia-400 border-white cursor-pointer hover:bg-gray-800 transition-colors z-10"
+                  className="grid place-items-center absolute -right-1 -bottom-1 bg-black w-5 h-5 rounded-full border-inset border-[2px] shadow-2xl shadow-blue-400 border-white cursor-pointer hover:bg-gray-800 transition-colors z-10"
                   onClick={(e) => {
                     e.stopPropagation();
                     setStoryModalOpen(true);

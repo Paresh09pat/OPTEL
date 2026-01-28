@@ -94,6 +94,7 @@ const Home = () => {
   const [feedType, setFeedType] = useState('all'); // 'all' or 'following'
   const [activeFilter, setActiveFilter] = useState(null); // Track active filter for UI
   const loadMoreTriggerRef = useRef(null); // Ref for intersection observer
+  const [showScrollTop, setShowScrollTop] = useState(false); // Track scroll position for scroll-to-top button
 
   // Function to get address from coordinates using reverse geocoding
   const getAddressFromCoordinates = async (latitude, longitude) => {
@@ -690,6 +691,35 @@ const Home = () => {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [imagePopup.show]);
+
+  // Scroll to top functionality - tracks the main scrollable container
+  useEffect(() => {
+    // Find the main scrollable container (the <main> element in MainLayout)
+    const mainContainer = document.querySelector('main.overflow-y-auto');
+    
+    if (!mainContainer) return;
+
+    const handleScroll = () => {
+      // Show button when scrolled more than 100vh in the main container
+      const scrolled = mainContainer.scrollTop;
+      const viewportHeight = window.innerHeight;
+      setShowScrollTop(scrolled > viewportHeight);
+    };
+
+    mainContainer.addEventListener('scroll', handleScroll);
+    return () => mainContainer.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    // Scroll the main container, not the window
+    const mainContainer = document.querySelector('main.overflow-y-auto');
+    if (mainContainer) {
+      mainContainer.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+  };
 
 
   const handleReaction = async (postId, reactionType) => {
@@ -1548,6 +1578,30 @@ const Home = () => {
             getAllUsersStories();
           }}
         />
+      )}
+
+      {/* Scroll to Top Button */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-20 right-6 lg:bottom-6 lg:right-[17rem] xl:right-[23rem] z-[9999] bg-blue-500 hover:bg-blue-600 text-white rounded-full p-2 shadow-2xl transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 animate-bounce-slow"
+          aria-label="Scroll to top"
+          style={{ boxShadow: '0 10px 40px rgba(59, 130, 246, 0.5)' }}
+        >
+          <svg 
+            className="w-4 h-4" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+            strokeWidth={3}
+          >
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              d="M5 10l7-7m0 0l7 7m-7-7v18" 
+            />
+          </svg>
+        </button>
       )}
 
       {/* Image Popup/Modal */}

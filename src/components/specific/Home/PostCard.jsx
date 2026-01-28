@@ -582,6 +582,41 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
     }
   }, [post_id, buildAuthHeaders, getNewsFeed]);
 
+  const handleDeletePost = useCallback(async () => {
+    setShowOptionsMenu(false);
+    
+    // Show confirmation before deleting
+    const confirmed = window.confirm('Are you sure you want to delete this post? This action cannot be undone.');
+    if (!confirmed) return;
+
+    setLoading(true);
+    try {
+      const response = await axios.post(
+        `${baseUrl}/api/v1/posts/delete`,
+        { post_id: post_id },
+        {
+          headers: buildAuthHeaders()
+        }
+      );
+      const data = response.data;
+      if (data?.api_status === 200 || data?.ok === true) {
+        toast.success('Post deleted successfully');
+        // Refetch the news feed to update the UI
+        if (getNewsFeed && typeof getNewsFeed === 'function') {
+          getNewsFeed();
+        }
+      } else {
+        toast.error(data?.message || 'Failed to delete post');
+      }
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      const errorMsg = error?.response?.data?.message || 'Error deleting post';
+      toast.error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  }, [post_id, buildAuthHeaders, getNewsFeed]);
+
   const handleShareToTimeline = useCallback(() => {
     console.log('Share to timeline:', post_id);
     // Don't close popup
@@ -958,8 +993,8 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
         // This provides instant feedback like Instagram/Facebook
         setLocalCommentsData(prev => prev.filter(comment => comment.id !== comment_id));
         
-        // Refetch comments in the background to sync with server (without showing loader)
-        // This ensures we have the latest data from the server
+        // Refetch ONLY comments in the background to sync with server (without showing loader)
+        // This ensures we have the latest data from the server without refetching entire feed
         isRefetchingRef.current = true;
         fetchPostComments(false).then((fetchedComments) => {
           // After refetch, update with fresh data from server (even if empty array)
@@ -986,17 +1021,8 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
           isRefetchingRef.current = false;
         });
         
-        // Refresh the news feed to update comment count in parent (non-blocking)
-        // Use setTimeout to delay this so it doesn't interfere with state updates
-        setTimeout(() => {
-          if (getNewsFeed && typeof getNewsFeed === 'function') {
-            getNewsFeed();
-          }
-          // Restore comments state after parent re-render
-          if (keepCommentsOpenRef.current) {
-            setClickedComments(true);
-          }
-        }, 100);
+        // NO LONGER REFETCHING ENTIRE FEED - just update comment count locally
+        // This is much more efficient and provides better UX
       } else {
         toast.error(data?.message || 'Failed to delete comment');
         console.log('Failed to delete comment:', data);
@@ -1009,7 +1035,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
     } finally {
       setCommentActionLoading(prev => ({ ...prev, [`delete_${comment_id}`]: false }));
     }
-  }, [buildAuthHeaders, clickedComments, commentReplies, fetchPostComments, getNewsFeed]);
+  }, [buildAuthHeaders, clickedComments, commentReplies, fetchPostComments]);
 
   // New function for deleting comment replies
   const deleteCommentReply = useCallback(async (reply_id) => {
@@ -1340,6 +1366,15 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
               >
                 Hide post
               </button>
+              {/* Delete Post - Only show for post owner */}
+              {(user?.user_id === currentUserId || user?.id === currentUserId || String(user?.user_id) === String(currentUserId) || String(user?.id) === String(currentUserId)) && (
+                <button
+                  onClick={handleDeletePost}
+                  className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 transition-colors text-sm font-medium cursor-pointer border-t border-gray-200"
+                >
+                  Delete Post
+                </button>
+              )}
             </div>
           )}
 

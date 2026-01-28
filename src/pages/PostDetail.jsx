@@ -319,6 +319,36 @@ const PostDetail = () => {
     }
   };
 
+  const deletePost = async (post_id) => {
+    // Show confirmation before deleting
+    const confirmed = window.confirm('Are you sure you want to delete this post? This action cannot be undone.');
+    if (!confirmed) return;
+
+    setLoading(true);
+    try {
+      const response = await axios.post(
+        `${baseUrl}/api/v1/posts/delete`,
+        { post_id: post_id },
+        {
+          headers: buildAuthHeaders()
+        }
+      );
+
+      const data = await response.data;
+      if (data?.ok === true || data?.api_status === 200) {
+        toast.success('Post deleted successfully');
+        navigate('/');
+      } else {
+        toast.error(data?.message || 'Failed to delete post');
+      }
+    } catch (error) {
+      const errorMsg = error?.response?.data?.message || 'Error deleting post';
+      toast.error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleReaction = async (postId, reactionType) => {
     setLoading(true);
     try {
@@ -608,6 +638,7 @@ const PostDetail = () => {
               savePost={savePost}
               reportPost={reportPost}
               hidePost={hidePost}
+              deletePost={deletePost}
               getNewsFeed={getNewsFeed}
               openImagePopup={openImagePopup}
               handleReaction={handleReaction}

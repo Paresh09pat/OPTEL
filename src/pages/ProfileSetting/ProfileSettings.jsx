@@ -264,6 +264,8 @@ const ProfileSettings = () => {
 
       // Only send request if there are changes
       if (Object.keys(userDataToUpdate).length === 0) {
+        toast.info('No changes to save');
+        setUpdateLoading(false);
         return;
       }
 
@@ -285,6 +287,59 @@ const ProfileSettings = () => {
       
       if (data.api_status === '200') {
         toast.success("Profile updated successfully!");
+        
+        // Refetch user data to show updated information
+        try {
+          const refreshResponse = await axios.get(
+            `${import.meta.env.VITE_API_URL}/api/v1/profile/user-data?user_profile_id=${userId}&fetch=user_data`,
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`,
+              }
+            }
+          );
+
+          const refreshData = refreshResponse.data;
+          
+          if (refreshData.api_status === '200') {
+            setUserData(refreshData.user_data);
+            
+            // Update localStorage with new data
+            if (refreshData.user_data.first_name) {
+              localStorage.setItem('user_first_name', refreshData.user_data.first_name);
+            }
+            if (refreshData.user_data.last_name) {
+              localStorage.setItem('user_last_name', refreshData.user_data.last_name);
+            }
+            if (refreshData.user_data.avatar_url) {
+              localStorage.setItem('user_avatar_url', refreshData.user_data.avatar_url);
+            }
+            
+            // Get location from localStorage if available, otherwise use API data
+            const savedAddress = localStorage.getItem('user_address');
+            const locationToUse = savedAddress || refreshData.user_data.address || '';
+            
+            // Update form with refreshed data
+            setFormData({
+              firstName: refreshData.user_data.first_name || '',
+              lastName: refreshData.user_data.last_name || '',
+              aboutMe: refreshData.user_data.about || '',
+              location: locationToUse,
+              school: refreshData.user_data.school || '',
+              schoolCompleted: false,
+              workingAt: refreshData.user_data.working || '',
+              companyWebsite: refreshData.user_data.working_link || '',
+              website: refreshData.user_data.website || '',
+              relationship: refreshData.user_data.relationship_id !== undefined ? getRelationshipText(refreshData.user_data.relationship_id) : 'Single',
+              college: '',
+              university: ''
+            });
+          }
+        } catch (refreshErr) {
+          console.error('Error refreshing user data:', refreshErr);
+          // Don't show error to user, the update was successful
+        }
       } else {
         throw new Error(data.api_text || 'Failed to update profile');
       }
@@ -499,13 +554,13 @@ const ProfileSettings = () => {
             <button 
               type="submit"
               disabled={updateLoading}
-              className={`w-32 mx-auto border border-purple-500 text-purple-500 bg-white py-2 px-4 rounded-lg cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-semibold ${
-                updateLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-purple-50'
+              className={`w-32 mx-auto bg-blue-500 text-white py-2 px-4 rounded-lg font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 text-sm ${
+                updateLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-600 cursor-pointer'
               }`}
             >
               {updateLoading ? (
                 <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500 mr-2"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                   Saving...
                 </div>
               ) : (

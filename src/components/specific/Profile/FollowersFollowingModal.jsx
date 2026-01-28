@@ -50,7 +50,7 @@ const FollowersFollowingModal = ({ isOpen, onClose, type, users, loading }) => {
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-[#d3d1d1]">
           <h2 className="text-xl font-semibold text-gray-900">
-            {type === 'followers' ? 'Followers' : type === 'following' ? 'Following' : 'Posts'}
+            {type === 'followers' ? 'Followers' : type === 'following' ? 'Following' : type === 'friends' ? 'Friends' : 'Posts'}
           </h2>
           <button
             onClick={onClose}
@@ -77,9 +77,9 @@ const FollowersFollowingModal = ({ isOpen, onClose, type, users, loading }) => {
                 const userId = user.user_id;
                 const firstName = user.first_name || '';
                 const lastName = user.last_name || '';
-                const userName = `${firstName} ${lastName}`.trim() || user.username || 'Unknown User';
-                // Use avatar_url from API response (already full URL)
-                const userAvatar = user.avatar_url;
+                const userName = `${firstName} ${lastName}`.trim() || user.name || user.username || 'Unknown User';
+                // Use avatar_url or avatar from API response (already full URL)
+                const userAvatar = user.avatar_url || user.avatar;
                 
                 // Clean about text (remove HTML tags if present)
                 const aboutText = user.about ? user.about.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim() : '';
@@ -136,6 +136,8 @@ const FollowersFollowingModal = ({ isOpen, onClose, type, users, loading }) => {
                   ? 'No followers yet' 
                   : type === 'following' 
                   ? 'Not following anyone yet' 
+                  : type === 'friends'
+                  ? 'No friends yet'
                   : 'No posts yet'}
               </p>
             </div>

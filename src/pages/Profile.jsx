@@ -1,16 +1,15 @@
-import React, { useState, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { FiEdit3 } from 'react-icons/fi'
-import { LiaEdit } from 'react-icons/lia'
-import CreatePostSection from '../components/specific/Home/CreatePostSection'
-import QuickActionSection from '../components/specific/Home/QuickActionSection'
-import PostCard from '../components/specific/Home/PostCard'
-import Avatar from '../components/Avatar'
 import axios from 'axios'
-import Loader from '../components/loading/Loader'
-import FollowersFollowingModal from '../components/specific/Profile/FollowersFollowingModal'
-import ConfirmModal from '../components/ConfirmModal'
+import { useEffect, useRef, useState } from 'react'
+import { LiaEdit } from 'react-icons/lia'
+import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
+import Avatar from '../components/Avatar'
+import ConfirmModal from '../components/ConfirmModal'
+import Loader from '../components/loading/Loader'
+import CreatePostSection from '../components/specific/Home/CreatePostSection'
+import PostCard from '../components/specific/Home/PostCard'
+import QuickActionSection from '../components/specific/Home/QuickActionSection'
+import FollowersFollowingModal from '../components/specific/Profile/FollowersFollowingModal'
 
 const Profile = () => {
     const [userData, setUserData] = useState(null);
@@ -21,6 +20,8 @@ const Profile = () => {
     const [postsError, setPostsError] = useState(null);
     const [modalOpen, setModalOpen] = useState(false);
     const [modalType, setModalType] = useState(null); // 'followers', 'following', or 'posts'
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const observerTarget = useRef(null);
     const [isFollowing, setIsFollowing] = useState(false);
     const [isFollowLoading, setIsFollowLoading] = useState(false);
     const [friendStatus, setFriendStatus] = useState({
@@ -35,6 +36,9 @@ const Profile = () => {
     const [isBlockLoading, setIsBlockLoading] = useState(false);
     const [badgeInfo, setBadgeInfo] = useState(null);
     const [badgeLoading, setBadgeLoading] = useState(false);
+    const [friends, setFriends] = useState([]);
+    const [friendsLoading, setFriendsLoading] = useState(false);
+    const [showScrollTop, setShowScrollTop] = useState(false); // Track scroll position for scroll-to-top button
     const navigate = useNavigate();
     const { userId: urlUserId } = useParams();
 
@@ -68,6 +72,31 @@ const Profile = () => {
         }
     };
 
+    // Fetch friends list
+    const fetchFriends = async () => {
+        try {
+            setFriendsLoading(true);
+            const response = await axios.get(
+                `${import.meta.env.VITE_API_URL}/api/v1/friends?type=all&per_page=12`,
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`,
+                    }
+                }
+            );
+
+            const data = response.data;
+            if (data.ok === true && data.data) {
+                setFriends(data.data.friends || []);
+            }
+        } catch (err) {
+            console.error('Error fetching friends:', err);
+        } finally {
+            setFriendsLoading(false);
+        }
+    };
+
     useEffect(() => {
         const fetchUserData = async () => {
             try {
@@ -86,7 +115,7 @@ const Profile = () => {
                 
                 if (data.api_status === '200') {
                     setUserData(data);
-                    // Store user data in localStorage for reuse
+                    
                     if (data.user_data?.avatar_url) {
                         localStorage.setItem('user_avatar_url', data.user_data.avatar_url);
                     }
@@ -111,6 +140,11 @@ const Profile = () => {
                     
                     // Fetch badge information
                     fetchBadgeInfo(userId);
+                    
+                    // Fetch friends list (only for own profile)
+                    if (isOwnProfile) {
+                        fetchFriends();
+                    }
                 } else {
                     throw new Error(data.api_text || 'Failed to fetch user data');
                 }
@@ -138,11 +172,78 @@ const Profile = () => {
         fetchUserData();
     }, [userId]);
 
+    // Scroll to top functionality - tracks the main scrollable container
+    useEffect(() => {
+        // Find the main scrollable container (the <main> element in MainLayout)
+        const mainContainer = document.querySelector('main.overflow-y-auto');
+        
+        if (!mainContainer) return;
+
+        const handleScroll = () => {
+            // Show button when scrolled more than 100vh in the main container
+            const scrolled = mainContainer.scrollTop;
+            const viewportHeight = window.innerHeight;
+            setShowScrollTop(scrolled > viewportHeight);
+        };
+
+        mainContainer.addEventListener('scroll', handleScroll);
+        return () => mainContainer.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    const scrollToTop = () => {
+        // Scroll the main container, not the window
+        const mainContainer = document.querySelector('main.overflow-y-auto');
+        if (mainContainer) {
+            mainContainer.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+    };
+
+    // Add state for pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const [hasMorePosts, setHasMorePosts] = useState(false);
+    const [totalPosts, setTotalPosts] = useState(0);
+
+    // Infinite scroll effect
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                // Check if the target is intersecting and we have more posts to load
+                if (entries[0].isIntersecting && hasMorePosts && !postsLoading && !isLoadingMore) {
+                   
+                    setCurrentPage(prev => prev + 1);
+                }
+            },
+            {
+                threshold: 0.1, // Trigger when 10% of the element is visible
+                rootMargin: '100px' // Start loading 100px before reaching the element
+            }
+        );
+
+        const currentTarget = observerTarget.current;
+        if (currentTarget) {
+            observer.observe(currentTarget);
+        }
+
+        return () => {
+            if (currentTarget) {
+                observer.unobserve(currentTarget);
+            }
+        };
+    }, [hasMorePosts, postsLoading, isLoadingMore]);
+
     // Fetch user posts using timeline API for all profiles
     useEffect(() => {
-        const fetchUserPosts = async () => {
+        const fetchUserPosts = async (page = 1) => {
             try {
-                setPostsLoading(true);
+                // Use different loading state for pagination vs initial load
+                if (page === 1) {
+                    setPostsLoading(true);
+                } else {
+                    setIsLoadingMore(true);
+                }
                 
                 // Get username from userData - works for both own profile and other users
                 const username = userData?.user_data?.username;
@@ -151,12 +252,13 @@ const Profile = () => {
                     console.error('Username not available');
                     setPosts([]);
                     setPostsLoading(false);
+                    setIsLoadingMore(false);
                     return;
                 }
 
                 // Use timeline API for all profiles (own and others)
                 const response = await axios.get(
-                    `${import.meta.env.VITE_API_URL}/api/v1/timeline?u=${username}&limit=20`,
+                    `${import.meta.env.VITE_API_URL}/api/v1/timeline?u=${username}&limit=20&page=${page}`,
                     {
                         headers: {
                             "Authorization": "Bearer " + localStorage.getItem('access_token'),
@@ -166,57 +268,83 @@ const Profile = () => {
                 );
                 
                 const data = response.data;
-                console.log('Timeline API Response:', data);
                 
                 if (data.api_status === '200' && Array.isArray(data.posts)) {
                     // Map timeline API response to PostCard format
-                    const formattedPosts = data.posts.map(post => ({
-                        id: post.id || post.post_id,
-                        author: post.author || {
+                    const formattedPosts = data.posts.map(post => {
+                        // Get user info from post.user or fallback to userData
+                        const postUser = post.user || {
                             user_id: post.user_id || userData.user_data.user_id,
                             username: post.username || username,
                             name: post.name || `${userData.user_data.first_name || ''} ${userData.user_data.last_name || ''}`.trim() || userData.user_data.name,
-                            avatar_url: post.avatar_url || userData.user_data.avatar_url
-                        },
-                        post_text: post.post_text || post.text || '',
-                        post_type: post.post_type,
-                        poll_id: post.poll_id,
-                        poll_options: post.poll_options,
-                        reactions_count: post.reactions_count || post.likes_count || 0,
-                        comments_count: post.comments_count || 0,
-                        shares_count: post.shares_count || 0,
-                        is_liked: post.is_liked || false,
-                        is_post_saved: post.is_post_saved || false,
-                        created_at_human: post.created_at_human || post.time_ago || 'Unknown',
-                        created_at: post.created_at,
-                        post_photo_url: post.post_photo_url,
-                        post_file_url: post.post_file_url,
-                        post_file: post.post_file,
-                        postFileName: post.postFileName,
-                        post_youtube: post.post_youtube,
-                        album_images: post.album_images,
-                        multi_image_post: post.multi_image_post,
-                        reaction_counts: post.reaction_counts,
-                        user_reaction: post.user_reaction,
-                        current_reaction: post.current_reaction,
-                        blog: post.blog
-                    }));
-                    setPosts(formattedPosts);
+                            avatar_url: post.avatar_url || post.avatar || userData.user_data.avatar_url
+                        };
+
+                        return {
+                            id: post.id || post.post_id,
+                            author: postUser,
+                            post_text: post.postText || post.post_text || post.text || '',
+                            post_type: post.postType || post.post_type,
+                            poll_id: post.poll_id,
+                            poll_options: post.poll_options,
+                            reactions_count: post.reactions_count || post.likes_count || 0,
+                            comments_count: post.comments_count || 0,
+                            shares_count: post.shares_count || 0,
+                            is_liked: post.is_liked || false,
+                            is_post_saved: post.is_post_saved || false,
+                            created_at_human: post.created_at_human || post.time_ago || (post.time ? new Date(post.time * 1000).toLocaleString() : 'Unknown'),
+                            created_at: post.created_at || (post.time ? new Date(post.time * 1000).toISOString() : null),
+                            post_photo_url: post.post_photo_url || (post.postPhoto && post.postPhoto !== '' ? `${import.meta.env.VITE_API_URL}/storage/${post.postPhoto}` : null),
+                            post_file_url: post.post_file_url || (post.postFile && post.postFile !== '' ? `${import.meta.env.VITE_API_URL}/storage/${post.postFile}` : null),
+                            post_video_url: post.post_video_url || (post.postVideo && post.postVideo !== '' ? `${import.meta.env.VITE_API_URL}/storage/${post.postVideo}` : null),
+                            post_file: post.post_file || post.postFile,
+                            postFileName: post.postFileName,
+                            post_youtube: post.post_youtube || post.postYoutube,
+                            album_images: post.album_images,
+                            multi_image_post: post.multi_image_post,
+                            reaction_counts: post.reaction_counts,
+                            user_reaction: post.user_reaction,
+                            current_reaction: post.current_reaction,
+                            blog: post.blog
+                        };
+                    });
+                    
+                    // Handle pagination
+                    if (page === 1) {
+                        setPosts(formattedPosts);
+                    } else {
+                        setPosts(prev => [...prev, ...formattedPosts]);
+                    }
+                    
+                    // Update pagination state
+                    if (data.pagination) {
+                        setHasMorePosts(data.pagination.has_more || data.pagination.current_page < data.pagination.last_page);
+                        setTotalPosts(data.pagination.total || 0);
+                        setCurrentPage(data.pagination.current_page || page);
+                    } else {
+                        setHasMorePosts(false);
+                        setTotalPosts(formattedPosts.length);
+                    }
                 } else {
                     setPosts([]);
+                    setHasMorePosts(false);
+                    setTotalPosts(0);
                 }
             } catch (err) {
                 console.error('Error fetching user posts:', err);
                 setPosts([]);
+                setHasMorePosts(false);
+                setTotalPosts(0);
             } finally {
                 setPostsLoading(false);
+                setIsLoadingMore(false);
             }
         };
 
         if (userData?.user_data?.username) {
-            fetchUserPosts();
+            fetchUserPosts(currentPage);
         }
-    }, [userData]);
+    }, [userData, currentPage]);
 
     const handleEditProfile = () => {
         navigate('/profile-settings');
@@ -972,6 +1100,14 @@ const Profile = () => {
             return `https://ouptel.com/${url.replace(/^\//, '')}`;
         };
 
+        // Check for video first (from timeline API: postVideo or post_video_url)
+        if (post?.post_video_url || post?.postVideo) {
+            const videoUrl = post.post_video_url || post.postVideo;
+            if (videoUrl && videoUrl !== '') {
+                return { video: ensureFullUrl(videoUrl) };
+            }
+        }
+
         if (post?.post_record_url) {
             const isAudio = post?.post_type === 'audio' || 
                             post?.post_record_url.includes('/audio/') ||
@@ -1065,6 +1201,9 @@ const Profile = () => {
         } else if (modalType === 'following') {
             // Return following array from API response
             return Array.isArray(userData?.following) ? userData.following : [];
+        } else if (modalType === 'friends') {
+            // Return friends array
+            return Array.isArray(friends) ? friends : [];
         }
         return [];
     };
@@ -1158,6 +1297,17 @@ const Profile = () => {
                                 {loading ? '...' : counts.post_count}
                             </p>
                             <p className='text-xs font-medium text-[#808080]'>Posts</p>
+                        </div>
+                        <div className="w-[1px] h-[40px] bg-[#808080]"></div>
+                        <div 
+                            className="flex flex-col gap-1 text-center cursor-pointer hover:opacity-70 transition-opacity"
+                            onClick={() => handleOpenModal('friends')}
+                            title="View friends"
+                        >
+                            <p className='text-lg font-medium text-[#212121]'>
+                                {friendsLoading ? '...' : friends.length}
+                            </p>
+                            <p className='text-xs font-medium text-[#808080]'>Friends</p>
                         </div>
                         <div className="w-[1px] h-[40px] bg-[#808080]"></div>
                         <div 
@@ -1348,6 +1498,17 @@ const Profile = () => {
                         <div className="w-[1px] h-[45px] lg:h-[55px] bg-[#808080]"></div>
                         <div 
                             className="flex flex-col gap-2 text-center items-center justify-between cursor-pointer hover:opacity-70 transition-opacity"
+                            onClick={() => handleOpenModal('friends')}
+                            title="View friends"
+                        >
+                            <p className='text-lg lg:text-xl font-medium text-[#212121]'>
+                                {friendsLoading ? '...' : friends.length}
+                            </p>
+                            <p className='text-xs lg:text-sm font-medium text-[#808080]'>Friends</p>
+                        </div>
+                        <div className="w-[1px] h-[45px] lg:h-[55px] bg-[#808080]"></div>
+                        <div 
+                            className="flex flex-col gap-2 text-center items-center justify-between cursor-pointer hover:opacity-70 transition-opacity"
                             onClick={() => handleOpenModal('followers')}
                             title="View followers"
                         >
@@ -1489,12 +1650,114 @@ const Profile = () => {
         {/* Only show CreatePostSection on own profile */}
         {isOwnProfile && (
             <div className="w-full mt-4 px-5">
-                <CreatePostSection  />
+                <CreatePostSection 
+                    fetchNewFeeds={async () => {
+                        // Show success toast
+                        // toast.success('Post created successfully!');
+                        
+                        // Refetch user data to update post count
+                        try {
+                            const response = await axios.get(
+                                `${import.meta.env.VITE_API_URL}/api/v1/profile/user-data?user_profile_id=${userId}&fetch=user_data,followers,following`,
+                                {
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`,
+                                    }
+                                }
+                            );
+                            if (response.data.api_status === '200') {
+                                setUserData(response.data);
+                            }
+                        } catch (error) {
+                            console.error('Error refreshing profile:', error);
+                        }
+                        
+                        // Refetch posts
+                        try {
+                            setPostsLoading(true);
+                            const username = userData?.user_data?.username;
+                            
+                            if (username) {
+                                const response = await axios.get(
+                                    `${import.meta.env.VITE_API_URL}/api/v1/timeline?u=${username}&limit=20&page=1`,
+                                    {
+                                        headers: {
+                                            "Authorization": "Bearer " + localStorage.getItem('access_token'),
+                                            "Content-Type": "application/json",
+                                        }
+                                    }
+                                );
+                                const data = response.data;
+                                if (data.api_status === '200' && Array.isArray(data.posts)) {
+                                    const formattedPosts = data.posts.map(post => {
+                                        const postUser = post.user || {
+                                            user_id: post.user_id || userData.user_data.user_id,
+                                            username: post.username || username,
+                                            name: post.name || `${userData.user_data.first_name || ''} ${userData.user_data.last_name || ''}`.trim() || userData.user_data.name,
+                                            avatar_url: post.avatar_url || post.avatar || userData.user_data.avatar_url
+                                        };
+
+                                        return {
+                                            id: post.id || post.post_id,
+                                            author: postUser,
+                                            post_text: post.postText || post.post_text || post.text || '',
+                                            post_type: post.postType || post.post_type,
+                                            poll_id: post.poll_id,
+                                            poll_options: post.poll_options,
+                                            reactions_count: post.reactions_count || post.likes_count || 0,
+                                            comments_count: post.comments_count || 0,
+                                            shares_count: post.shares_count || 0,
+                                            is_liked: post.is_liked || false,
+                                            is_post_saved: post.is_post_saved || false,
+                                            created_at_human: post.created_at_human || post.time_ago || (post.time ? new Date(post.time * 1000).toLocaleString() : 'Unknown'),
+                                            created_at: post.created_at || (post.time ? new Date(post.time * 1000).toISOString() : null),
+                                            post_photo_url: post.post_photo_url || (post.postPhoto && post.postPhoto !== '' ? `${import.meta.env.VITE_API_URL}/storage/${post.postPhoto}` : null),
+                                            post_file_url: post.post_file_url || (post.postFile && post.postFile !== '' ? `${import.meta.env.VITE_API_URL}/storage/${post.postFile}` : null),
+                                            post_video_url: post.post_video_url || (post.postVideo && post.postVideo !== '' ? `${import.meta.env.VITE_API_URL}/storage/${post.postVideo}` : null),
+                                            post_file: post.post_file || post.postFile,
+                                            postFileName: post.postFileName,
+                                            post_youtube: post.post_youtube || post.postYoutube,
+                                            album_images: post.album_images,
+                                            multi_image_post: post.multi_image_post,
+                                            reaction_counts: post.reaction_counts,
+                                            user_reaction: post.user_reaction,
+                                            current_reaction: post.current_reaction,
+                                            blog: post.blog
+                                        };
+                                    });
+                                    setPosts(formattedPosts);
+                                    setCurrentPage(1);
+                                    
+                                    // Update pagination state
+                                    if (data.pagination) {
+                                        setHasMorePosts(data.pagination.has_more || data.pagination.current_page < data.pagination.last_page);
+                                        setTotalPosts(data.pagination.total || 0);
+                                    }
+                                }
+                            }
+                        } catch (err) {
+                            console.error('Error refetching posts:', err);
+                        } finally {
+                            setPostsLoading(false);
+                        }
+                    }}
+                    showNotification={(message, type) => {
+                        if (type === 'success') {
+                            toast.success(message);
+                        } else if (type === 'error') {
+                            toast.error(message);
+                        } else {
+                            toast.info(message);
+                        }
+                    }}
+                />
             </div>
         )}
         <div className="w-full mt-4 px-5">
             <QuickActionSection />
         </div>
+        
         <div className="w-full mt-4 px-5" data-posts-section>
             {postsLoading ? (
                 <Loader />
@@ -1537,7 +1800,7 @@ const Profile = () => {
                                             
                                             if (username) {
                                                 const response = await axios.get(
-                                                    `${import.meta.env.VITE_API_URL}/api/v1/timeline?u=${username}&limit=20`,
+                                                    `${import.meta.env.VITE_API_URL}/api/v1/timeline?u=${username}&limit=20&page=1`,
                                                     {
                                                         headers: {
                                                             "Authorization": "Bearer " + localStorage.getItem('access_token'),
@@ -1547,38 +1810,50 @@ const Profile = () => {
                                                 );
                                                 const data = response.data;
                                                 if (data.api_status === '200' && Array.isArray(data.posts)) {
-                                                    const formattedPosts = data.posts.map(post => ({
-                                                        id: post.id || post.post_id,
-                                                        author: post.author || {
+                                                    const formattedPosts = data.posts.map(post => {
+                                                        const postUser = post.user || {
                                                             user_id: post.user_id || userData.user_data.user_id,
                                                             username: post.username || username,
                                                             name: post.name || `${userData.user_data.first_name || ''} ${userData.user_data.last_name || ''}`.trim() || userData.user_data.name,
-                                                            avatar_url: post.avatar_url || userData.user_data.avatar_url
-                                                        },
-                                                        post_text: post.post_text || post.text || '',
-                                                        post_type: post.post_type,
-                                                        poll_id: post.poll_id,
-                                                        poll_options: post.poll_options,
-                                                        reactions_count: post.reactions_count || post.likes_count || 0,
-                                                        comments_count: post.comments_count || 0,
-                                                        shares_count: post.shares_count || 0,
-                                                        is_liked: post.is_liked || false,
-                                                        is_post_saved: post.is_post_saved || false,
-                                                        created_at_human: post.created_at_human || post.time_ago || 'Unknown',
-                                                        created_at: post.created_at,
-                                                        post_photo_url: post.post_photo_url,
-                                                        post_file_url: post.post_file_url,
-                                                        post_file: post.post_file,
-                                                        postFileName: post.postFileName,
-                                                        post_youtube: post.post_youtube,
-                                                        album_images: post.album_images,
-                                                        multi_image_post: post.multi_image_post,
-                                                        reaction_counts: post.reaction_counts,
-                                                        user_reaction: post.user_reaction,
-                                                        current_reaction: post.current_reaction,
-                                                        blog: post.blog
-                                                    }));
+                                                            avatar_url: post.avatar_url || post.avatar || userData.user_data.avatar_url
+                                                        };
+
+                                                        return {
+                                                            id: post.id || post.post_id,
+                                                            author: postUser,
+                                                            post_text: post.postText || post.post_text || post.text || '',
+                                                            post_type: post.postType || post.post_type,
+                                                            poll_id: post.poll_id,
+                                                            poll_options: post.poll_options,
+                                                            reactions_count: post.reactions_count || post.likes_count || 0,
+                                                            comments_count: post.comments_count || 0,
+                                                            shares_count: post.shares_count || 0,
+                                                            is_liked: post.is_liked || false,
+                                                            is_post_saved: post.is_post_saved || false,
+                                                            created_at_human: post.created_at_human || post.time_ago || (post.time ? new Date(post.time * 1000).toLocaleString() : 'Unknown'),
+                                                            created_at: post.created_at || (post.time ? new Date(post.time * 1000).toISOString() : null),
+                                                            post_photo_url: post.post_photo_url || (post.postPhoto && post.postPhoto !== '' ? `${import.meta.env.VITE_API_URL}/storage/${post.postPhoto}` : null),
+                                                            post_file_url: post.post_file_url || (post.postFile && post.postFile !== '' ? `${import.meta.env.VITE_API_URL}/storage/${post.postFile}` : null),
+                                                            post_video_url: post.post_video_url || (post.postVideo && post.postVideo !== '' ? `${import.meta.env.VITE_API_URL}/storage/${post.postVideo}` : null),
+                                                            post_file: post.post_file || post.postFile,
+                                                            postFileName: post.postFileName,
+                                                            post_youtube: post.post_youtube || post.postYoutube,
+                                                            album_images: post.album_images,
+                                                            multi_image_post: post.multi_image_post,
+                                                            reaction_counts: post.reaction_counts,
+                                                            user_reaction: post.user_reaction,
+                                                            current_reaction: post.current_reaction,
+                                                            blog: post.blog
+                                                        };
+                                                    });
                                                     setPosts(formattedPosts);
+                                                    
+                                                    // Update pagination state
+                                                    if (data.pagination) {
+                                                        setHasMorePosts(data.pagination.has_more || data.pagination.current_page < data.pagination.last_page);
+                                                        setTotalPosts(data.pagination.total || 0);
+                                                        setCurrentPage(1);
+                                                    }
                                                 }
                                             }
                                         } catch (err) {
@@ -1607,6 +1882,25 @@ const Profile = () => {
                 <div className="text-center py-8">
                     <p className="text-gray-500">No posts yet</p>
                     <p className="text-sm text-gray-400 mt-2">Start sharing your thoughts!</p>
+                </div>
+            )}
+            
+            {/* Infinite scroll observer target */}
+            {hasMorePosts && posts.length > 0 && (
+                <div ref={observerTarget} className="flex justify-center py-6">
+                    {isLoadingMore && (
+                        <div className="flex items-center space-x-2">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                            <span className="text-gray-500 text-sm">Loading more posts...</span>
+                        </div>
+                    )}
+                </div>
+            )}
+            
+            {/* End of posts message */}
+            {!hasMorePosts && posts.length > 0 && !postsLoading && (
+                <div className="text-center py-6">
+                    <p className="text-gray-500 text-sm">You've reached the end</p>
                 </div>
             )}
         </div>
@@ -1710,6 +2004,30 @@ const Profile = () => {
                     )}
                 </div>
             </div>
+        )}
+
+        {/* Scroll to Top Button */}
+        {showScrollTop && (
+            <button
+                onClick={scrollToTop}
+                className="fixed bottom-20 right-6 lg:bottom-6 lg:right-[17rem] xl:right-[23rem] z-[9999] bg-blue-500 hover:bg-blue-600 text-white rounded-full p-2 shadow-2xl transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 animate-bounce-slow"
+                aria-label="Scroll to top"
+                style={{ boxShadow: '0 10px 40px rgba(59, 130, 246, 0.5)' }}
+            >
+                <svg 
+                    className="w-4 h-4" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                    strokeWidth={3}
+                >
+                    <path 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        d="M5 10l7-7m0 0l7 7m-7-7v18" 
+                    />
+                </svg>
+            </button>
         )}
     </div>
   )

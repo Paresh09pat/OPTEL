@@ -29,6 +29,8 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
   const [storyViews, setStoryViews] = useState([]);
   const [loadingViews, setLoadingViews] = useState(false);
   const [viewsCount, setViewsCount] = useState(0);
+  // Description expansion state
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
   // Keep refs in sync
   useEffect(() => {
@@ -304,6 +306,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
       setProgress(0);
       setIsPaused(false);
       setShowReactionPopup(false);
+      setIsDescriptionExpanded(false);
       // Initialize reactions from story data if available
       const initialReactions = {};
       stories.forEach(story => {
@@ -316,6 +319,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
       stopProgress();
       setProgress(0);
       setShowReactionPopup(false);
+      setIsDescriptionExpanded(false);
     }
 
     return () => {
@@ -329,6 +333,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
     if (isOpen && stories && stories.length > 0 && !isPaused && !deleteModalOpen) {
       setProgress(0);
       setShowReactionPopup(false); // Close reaction popup when story changes
+      setIsDescriptionExpanded(false); // Reset description expansion when story changes
 
       let markSeenTimer = null;
       let progressTimer = null;
@@ -606,7 +611,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
 
 
           {/* Story Info Overlay */}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6">
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent backdrop-blur-md p-6">
             <div 
               className="flex items-center gap-3 mb-3 cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => {
@@ -626,15 +631,55 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
                 />
               )}
               <div>
-                <h3 className="text-white font-semibold">{currentUser?.name || currentUser?.username}</h3>
-                <p className="text-white/70 text-sm">{currentStory?.time_text}</p>
+                <h3 className="text-white font-semibold drop-shadow-lg">{currentUser?.name || currentUser?.username}</h3>
+                <p className="text-white/80 text-sm drop-shadow-md">{currentStory?.time_text}</p>
               </div>
             </div>
             {currentStory?.title && (
-              <h4 className="text-white font-medium mb-2">{currentStory.title}</h4>
+              <h4 className="text-white font-medium mb-2 drop-shadow-lg">{currentStory.title}</h4>
             )}
             {currentStory?.description && (
-              <p className="text-white/90 text-sm">{currentStory.description}</p>
+              <div className="text-white/90 text-sm drop-shadow-md">
+                {isDescriptionExpanded ? (
+                  <div>
+                    <p className="whitespace-pre-wrap break-words">{currentStory.description}</p>
+                    {currentStory.description.length > 100 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsDescriptionExpanded(false);
+                        }}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onMouseUp={(e) => e.stopPropagation()}
+                        className="text-white/70 hover:text-white font-medium mt-1 inline-block"
+                      >
+                        Show less
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <p className="line-clamp-2">
+                      {currentStory.description.length > 100
+                        ? `${currentStory.description.substring(0, 100)}...`
+                        : currentStory.description}
+                    </p>
+                    {currentStory.description.length > 100 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsDescriptionExpanded(true);
+                        }}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onMouseUp={(e) => e.stopPropagation()}
+                        className="text-white/70 hover:text-white font-medium mt-1 inline-block"
+                      >
+                        Read more
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
 
             {/* Reaction Button */}

@@ -7,16 +7,21 @@ const StoryCreateModal = ({ isOpen, onClose, onStoryCreated }) => {
   const { notifyStoryUpdate } = useUser();
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
+  const [fileType, setFileType] = useState(null); // 'image' or 'video'
   const [storyTitle, setStoryTitle] = useState('');
   const [storyDescription, setStoryDescription] = useState('');
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
+  const videoRef = useRef(null);
+
+  const MAX_DESCRIPTION_LENGTH = 300;
 
   
   useEffect(() => {
     if (!isOpen) {
       setFile(null);
       setPreview(null);
+      setFileType(null);
       setStoryTitle('');
       setStoryDescription('');
       if (fileInputRef.current) {
@@ -51,19 +56,24 @@ const StoryCreateModal = ({ isOpen, onClose, onStoryCreated }) => {
   const handleFileSelect = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
-      // Validate file type (only images)
-      if (!selectedFile.type.startsWith('image/')) {
-        toast.error('Please select an image file');
+      // Validate file type (images and videos)
+      const isImage = selectedFile.type.startsWith('image/');
+      const isVideo = selectedFile.type.startsWith('video/');
+      
+      if (!isImage && !isVideo) {
+        toast.error('Please select an image or video file');
         return;
       }
 
-      // Validate file size (max 10MB)
-      if (selectedFile.size > 10 * 1024 * 1024) {
-        toast.error('File size must be less than 10MB');
+      // Validate file size (max 50MB for videos, 10MB for images)
+      const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
+      if (selectedFile.size > maxSize) {
+        toast.error(`File size must be less than ${isVideo ? '50MB' : '10MB'}`);
         return;
       }
 
       setFile(selectedFile);
+      setFileType(isImage ? 'image' : 'video');
       
       // Create preview
       const reader = new FileReader();
@@ -77,6 +87,7 @@ const StoryCreateModal = ({ isOpen, onClose, onStoryCreated }) => {
   const handleRemoveFile = () => {
     setFile(null);
     setPreview(null);
+    setFileType(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -86,7 +97,7 @@ const StoryCreateModal = ({ isOpen, onClose, onStoryCreated }) => {
     e.preventDefault();
 
     if (!file) {
-      toast.error('Please select an image file');
+      toast.error('Please select an image or video file');
       return;
     }
 
@@ -100,6 +111,11 @@ const StoryCreateModal = ({ isOpen, onClose, onStoryCreated }) => {
       return;
     }
 
+    if (storyDescription.length > MAX_DESCRIPTION_LENGTH) {
+      toast.error(`Description must be ${MAX_DESCRIPTION_LENGTH} characters or less`);
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -107,7 +123,7 @@ const StoryCreateModal = ({ isOpen, onClose, onStoryCreated }) => {
       const formData = new FormData();
       
       formData.append('file', file);
-      formData.append('file_type', 'image');
+      formData.append('file_type', fileType); // 'image' or 'video'
       formData.append('story_title', storyTitle.trim());
       formData.append('story_description', storyDescription.trim());
 
@@ -135,6 +151,7 @@ const StoryCreateModal = ({ isOpen, onClose, onStoryCreated }) => {
         // Reset form
         setFile(null);
         setPreview(null);
+        setFileType(null);
         setStoryTitle('');
         setStoryDescription('');
         if (fileInputRef.current) {
@@ -180,7 +197,7 @@ const StoryCreateModal = ({ isOpen, onClose, onStoryCreated }) => {
           {/* File Upload */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Story Image <span className="text-red-500">*</span>
+              Story Media (Image or Video) <span className="text-red-500">*</span>
             </label>
             {!preview ? (
               <div
@@ -189,22 +206,33 @@ const StoryCreateModal = ({ isOpen, onClose, onStoryCreated }) => {
               >
                 <FaImage className="w-10 h-10 text-gray-400 mx-auto mb-2" />
                 <p className="text-sm text-gray-600 mb-1">Click to upload or drag and drop</p>
-                <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                <p className="text-xs text-gray-500">Images (PNG, JPG, GIF) up to 10MB</p>
+                <p className="text-xs text-gray-500">Videos (MP4, MOV, AVI) up to 50MB</p>
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/*,video/*"
                   onChange={handleFileSelect}
                   className="hidden"
                 />
               </div>
             ) : (
               <div className="relative">
-                <img
-                  src={preview}
-                  alt="Preview"
-                  className="w-full h-64 object-cover rounded-xl"
-                />
+                {fileType === 'image' ? (
+                  <img
+                    src={preview}
+                    alt="Preview"
+                    className="w-full h-64 object-cover rounded-xl"
+                  />
+                ) : (
+                  <video
+                    ref={videoRef}
+                    src={preview}
+                    className="w-full h-64 object-cover rounded-xl"
+                    controls
+                    playsInline
+                  />
+                )}
                 <button
                   type="button"
                   onClick={handleRemoveFile}
@@ -212,6 +240,9 @@ const StoryCreateModal = ({ isOpen, onClose, onStoryCreated }) => {
                 >
                   <FaTimes className="w-4 h-4" />
                 </button>
+                <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/50 rounded text-white text-xs">
+                  {fileType === 'image' ? 'Image' : 'Video'}
+                </div>
               </div>
             )}
           </div>
@@ -238,12 +269,31 @@ const StoryCreateModal = ({ isOpen, onClose, onStoryCreated }) => {
             </label>
             <textarea
               value={storyDescription}
-              onChange={(e) => setStoryDescription(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value.length <= MAX_DESCRIPTION_LENGTH) {
+                  setStoryDescription(value);
+                }
+              }}
               placeholder="Enter story description"
               rows="3"
               className="w-full px-4 py-2 border border-[#d3d1d1] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
               required
             />
+            <div className="flex justify-between items-center mt-1">
+              <p className="text-xs text-gray-500">
+                Maximum {MAX_DESCRIPTION_LENGTH} characters
+              </p>
+              <p className={`text-xs font-medium ${
+                storyDescription.length > MAX_DESCRIPTION_LENGTH * 0.9 
+                  ? 'text-red-500' 
+                  : storyDescription.length > MAX_DESCRIPTION_LENGTH * 0.7 
+                    ? 'text-yellow-500' 
+                    : 'text-gray-500'
+              }`}>
+                {storyDescription.length} / {MAX_DESCRIPTION_LENGTH}
+              </p>
+            </div>
           </div>
 
           {/* Submit Button */}
@@ -257,7 +307,7 @@ const StoryCreateModal = ({ isOpen, onClose, onStoryCreated }) => {
             </button>
             <button
               type="submit"
-              disabled={loading || !file || !storyTitle.trim() || !storyDescription.trim()}
+              disabled={loading || !file || !storyTitle.trim() || !storyDescription.trim() || storyDescription.length > MAX_DESCRIPTION_LENGTH}
               className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (

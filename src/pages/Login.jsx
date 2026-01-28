@@ -136,7 +136,7 @@ const Login = () => {
                 
                 {/* Welcome text */}
                 <div className="mt-8 text-center">
-                  <h2 className="text-3xl font-bold text-white mb-3">Welcome to OPTEL</h2>
+                  <h2 className="text-3xl font-bold text-white mb-3">Welcome to OUPTEL</h2>
                   <p className="text-white/80 text-lg">Connect, Share, and Explore</p>
                 </div>
               </div>
