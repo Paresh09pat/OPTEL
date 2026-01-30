@@ -34,6 +34,7 @@ const Profile = () => {
     const [showUnfriendModal, setShowUnfriendModal] = useState(false);
     const [showBlockModal, setShowBlockModal] = useState(false);
     const [isBlockLoading, setIsBlockLoading] = useState(false);
+    const [isBlocked, setIsBlocked] = useState(false);
     const [badgeInfo, setBadgeInfo] = useState(null);
     const [badgeLoading, setBadgeLoading] = useState(false);
     const [friends, setFriends] = useState([]);
@@ -130,6 +131,8 @@ const Profile = () => {
                     }
                     // Update follow status based on is_following from API response
                     setIsFollowing(data.user_data?.is_following === 1 && !isOwnProfile);
+                    // Update blocked status
+                    setIsBlocked(data.user_data?.is_blocked === 1 || data.user_data?.is_blocked === true);
                     // Update friend status based on all friend-related fields from API response
                     setFriendStatus({
                         is_friend: data.user_data?.is_friend === 1 || data.user_data?.is_friend === true,
@@ -717,6 +720,7 @@ const Profile = () => {
             // Check for successful block response - api_status 200 and blocked status (blocked or already_blocked)
             if (data?.api_status === '200' && (data?.blocked === 'blocked' || data?.blocked === 'already_blocked')) {
                 setShowBlockModal(false);
+                setIsBlocked(true);
                 
                 // Show appropriate message
                 if (data?.blocked === 'already_blocked') {
@@ -738,6 +742,7 @@ const Profile = () => {
                     );
                     if (refreshResponse.data.api_status === '200') {
                         setUserData(refreshResponse.data);
+                        setIsBlocked(refreshResponse.data.user_data?.is_blocked === 1 || refreshResponse.data.user_data?.is_blocked === true);
                     }
                 } catch (refreshError) {
                     console.error('Error refreshing profile:', refreshError);
@@ -757,6 +762,62 @@ const Profile = () => {
             const errorMessage = error.response?.data?.api_text || error.response?.data?.message || error.message || 'Failed to block user. Please try again later.';
             toast.error(errorMessage);
             setShowBlockModal(false);
+        } finally {
+            setIsBlockLoading(false);
+        }
+    };
+
+    const handleUnblockUser = async () => {
+        if (isOwnProfile) return;
+        
+        setIsBlockLoading(true);
+        try {
+            // Use the correct unblock endpoint
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_URL}/api/v1/friends/${userId}/unblock`,
+                {},
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`,
+                    }
+                }
+            );
+            
+            const data = response.data;
+            
+            // Check for successful unblock response
+            if (data?.api_status === '200' || data?.ok === true) {
+                setIsBlocked(false);
+                toast.success('User unblocked successfully!');
+                
+                // Refetch profile data to update the UI
+                try {
+                    const refreshResponse = await axios.get(
+                        `${import.meta.env.VITE_API_URL}/api/v1/profile/user-data?user_profile_id=${userId}&fetch=user_data,followers,following`,
+                        {
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`,
+                            }
+                        }
+                    );
+                    
+                    if (refreshResponse.data.api_status === '200') {
+                        setUserData(refreshResponse.data);
+                        setIsBlocked(refreshResponse.data.user_data?.is_blocked === 1 || refreshResponse.data.user_data?.is_blocked === true);
+                    }
+                } catch (refreshError) {
+                    console.error('Error refreshing profile:', refreshError);
+                }
+            } else {
+                // Handle error response
+                toast.error(data?.api_text || data?.message || 'Failed to unblock user. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error unblocking user:', error);
+            const errorMessage = error.response?.data?.api_text || error.response?.data?.message || error.message || 'Failed to unblock user. Please try again later.';
+            toast.error(errorMessage);
         } finally {
             setIsBlockLoading(false);
         }
@@ -1435,17 +1496,39 @@ const Profile = () => {
                                 </button>
                             )}
 
-                            {/* Block User Button */}
-                            <button
-                                onClick={handleBlockClick}
-                                disabled={isBlockLoading}
-                                className="w-full px-6 py-2 border border-red-500 text-red-500 bg-transparent rounded-lg font-medium hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                            >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                                </svg>
-                                Block User
-                            </button>
+                            {/* Block/Unblock User Button */}
+                            {isBlocked ? (
+                                <button
+                                    onClick={handleUnblockUser}
+                                    disabled={isBlockLoading}
+                                    className="w-full px-6 py-2 border border-green-500 text-green-500 bg-transparent rounded-lg font-medium hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                >
+                                    {isBlockLoading ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                                            <span>Unblocking...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            Unblock User
+                                        </>
+                                    )}
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={handleBlockClick}
+                                    disabled={isBlockLoading}
+                                    className="w-full px-6 py-2 border border-red-500 text-red-500 bg-transparent rounded-lg font-medium hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                    </svg>
+                                    Block User
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>
@@ -1633,17 +1716,39 @@ const Profile = () => {
                             </button>
                         )}
 
-                        {/* Block User Button */}
-                        <button
-                            onClick={handleBlockClick}
-                            disabled={isBlockLoading}
-                            className="px-6 py-2 border border-red-500 text-red-500 bg-transparent rounded-lg font-medium hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                            </svg>
-                            Block User
-                        </button>
+                        {/* Block/Unblock User Button */}
+                        {isBlocked ? (
+                            <button
+                                onClick={handleUnblockUser}
+                                disabled={isBlockLoading}
+                                className="px-6 py-2 border border-green-500 text-green-500 bg-transparent rounded-lg font-medium hover:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            >
+                                {isBlockLoading ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                                        <span>Unblocking...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        Unblock User
+                                    </>
+                                )}
+                            </button>
+                        ) : (
+                            <button
+                                onClick={handleBlockClick}
+                                disabled={isBlockLoading}
+                                className="px-6 py-2 border border-red-500 text-red-500 bg-transparent rounded-lg font-medium hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                </svg>
+                                Block User
+                            </button>
+                        )}
                     </div>
                 )}
             </div>

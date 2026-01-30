@@ -53,19 +53,19 @@ const QuickActionsSection = ({ className = '', fetchNewFeeds, activeFilter = nul
           return (
             <button 
               key={index}
-              className={`flex flex-col items-center transition-all duration-200 ${
-                isActive ? 'scale-110' : 'hover:scale-105'
+              className={`flex flex-col items-center gap-2 transition-all duration-200 relative ${
+                isActive ? '' : 'hover:scale-105'
               }`}
               title={action.tooltip}
               onClick={() => fetchNewFeeds(action.name)}
             >
-              <div className={`w-7 h-7 rounded-xl ${action.bg} flex items-center justify-center cursor-pointer transition-all duration-200 ${
-                isActive 
-                  ? 'ring-2 ring-blue-500 ring-offset-2 shadow-lg' 
-                  : 'hover:shadow-md'
-              }`}>
+              <div className={`w-7 h-7 rounded-xl ${action.bg} flex items-center justify-center cursor-pointer transition-all duration-200 hover:shadow-md`}>
                 <action.icon />
               </div>
+              {/* Underline shadow effect */}
+              {isActive && (
+                <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-full h-1 bg-blue-500 rounded-full shadow-lg"></div>
+              )}
             </button>
           );
         })}
