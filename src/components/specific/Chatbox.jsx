@@ -135,74 +135,8 @@ const Chatbox = ({ onClose, isMobile = false }) => {
     }
   ];
 
-  const getalluserchats = async () => {
-    setLoading(true);
-    try {
-      const accessToken = localStorage.getItem("access_token");
-      const formData = new URLSearchParams();
-      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
-      formData.append('data_type', 'users');
-      // Removed user_type restriction to get all users, not just online ones
-      const response = await fetch(`https://ouptel.com/api/get_chats?access_token=${accessToken}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-Requested-With': 'XMLHttpRequest',
-          "Accept": "application/json"
-        },
-        body: formData.toString(),
-      });
-      const data = await response.json();
-      if (data?.api_status === 200) {
-        setConversations(data?.data);
-      } else {
-        setConversations(sampleConversations);
-      }
-    } catch (error) {
-      setConversations(sampleConversations);
-    }
-    finally {
-      setLoading(false);
-    }
-  }
+ 
 
-  const getallgroupchats = async () => {
-    setLoading(true);
-    try {
-      const accessToken = localStorage.getItem("access_token");
-      const formData = new URLSearchParams();
-      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
-      formData.append('type', 'get_list');
-      const response = await fetch(`https://ouptel.com/api/group_chat?access_token=${accessToken}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-Requested-With': 'XMLHttpRequest',
-          "Accept": "application/json"
-        },
-        body: formData.toString(),
-      });
-      const data = await response.json();
-      if (data?.api_status === 200) {
-        setGroupConversations(data?.data);
-      } else {
-
-        setGroupConversations(sampleGroups);
-      }
-    } catch (error) {
-      setGroupConversations(sampleGroups);
-    }
-    finally {
-      setLoading(false);
-    }
-  }
-  useEffect(() => {
-    getalluserchats();
-    getallgroupchats();
-    fetchUserStories();
-    fetchNotificationCount();
-    fetchFriendRequestsCount();
-  }, []);
 
   // Re-fetch stories when storyUpdateTrigger changes (story created/deleted)
   useEffect(() => {

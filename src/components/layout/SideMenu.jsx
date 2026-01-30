@@ -71,6 +71,7 @@ const SideMenu = ({ onClose, isMobile = false }) => {
         <nav className="">
           {navigationItems.map((item) => {
             const active = isActive(item.path)
+            const IconComponent = typeof item.icon === 'function' ? item.icon : null
 
             return (
               <Link
@@ -83,13 +84,17 @@ const SideMenu = ({ onClose, isMobile = false }) => {
                   }`}
               >
                 <div
-                  className={`w-10 h-10 ${item.color} rounded-lg flex items-center justify-center flex-shrink-0`}
+                  className={`w-10 h-10 ${item.color || 'bg-gray-100'} rounded-lg flex items-center justify-center flex-shrink-0`}
                 >
-                  <img
-                    src={item.icon}
-                    alt={item.name}
-                    className="w-5 h-5 object-contain"
-                  />
+                  {IconComponent ? (
+                    <IconComponent className="w-5 h-5 text-gray-700" />
+                  ) : (
+                    <img
+                      src={item.icon}
+                      alt={item.name}
+                      className="w-5 h-5 object-contain"
+                    />
+                  )}
                 </div>
                 <span
                   className={`font-medium text-lg truncate ${active ? 'text-blue-600' : 'text-gray-700'

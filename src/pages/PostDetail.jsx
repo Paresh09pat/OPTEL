@@ -270,12 +270,13 @@ const PostDetail = () => {
       formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
       formData.append('action', 'report');
       formData.append('post_id', post_id);
-      const response = await fetch(`https://ouptel.com/api/post-actions?access_token=${accessToken}`, {
+      const response = await fetch(`https://ouptel.com/api/post-actions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           'X-Requested-With': 'XMLHttpRequest',
-          "Accept": "application/json"
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
         },
         body: formData.toString(),
       });

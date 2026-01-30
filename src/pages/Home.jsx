@@ -464,12 +464,13 @@ const Home = () => {
       formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
       // formData.append('action', 'follow');
       formData.append('user_id', user_id);
-      const response = await fetch(`https://ouptel.com/api/follow-user?access_token=${accessToken}`, {
+      const response = await fetch(`https://ouptel.com/api/follow-user`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           'X-Requested-With': 'XMLHttpRequest',
-          "Accept": "application/json"
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
         },
         body: formData.toString(),
       })
@@ -626,12 +627,13 @@ const Home = () => {
       formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
       formData.append('action', 'report');
       formData.append('post_id', post_id);
-      const response = await fetch(`https://ouptel.com/api/post-actions?access_token=${accessToken}`, {
+      const response = await fetch(`https://ouptel.com/api/post-actions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           'X-Requested-With': 'XMLHttpRequest',
-          "Accept": "application/json"
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
         },
         body: formData.toString(),
       })
@@ -1153,11 +1155,12 @@ const Home = () => {
       formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
       // formData.append('user_id', userId);
       formData.append('type', 'get');
-      const response = await fetch(`https://ouptel.com/api/sessions?access_token=${accessToken}`, {
+      const response = await fetch(`https://ouptel.com/api/sessions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           'X-Requested-With': 'XMLHttpRequest',
+          'Authorization': `Bearer ${accessToken}`
         },
         body: formData.toString(),
       })
@@ -1185,41 +1188,8 @@ const Home = () => {
 
 
   const getFriendSuggestions = async () => {
-    setLoading(true);
-    try {
-      const accessToken = localStorage.getItem("access_token");
-      const formData = new URLSearchParams();
-      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
-      formData.append('type', 'users');
-      formData.append('limit', '10');
-      const response = await fetch(`https://ouptel.com/api/fetch-recommended?access_token=${accessToken}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-Requested-With': 'XMLHttpRequest',
-          "Accept": "application/json"
-        },
-        body: formData.toString(),
-      })
-      const data = await response.json();
-      if (data?.api_status === 200 && data?.data && data.data.length > 0) {
-        setFriendSuggestions(data?.data);
-      } else {
-        // Use dummy data as fallback if API fails or returns no data
-        setFriendSuggestions(dummyFriendSuggestions);
-        if (response?.data?.errors?.error_text) {
-          setError(response?.data?.errors?.error_text);
-        }
-      }
-
-
-    } catch (error) {
-      // Use dummy data as fallback on error
-      setFriendSuggestions(dummyFriendSuggestions);
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
+    // This API endpoint has been removed - using dummy data instead
+    setFriendSuggestions(dummyFriendSuggestions);
   }
 
   const getuserStories = async () => {
@@ -1229,12 +1199,13 @@ const Home = () => {
       const formData = new URLSearchParams();
       formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
       // formData.append('type', 'get');
-      const response = await fetch(`https://ouptel.com/api/get-user-stories?access_token=${accessToken}`, {
+      const response = await fetch(`https://ouptel.com/api/get-user-stories`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           'X-Requested-With': 'XMLHttpRequest',
-          "Accept": "application/json"
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
         },
         body: formData.toString(),
       })
@@ -1363,12 +1334,7 @@ const Home = () => {
     setShowStoriesPreview(true);
   };
 
-  useEffect(() => {
-    getSession();
-    getFriendSuggestions();
-    getuserStories();
-    getAllUsersStories();
-  }, []);
+
 
   // Show loader while user data is loading
   if (userLoading) {
@@ -1415,24 +1381,24 @@ const Home = () => {
             <div className="sticky top-0 z-30 bg-[#EDF6F9] py-2 -mx-2 md:-mx-4">
               <div className="mx-2 md:mx-4 space-y-3">
                 {/* Feed Type Filter */}
-                <div className="bg-white rounded-2xl shadow-sm border border-[#d3d1d1] py-2 px-4">
+                <div className="bg-transparent rounded-2xl  py-2 px-4">
                   <div className="flex items-center justify-center space-x-2">
                     <button
                       onClick={() => setFeedType('all')}
-                      className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                      className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 cursor-pointer ${
                         feedType === 'all'
                           ? 'bg-blue-500 text-white shadow-md'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          : 'bg-white text-gray-600 hover:bg-gray-200'
                       }`}
                     >
                       All Posts
                     </button>
                     <button
                       onClick={() => setFeedType('following')}
-                      className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                      className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 cursor-pointer ${
                         feedType === 'following'
                           ? 'bg-blue-500 text-white shadow-md'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          : 'bg-white text-gray-600 hover:bg-gray-200'
                       }`}
                     >
                       Following

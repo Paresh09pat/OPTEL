@@ -1,18 +1,16 @@
 // src/constants/navigation.js
-import homeIcon from '/icons/home.png'
-import exploreIcon from '/icons/compass.png'
+import { BiSolidOffer } from 'react-icons/bi'
 import albumsIcon from '/icons/album.png'
-import savedIcon from '/icons/save.png'
+import blogIcon from '/icons/blog.png'
+import exploreIcon from '/icons/compass.png'
 import eventsIcon from '/icons/event.png'
 import forumIcon from '/icons/forum.png'
 import groupsIcon from '/icons/group.png'
-import pagesIcon from '/icons/page.png'
-import blogIcon from '/icons/blog.png'
-import articleIcon from '/icons/article.png'
+import homeIcon from '/icons/home.png'
 import jobsIcon from '/icons/job.png'
-import offerIcon from '/icons/job.png' // Using job icon as placeholder, can be replaced later
-import moreIcon from '/icons/more.png'
 import marketIcon from '/icons/market.svg'
+import pagesIcon from '/icons/page.png'
+import savedIcon from '/icons/save.png'
 
 export const navigationItems = [
   {
@@ -79,7 +77,7 @@ export const navigationItems = [
     id: 'offers',
     name: 'Offers',
     path: '/offers',
-    icon: offerIcon,
+    icon: BiSolidOffer ,
     color: 'bg-gray-100', // Default background color for icon
   },
   {
