@@ -433,21 +433,26 @@ const GeneralSettings = () => {
             </div>
           </div>
 
-          <div className="border-t border-[#d3d1d1] pt-4 mt-3.5 grid place-items-center ">
+          <div className="border-t border-[#d3d1d1] pt-4 mt-3.5 grid place-items-center">
             <button
               type="submit"
               disabled={updateLoading}
-              className={`w-32 mx-auto border border-purple-500 text-purple-500 bg-white py-2 px-4 rounded-lg cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-semibold ${
-                updateLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-purple-50'
+              className={`px-8 py-3 bg-gradient-to-r from-[#60a1f9] to-[#1153e7] text-white rounded-full font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-[#1153e7] focus:ring-offset-2 text-base shadow-md flex items-center gap-2 ${
+                updateLoading ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-lg hover:scale-105 cursor-pointer'
               }`}
             >
               {updateLoading ? (
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500 mr-2"></div>
-                  Saving...
-                </div>
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  <span>Saving...</span>
+                </>
               ) : (
-                'Save'
+                <>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>Save Changes</span>
+                </>
               )}
             </button>
           </div>

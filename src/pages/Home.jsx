@@ -1431,7 +1431,7 @@ const Home = () => {
               <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6">Friend Suggestions</h2>
               <InfiniteFriendSuggestions
                 friendSuggestions={friendSuggestions}
-                onAddFriend={followUser}
+                // onAddFriend={followUser}
                 followedUsers={followedUsers}
               />
             </div>
