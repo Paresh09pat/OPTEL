@@ -378,6 +378,7 @@ const Home = () => {
 
   useEffect(() => {
     getNewFeeds();
+    getAllUsersStories(); // Fetch all users' stories on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

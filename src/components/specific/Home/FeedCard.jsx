@@ -2,31 +2,44 @@ import { memo } from "react";
 
 const FeedCard = ({ image, username, isVideo = false, avatar, onClick }) => {
     return (
-    <div 
-      className="relative flex-shrink-0 w-[120px] h-[160px] rounded-xl overflow-hidden cursor-pointer group"
-      onClick={onClick}
-    >
-        <img
-            src={image}
-            alt={username}
-            className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-opacity-20 group-hover:bg-opacity-30 transition-all duration-200"></div>
-        {isVideo && (
-            <div className="absolute top-3 right-3 bg-black bg-opacity-50 rounded-full p-1.5">
-                <Play className="text-white w-3 h-3" />
-            </div>
-        )}
-        <div className="absolute bottom-3 left-3 flex items-center space-x-2">
+    <div className="relative flex-shrink-0 p-1">
+        {/* Instagram-style gradient border */}
+        <div 
+            className="absolute inset-0 rounded-xl p-[3px]"
+            style={{
+                background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+            }}
+        >
+            <div className="w-full h-full bg-[#EDF6F9] rounded-xl" />
+        </div>
+        
+        <div 
+            className="relative w-[120px] h-[160px] rounded-xl overflow-hidden cursor-pointer group"
+            onClick={onClick}
+            style={{ zIndex: 1 }}
+        >
             <img
-                src={avatar || '/perimg.png'}
+                src={image}
                 alt={username}
-                className="w-8 h-8 rounded-full border-2 border-white object-cover"
-                onError={(e) => {
-                    e.target.src = '/perimg.png';
-                }}
+                className="w-full h-full object-cover"
             />
-            <span className="text-white text-sm font-medium">{username}</span>
+            <div className="absolute inset-0 bg-opacity-20 group-hover:bg-opacity-30 transition-all duration-200"></div>
+            {isVideo && (
+                <div className="absolute top-3 right-3 bg-black bg-opacity-50 rounded-full p-1.5">
+                    <Play className="text-white w-3 h-3" />
+                </div>
+            )}
+            <div className="absolute bottom-3 left-3 flex items-center space-x-2">
+                <img
+                    src={avatar || '/perimg.png'}
+                    alt={username}
+                    className="w-8 h-8 rounded-full border-2 border-white object-cover"
+                    onError={(e) => {
+                        e.target.src = '/perimg.png';
+                    }}
+                />
+                <span className="text-white text-sm font-medium drop-shadow-lg">{username}</span>
+            </div>
         </div>
     </div>
     )
