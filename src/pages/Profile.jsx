@@ -4,6 +4,7 @@ import { LiaEdit } from 'react-icons/lia'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import Avatar from '../components/Avatar'
+import ReportPostModal from '../components/ReportPostModal'
 import ConfirmModal from '../components/ConfirmModal'
 import Loader from '../components/loading/Loader'
 import CreatePostSection from '../components/specific/Home/CreatePostSection'
@@ -40,6 +41,8 @@ const Profile = () => {
     const [friends, setFriends] = useState([]);
     const [friendsLoading, setFriendsLoading] = useState(false);
     const [showScrollTop, setShowScrollTop] = useState(false); // Track scroll position for scroll-to-top button
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [reportingPostId, setReportingPostId] = useState(null);
     const navigate = useNavigate();
     const { userId: urlUserId } = useParams();
 
@@ -1014,29 +1017,43 @@ const Profile = () => {
     };
 
     const reportPost = async (post_id) => {
+        setReportingPostId(post_id);
+        setShowReportModal(true);
+    };
+
+    const handleReportSubmit = async (reason, text) => {
+        if (!reportingPostId) return;
+        
         setLoading(true);
         try {
             const accessToken = localStorage.getItem("access_token");
-            const formData = new URLSearchParams();
-            formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
-            formData.append('action', 'report');
-            formData.append('post_id', post_id);
-            const response = await fetch(`https://ouptel.com/api/post-actions`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json',
-                    'Authorization': `Bearer ${accessToken}`
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_URL}/api/v1/posts/${reportingPostId}/report`,
+                {
+                    reason: reason,
+                    text: text
                 },
-                body: formData.toString(),
-            });
-            const data = await response.json();
-            if (data?.api_status === 200) {
-                toast.success('Post reported successfully');
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Accept': 'application/json'
+                    }
+                }
+            );
+            
+            const data = response.data;
+            if (data?.ok === true || data?.api_status === 200) {
+                toast.success(data?.message || 'Post reported successfully');
+                setShowReportModal(false);
+                setReportingPostId(null);
+            } else {
+                toast.error(data?.message || 'Failed to report post');
             }
         } catch (error) {
             console.error('Error reporting post:', error);
+            const errorMsg = error?.response?.data?.message || 'Error reporting post';
+            toast.error(errorMsg);
         } finally {
             setLoading(false);
         }
@@ -2136,6 +2153,17 @@ const Profile = () => {
                 </svg>
             </button>
         )}
+
+        {/* Report Post Modal */}
+        <ReportPostModal
+            isOpen={showReportModal}
+            onClose={() => {
+                setShowReportModal(false);
+                setReportingPostId(null);
+            }}
+            onSubmit={handleReportSubmit}
+            isLoading={loading}
+        />
     </div>
   )
 }

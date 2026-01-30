@@ -4,6 +4,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import PostCard from '../components/specific/Home/PostCard';
 import Loader from '../components/loading/Loader';
+import ReportPostModal from '../components/ReportPostModal';
 import { baseUrl } from '../utils/constant';
 import { useUser } from '../context/UserContext';
 
@@ -24,6 +25,8 @@ const PostDetail = () => {
     return saved ? new Set(JSON.parse(saved)) : new Set();
   });
   const [imagePopup, setImagePopup] = useState({ show: false, images: [], currentIndex: 0 });
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportingPostId, setReportingPostId] = useState(null);
 
   const buildAuthHeaders = useCallback(() => {
     const accessToken = localStorage.getItem("access_token");
@@ -263,32 +266,43 @@ const PostDetail = () => {
   };
 
   const reportPost = async (post_id) => {
+    setReportingPostId(post_id);
+    setShowReportModal(true);
+  };
+
+  const handleReportSubmit = async (reason, text) => {
+    if (!reportingPostId) return;
+    
     setLoading(true);
     try {
       const accessToken = localStorage.getItem("access_token");
-      const formData = new URLSearchParams();
-      formData.append('server_key', '24a16e93e8a365b15ae028eb28a970f5ce0879aa-98e9e5bfb7fcb271a36ed87d022e9eff-37950179');
-      formData.append('action', 'report');
-      formData.append('post_id', post_id);
-      const response = await fetch(`https://ouptel.com/api/post-actions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-Requested-With': 'XMLHttpRequest',
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${accessToken}`
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/v1/posts/${reportingPostId}/report`,
+        {
+          reason: reason,
+          text: text
         },
-        body: formData.toString(),
-      });
-      const data = await response.json();
-      if (data?.api_status === 200) {
-        toast.success('Post reported successfully');
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+            'Accept': 'application/json'
+          }
+        }
+      );
+      
+      const data = response.data;
+      if (data?.ok === true || data?.api_status === 200) {
+        toast.success(data?.message || 'Post reported successfully');
+        setShowReportModal(false);
+        setReportingPostId(null);
       } else {
-        toast.error('Failed to report post');
+        toast.error(data?.message || 'Failed to report post');
       }
     } catch (error) {
       console.error('Error reporting post:', error);
-      toast.error('Error reporting post');
+      const errorMsg = error?.response?.data?.message || 'Error reporting post';
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -711,6 +725,17 @@ const PostDetail = () => {
           </div>
         </div>
       )}
+
+      {/* Report Post Modal */}
+      <ReportPostModal
+        isOpen={showReportModal}
+        onClose={() => {
+          setShowReportModal(false);
+          setReportingPostId(null);
+        }}
+        onSubmit={handleReportSubmit}
+        isLoading={loading}
+      />
     </>
   );
 };

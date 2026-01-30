@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Loader from '../../components/loading/Loader';
+import ReportPostModal from '../../components/ReportPostModal';
 import { baseUrl } from '../../utils/constant';
 import { HiUsers } from 'react-icons/hi';
 import { FaHeart, FaRegHeart, FaGlobe, FaPhone, FaMapMarkerAlt } from 'react-icons/fa';
@@ -31,6 +32,8 @@ const PageDetailed = () => {
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [totalPosts, setTotalPosts] = useState(0);
   const [activeTab, setActiveTab] = useState('posts'); // 'posts', 'about', 'info'
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportingPostId, setReportingPostId] = useState(null);
 
   const accessToken = useMemo(() => localStorage.getItem('access_token'), []);
 
@@ -92,10 +95,20 @@ const PageDetailed = () => {
 
   // Handler for reporting posts
   const handleReportPost = useCallback(async (postId) => {
+    setReportingPostId(postId);
+    setShowReportModal(true);
+  }, []);
+
+  const handleReportSubmit = useCallback(async (reason, text) => {
+    if (!reportingPostId) return;
+    
     try {
       const response = await axios.post(
-        `${baseUrl}/api/v1/posts/report`,
-        { post_id: postId },
+        `${baseUrl}/api/v1/posts/${reportingPostId}/report`,
+        {
+          reason: reason,
+          text: text
+        },
         {
           headers: {
             'Content-Type': 'application/json',
@@ -105,16 +118,20 @@ const PageDetailed = () => {
         }
       );
 
-      if (response.data?.ok === true || response.data?.api_status === 200) {
-        toast.success(response.data?.message || 'Post reported successfully');
+      const data = response.data;
+      if (data?.ok === true || data?.api_status === 200) {
+        toast.success(data?.message || 'Post reported successfully');
+        setShowReportModal(false);
+        setReportingPostId(null);
       } else {
-        toast.error(response.data?.message || 'Failed to report post');
+        toast.error(data?.message || 'Failed to report post');
       }
     } catch (error) {
       console.error('Error reporting post:', error);
-      toast.error(error?.response?.data?.message || 'Error reporting post');
+      const errorMsg = error?.response?.data?.message || 'Error reporting post';
+      toast.error(errorMsg);
     }
-  }, [accessToken]);
+  }, [accessToken, reportingPostId]);
 
   // Handler for hiding posts
   const handleHidePost = useCallback(async (postId) => {
@@ -690,6 +707,17 @@ const PageDetailed = () => {
           )}
         </div>
       </div>
+
+      {/* Report Post Modal */}
+      <ReportPostModal
+        isOpen={showReportModal}
+        onClose={() => {
+          setShowReportModal(false);
+          setReportingPostId(null);
+        }}
+        onSubmit={handleReportSubmit}
+        isLoading={loading}
+      />
     </div>
   );
 };

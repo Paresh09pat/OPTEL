@@ -13,6 +13,7 @@ import Avatar from '../../Avatar';
 import SharePopup from './SharePopup';
 import Poll from './Poll';
 import ReactionDetailsModal from './ReactionDetailsModal';
+import ReportPostModal from '../../ReportPostModal';
 const PostCard = ({ id, user, content, image, video, audio, file, likes, comments, shares, saves, timeAgo, post_id, handleLike, handleDislike, isLiked, commentsData, savePost, isSaved, blog, multipleImages, hasMultipleImages, reportPost, hidePost, iframelink, postfile, postFileName, getNewsFeed, openImagePopup, handleReaction, postReaction, postReactionCounts, currentReaction, userReaction, postType, pollOptions, handlePollVote, isPollLoading, colorId, colorData, feeling, isFeelingPost, likedUsers }) => {
   // Use id as the primary identifier, fallback to post_id for backward compatibility
   const postIdentifier = id || post_id;
@@ -69,6 +70,8 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
   const [videoProgress, setVideoProgress] = useState(0);
   // Add state for image slider
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  // Add state for report modal
+  const [showReportModal, setShowReportModal] = useState(false);
   const buildAuthHeaders = useCallback(() => {
     const accessToken = localStorage.getItem("access_token");
     const headers = {
@@ -568,10 +571,40 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
     setShowOptionsMenu(false);
   }, [savePost, postIdentifier]);
 
-  const handleReportPost = useCallback(() => {
-    reportPost(postIdentifier);
+  const handleReportPost = useCallback(async () => {
     setShowOptionsMenu(false);
-  }, [postIdentifier]);
+    setShowReportModal(true);
+  }, []);
+
+  const handleReportSubmit = useCallback(async (reason, text) => {
+    setLoading(true);
+    try {
+      const response = await axios.post(
+        `${baseUrl}/api/v1/posts/${postIdentifier}/report`,
+        {
+          reason: reason,
+          text: text
+        },
+        {
+          headers: buildAuthHeaders()
+        }
+      );
+      
+      const data = response.data;
+      if (data?.ok === true || data?.api_status === 200) {
+        toast.success(data?.message || 'Post reported successfully');
+        setShowReportModal(false);
+      } else {
+        toast.error(data?.message || 'Failed to report post');
+      }
+    } catch (error) {
+      console.error('Error reporting post:', error);
+      const errorMsg = error?.response?.data?.message || 'Error reporting post';
+      toast.error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  }, [postIdentifier, buildAuthHeaders]);
 
   const handleOpenInNewTab = useCallback(() => {
     window.open(`/post/${postIdentifier}`, '_blank');
@@ -2645,6 +2678,13 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
         onClose={() => setShowReactionDetailsModal(false)}
         data={reactionDetails}
         isLoading={isLoadingReactionDetails}
+      />
+
+      <ReportPostModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        onSubmit={handleReportSubmit}
+        isLoading={loading}
       />
 
     </div>
