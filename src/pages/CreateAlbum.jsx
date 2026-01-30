@@ -1,10 +1,12 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { baseUrl } from "../utils/constant";
 import { toast } from "react-toastify";
 import Loader from "../components/loading/Loader";
+import { FiX } from 'react-icons/fi';
 
 const CreateAlbum = () => {
+  const navigate = useNavigate();
   const [albumName, setAlbumName] = useState("");
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -77,35 +79,20 @@ const CreateAlbum = () => {
   return (
     <>
       {loading && <Loader />}
-      <div className="bg-white w-full h-full flex flex-col">
-        <div className="w-full h-[98px] sticky pt-8 top-0 z-10 bg-[#EDF6F9]">
-          <div className="flex items-center justify-between h-full px-4 md:px-7 md:flex-row gap-4">
-            <h1 className="text-2xl font-bold text-[#212121] mb-4">
-              My Albums
-            </h1>
-            <div className="flex gap-6 items-center">
-              <Link
-                to={"/create-album"}
-                className="border border-[#d3d1d1] cursor-pointer py-1.5 px-3.5 rounded-2xl flex items-center gap-1.5"
-              >
-                <img
-                  src="/icons/gridicons_create.svg"
-                  alt="create"
-                  className="size-[15px]"
-                />
-                <span className="text-[#808080] text-base font-medium">
-                  Create Album
-                </span>
-              </Link>
-            </div>
-          </div>
-        </div>
-
+      <div className="bg-white w-full h-full flex flex-col rounded-3xl shadow-2xl overflow-hidden">
         <div className="w-full flex flex-col gap-4">
-          <div className="relative w-full h-[10rem] md:h-[18rem] flex items-start justify-end p-6 md:p-16">
+          <div className="relative h-64 flex items-start justify-end px-8 md:px-16">
+            {/* Close Button */}
+            <button
+              onClick={() => navigate(-1)}
+              className="z-10 absolute flex -right-2 -top-2 w-10 h-10 items-center justify-center cursor-pointer text-gray-600 bg-gray-100 rounded-full transition-colors hover:bg-gray-200"
+            >
+              <FiX className="w-6 h-6" />
+            </button>
+            
             {/* Wave SVG */}
-            <img src="/Vectorgroup.svg" alt="vector" className='absolute bottom-0 right-0 top-0 w-full h-full object-cover' />
-            <h2 className="text-3xl text-white font-bold z-10">Create Album</h2>
+            <img src="/Vectorgroup.svg" alt="vector" className='absolute bottom-0 right-0 top-0 w-full' />
+            <h2 className="text-xl md:text-2xl font-bold text-white z-10 pt-6">Create Album</h2>
           </div>
 
           <form
@@ -171,6 +158,7 @@ const CreateAlbum = () => {
                         <div
                           key={index}
                           className="relative group w-[100px] h-[100px] rounded overflow-hidden border"
+                          onClick={(e) => e.preventDefault()}
                         >
                           {file.type.startsWith("image") ? (
                             <img
@@ -188,10 +176,11 @@ const CreateAlbum = () => {
                           <button
                             type="button"
                             onClick={(e) => {
+                              e.preventDefault();
                               e.stopPropagation();
                               removeFile(index);
                             }}
-                            className="absolute top-1 right-1 bg-black bg-opacity-60 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center cursor-pointer"
+                            className="absolute top-1 right-1 bg-black bg-opacity-60 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center cursor-pointer hover:bg-red-600 transition-colors"
                             title="Remove"
                           >
                             ×
@@ -199,6 +188,16 @@ const CreateAlbum = () => {
                         </div>
                       );
                     })}
+                    {/* Add more button */}
+                    <div
+                      className="w-[100px] h-[100px] rounded border-2 border-dashed border-gray-400 flex items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors"
+                      onClick={(e) => {
+                        // Allow this div to trigger the file input
+                        e.stopPropagation();
+                      }}
+                    >
+                      <span className="text-3xl text-gray-400">+</span>
+                    </div>
                   </div>
                 )}
               </label>
