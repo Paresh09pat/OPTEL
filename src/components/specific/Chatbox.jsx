@@ -762,7 +762,7 @@ const Chatbox = ({ onClose, isMobile = false }) => {
       {/* Who to Follow */}
       <div className="py-4 px-6 mt-2.5 bg-[#a2a2a2] rounded-lg border border-[#d3d1d1]">
         <Link to="/" className='cursor-pointer'>
-        <img src="op_logo.png" alt="ouptel-logo" width={100} />
+        <img src="/op_logo.png" alt="ouptel-logo" width={100} />
         </Link>
         <div className="grid grid-cols-2 gap-11 text-white mt-3.5 text-[12px]">
           <div className="flex flex-col gap-1.5 ">

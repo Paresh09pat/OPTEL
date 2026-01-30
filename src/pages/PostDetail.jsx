@@ -375,9 +375,16 @@ const PostDetail = () => {
         }));
 
         await fetchPostData();
+      } else {
+        // Handle error response from API
+        const errorMessage = data?.message || 'Failed to add reaction';
+        toast.error(errorMessage);
+        console.error('Reaction failed:', data);
       }
     } catch (error) {
       console.error('Error adding reaction:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Error adding reaction';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -654,6 +661,7 @@ const PostDetail = () => {
               colorData={post?.color_data}
               feeling={post?.feeling}
               isFeelingPost={post?.post_type === 'feeling' || !!post?.feeling}
+              likedUsers={post?.liked_users || []}
             />
           </div>
         </div>

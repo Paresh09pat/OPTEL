@@ -26,7 +26,7 @@ const SocialLinks = ({ formData, handleChange }) => {
               value={formData.facebook}
               onChange={handleChange}
               placeholder="URL"
-              className={`w-full px-3 py-2 border border-[#212121] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500 ${
+              className={`w-full px-3 py-2 border border-[#212121] rounded-3xl focus:outline-none focus:ring-2 focus:ring-[#1153e7] ${
                 formData.facebook && !validateUrl(formData.facebook) 
                   ? 'border-red-300' 
                   : 'border-[#212121]'
@@ -42,7 +42,7 @@ const SocialLinks = ({ formData, handleChange }) => {
               value={formData.twitter}
               onChange={handleChange}
               placeholder="URL"
-              className={`w-full px-3 py-2 border border-[#212121] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500 ${
+              className={`w-full px-3 py-2 border border-[#212121] rounded-3xl focus:outline-none focus:ring-2 focus:ring-[#1153e7] ${
                 formData.twitter && !validateUrl(formData.twitter) 
                   ? 'border-red-300' 
                   : 'border-[#212121]'
@@ -58,7 +58,7 @@ const SocialLinks = ({ formData, handleChange }) => {
               value={formData.instagram}
               onChange={handleChange}
               placeholder="URL"
-              className={`w-full px-3 py-2 border border-[#212121] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500 ${
+              className={`w-full px-3 py-2 border border-[#212121] rounded-3xl focus:outline-none focus:ring-2 focus:ring-[#1153e7] ${
                 formData.instagram && !validateUrl(formData.instagram) 
                   ? 'border-red-300' 
                   : 'border-[#212121]'
@@ -74,7 +74,7 @@ const SocialLinks = ({ formData, handleChange }) => {
               value={formData.vkontakte}
               onChange={handleChange}
               placeholder="URL"
-              className={`w-full px-3 py-2 border border-[#212121] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500 ${
+              className={`w-full px-3 py-2 border border-[#212121] rounded-3xl focus:outline-none focus:ring-2 focus:ring-[#1153e7] ${
                 formData.vkontakte && !validateUrl(formData.vkontakte) 
                   ? 'border-red-300' 
                   : 'border-[#212121]'
@@ -90,7 +90,7 @@ const SocialLinks = ({ formData, handleChange }) => {
               value={formData.linkedin}
               onChange={handleChange}
               placeholder="URL"
-              className={`w-full px-3 py-2 border border-[#212121] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500 ${
+              className={`w-full px-3 py-2 border border-[#212121] rounded-3xl focus:outline-none focus:ring-2 focus:ring-[#1153e7] ${
                 formData.linkedin && !validateUrl(formData.linkedin) 
                   ? 'border-red-300' 
                   : 'border-[#212121]'
@@ -106,7 +106,7 @@ const SocialLinks = ({ formData, handleChange }) => {
               value={formData.youtube}
               onChange={handleChange}
               placeholder="URL"
-              className={`w-full px-3 py-2 border border-[#212121] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500 ${
+              className={`w-full px-3 py-2 border border-[#212121] rounded-3xl focus:outline-none focus:ring-2 focus:ring-[#1153e7] ${
                 formData.youtube && !validateUrl(formData.youtube) 
                   ? 'border-red-300' 
                   : 'border-[#212121]'

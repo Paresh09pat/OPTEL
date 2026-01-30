@@ -547,71 +547,69 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
         )}
 
 
-        {/* Story Image */}
-        <div className="relative w-full max-w-md h-full max-h-[90vh] flex items-center justify-center">
-          {/* Progress Bars - Instagram Style */}
-          <div className="absolute top-0 left-0 right-0 flex gap-2 z-50 p-3">
-            {stories.map((story, index) => (
-              <div
-                key={story.id}
-                className="flex-1 h-2 bg-gray-800/60 rounded-sm overflow-hidden border border-white/20"
-              >
+        {/* Story Container */}
+        <div className="relative w-full max-w-md h-full flex flex-col items-center justify-center">
+          {/* Story Image Container */}
+          <div className="relative w-full flex-shrink-0">
+            {/* Progress Bars - Instagram Style */}
+            <div className="absolute top-0 left-0 right-0 flex gap-2 z-50 p-3">
+              {stories.map((story, index) => (
                 <div
-                  className="h-full bg-white rounded-sm"
-                  style={{
-                    width: index < currentStoryIndex
-                      ? '100%'
-                      : index === currentStoryIndex
-                        ? `${progress}%`
-                        : '0%',
-                    transition: index === currentStoryIndex && !isPaused && !deleteModalOpen
-                      ? 'width 0.05s linear'
-                      : index < currentStoryIndex
-                        ? 'width 0.3s ease-out'
-                        : 'none',
-                  }}
-                />
-              </div>
-            ))}
+                  key={story.id}
+                  className="flex-1 h-2 bg-gray-800/60 rounded-sm overflow-hidden border border-white/20"
+                >
+                  <div
+                    className="h-full bg-white rounded-sm"
+                    style={{
+                      width: index < currentStoryIndex
+                        ? '100%'
+                        : index === currentStoryIndex
+                          ? `${progress}%`
+                          : '0%',
+                      transition: index === currentStoryIndex && !isPaused && !deleteModalOpen
+                        ? 'width 0.05s linear'
+                        : index < currentStoryIndex
+                          ? 'width 0.3s ease-out'
+                          : 'none',
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Story Counter */}
+            <div className="absolute top-14 left-3 text-white text-xs font-semibold z-50 drop-shadow-lg">
+              {currentStoryIndex + 1} / {stories.length}
+            </div>
+
+            {/* Views Button - Only for current user's stories */}
+            {isCurrentUserStories && currentStory?.id && (
+              <button
+                onClick={() => {
+                  setIsPaused(true);
+                  stopProgress();
+                  fetchStoryViews(currentStory.id);
+                  setShowViewsModal(true);
+                }}
+                className="absolute top-14 right-3 flex items-center gap-1.5 text-white text-xs font-semibold z-50 bg-black/40 hover:bg-black/60 px-2.5 py-1.5 rounded-full transition-colors backdrop-blur-sm"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span>{currentStory?.views || viewsCount || 0}</span>
+              </button>
+            )}
+
+            {/* Top gradient overlay for better progress bar visibility */}
+            <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-black/60 via-black/30 to-transparent pointer-events-none z-40" />
+
+            <img
+              src={currentStory?.thumbnail}
+              alt={currentStory?.title || 'Story'}
+              className="w-full h-auto max-h-[70vh] object-contain"
+            />
           </div>
 
-
-
-          {/* Story Counter */}
-          <div className="absolute top-14 left-3 text-white text-xs font-semibold z-50 drop-shadow-lg">
-            {currentStoryIndex + 1} / {stories.length}
-          </div>
-
-          {/* Views Button - Only for current user's stories */}
-          {isCurrentUserStories && currentStory?.id && (
-            <button
-              onClick={() => {
-                setIsPaused(true);
-                stopProgress();
-                fetchStoryViews(currentStory.id);
-                setShowViewsModal(true);
-              }}
-              className="absolute top-14 right-3 flex items-center gap-1.5 text-white text-xs font-semibold z-50 bg-black/40 hover:bg-black/60 px-2.5 py-1.5 rounded-full transition-colors backdrop-blur-sm"
-            >
-              <Eye className="w-3.5 h-3.5" />
-              <span>{currentStory?.views || viewsCount || 0}</span>
-            </button>
-          )}
-
-
-          {/* Top gradient overlay for better progress bar visibility */}
-          <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-black/60 via-black/30 to-transparent pointer-events-none z-40" />
-
-
-          <img
-            src={currentStory?.thumbnail}
-            alt={currentStory?.title || 'Story'}
-            className="w-full h-full object-contain"
-          />
-
-
-          {/* Story Info Overlay */}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent backdrop-blur-md p-6">
+          {/* Story Info Section - Below Image */}
+          <div className="w-full bg-black/90 backdrop-blur-md p-6 mt-auto">
             <div 
               className="flex items-center gap-3 mb-3 cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => {
@@ -623,16 +621,18 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
                 }
               }}
             >
-              {currentUser?.avatar_url && (
-                <img
-                  src={currentUser.avatar_url}
-                  alt={currentUser.name}
-                  className="w-10 h-10 rounded-full border-2 border-white"
-                />
-              )}
+              <img
+                src={currentUser?.avatar_url || currentUser?.avatar || '/user.png'}
+                alt={currentUser?.name || currentUser?.username || 'User'}
+                className="w-10 h-10 rounded-full border-2 border-white object-cover"
+                onError={(e) => {
+                  e.target.onerror = null; // Prevent infinite loop
+                  e.target.src = '/user.png'; // Fallback to default avatar
+                }}
+              />
               <div>
-                <h3 className="text-white font-semibold drop-shadow-lg">{currentUser?.name || currentUser?.username}</h3>
-                <p className="text-white/80 text-sm drop-shadow-md">{currentStory?.time_text}</p>
+                <h3 className="text-white font-semibold drop-shadow-lg">{currentUser?.name || currentUser?.username || 'Unknown User'}</h3>
+                <p className="text-white/80 text-sm drop-shadow-md">{currentStory?.time_text || 'Just now'}</p>
               </div>
             </div>
             {currentStory?.title && (

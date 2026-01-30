@@ -24,7 +24,7 @@ const DeletePage = () => {
             value={formData.password}
             onChange={handleChange}
             placeholder="Password"
-            className="w-full px-3 py-2 border border-[#212121] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="w-full px-3 py-2 border border-[#212121] rounded-3xl focus:outline-none focus:ring-2 focus:ring-[#1153e7]"
           />
         </div>
 
@@ -36,7 +36,7 @@ const DeletePage = () => {
             value={formData.confirmPassword}
             onChange={handleChange}
             placeholder="Password"
-            className="w-full px-3 py-2 border border-[#212121] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="w-full px-3 py-2 border border-[#212121] rounded-3xl focus:outline-none focus:ring-2 focus:ring-[#1153e7]"
           />
         </div>
 
@@ -50,7 +50,7 @@ const DeletePage = () => {
                 value="agree"
                 checked={formData.finalConfirmation === 'agree'}
                 onChange={handleChange}
-                className="mr-2"
+                className="mr-2 accent-[#1153e7] focus:ring-[#1153e7]"
               />
               <span className="text-sm text-gray-700">Agree</span>
             </label>
@@ -61,7 +61,7 @@ const DeletePage = () => {
                 value="disagree"
                 checked={formData.finalConfirmation === 'disagree'}
                 onChange={handleChange}
-                className="mr-2"
+                className="mr-2 accent-[#1153e7] focus:ring-[#1153e7]"
               />
               <span className="text-sm text-gray-700">Disagree</span>
             </label>
@@ -70,7 +70,7 @@ const DeletePage = () => {
       </div>
 
       <div className="border-t border-[#808080] pt-4 mt-3.5 grid place-items-center ">
-        <button className="w-32 mx-auto border border-[#FF0707] text-[#FF0707] bg-white py-2 px-4 rounded-lg cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm font-semibold">
+        <button className="w-32 mx-auto border border-[#FF0707] text-[#FF0707] bg-white py-2 px-4 rounded-lg cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF0707] text-sm font-semibold hover:bg-red-50">
           Delete Page
         </button>
       </div>

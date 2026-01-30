@@ -13,7 +13,7 @@ import Avatar from '../../Avatar';
 import SharePopup from './SharePopup';
 import Poll from './Poll';
 import ReactionDetailsModal from './ReactionDetailsModal';
-const PostCard = ({ user, content, image, video, audio, file, likes, comments, shares, saves, timeAgo, post_id, handleLike, handleDislike, isLiked, commentsData, savePost, isSaved, blog, multipleImages, hasMultipleImages, reportPost, hidePost, iframelink, postfile, postFileName, getNewsFeed, openImagePopup, handleReaction, postReaction, postReactionCounts, currentReaction, userReaction, postType, pollOptions, handlePollVote, isPollLoading, colorId, colorData, feeling, isFeelingPost }) => {
+const PostCard = ({ user, content, image, video, audio, file, likes, comments, shares, saves, timeAgo, post_id, handleLike, handleDislike, isLiked, commentsData, savePost, isSaved, blog, multipleImages, hasMultipleImages, reportPost, hidePost, iframelink, postfile, postFileName, getNewsFeed, openImagePopup, handleReaction, postReaction, postReactionCounts, currentReaction, userReaction, postType, pollOptions, handlePollVote, isPollLoading, colorId, colorData, feeling, isFeelingPost, likedUsers }) => {
   const navigate = useNavigate();
   const { userData } = useUser();
   const [clickedComments, setClickedComments] = useState(false);
@@ -308,28 +308,25 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
   const fetchReactionDetails = useCallback(async () => {
     setIsLoadingReactionDetails(true);
     setShowReactionDetailsModal(true);
-    try {
-      const response = await axios.get(
-        `${baseUrl}/api/v1/posts/${post_id}/reactions`,
-        {
-          params: { per_page: 20 },
-          headers: buildAuthHeaders()
-        }
-      );
-      const data = response.data;
-      if (data?.ok === true) {
-        setReactionDetails(data.data);
-      } else {
-        console.error('Failed to fetch reaction details:', data);
-        toast.error('Failed to load reaction details');
-      }
-    } catch (error) {
-      console.error('Error fetching reaction details:', error);
-      toast.error('Error loading reaction details');
-    } finally {
-      setIsLoadingReactionDetails(false);
-    }
-  }, [post_id, buildAuthHeaders]);
+    
+    console.log('PostCard - fetchReactionDetails called');
+    console.log('PostCard - likedUsers prop:', likedUsers);
+    console.log('PostCard - postReactionCounts:', postReactionCounts);
+    console.log('PostCard - Total reaction count:', getTotalReactionCount());
+    
+    // Use the liked_users data that's already available from the post
+    const reactionData = {
+      reaction_counts: postReactionCounts || {},
+      total_reactions: getTotalReactionCount(),
+      liked_users: likedUsers || [] // Use the prop passed from parent
+    };
+    
+    console.log('PostCard - Reaction data being set:', reactionData);
+    
+    // Set the data immediately - no need to fetch again
+    setReactionDetails(reactionData);
+    setIsLoadingReactionDetails(false);
+  }, [post_id, postReactionCounts, likedUsers]);
 
   const handleClickComments = useCallback(async () => {
     try {

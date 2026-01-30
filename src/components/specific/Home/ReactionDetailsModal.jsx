@@ -1,7 +1,38 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FaTimes } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
+import Avatar from '../../Avatar';
 
+/**
+ * ReactionDetailsModal - Shows users who reacted to a post
+ * 
+ * Props:
+ * - isOpen: boolean - controls modal visibility
+ * - onClose: function - callback to close modal
+ * - data: object - contains:
+ *   - liked_users: array of user objects with fields:
+ *     - user_id or id: user identifier
+ *     - name: user's full name
+ *     - username: user's username
+ *     - email: user's email
+ *     - avatar_url or avatar or profile_picture: user's avatar image
+ *     - verified: boolean - if user is verified
+ *     - reaction_type: number (1-6) - type of reaction (optional, for filtering by tabs)
+ *   - reaction_counts: object - count of each reaction type
+ *   - total_reactions: number - total count of all reactions
+ * - isLoading: boolean - shows loading state
+ * 
+ * Features:
+ * - Displays all users who reacted to a post
+ * - Tabs to filter by reaction type (All, Like, Love, Haha, Wow, Sad, Angry)
+ * - Clickable user cards that navigate to user profiles
+ * - Shows verified badge for verified users
+ * - Handles missing data gracefully with fallback displays
+ */
 const ReactionDetailsModal = ({ isOpen, onClose, data, isLoading }) => {
+    const navigate = useNavigate();
+    const [activeTab, setActiveTab] = useState('all');
+
     if (!isOpen) return null;
 
     const reactionsMapping = {
@@ -15,6 +46,21 @@ const ReactionDetailsModal = ({ isOpen, onClose, data, isLoading }) => {
 
     const reactionCounts = data?.reaction_counts || {};
     const totalReactions = data?.total_reactions || 0;
+    const likedUsers = data?.liked_users || [];
+
+    // Debug log to see the data structure
+    console.log('=== ReactionDetailsModal Debug ===');
+    console.log('Full data:', data);
+    console.log('Liked users array:', likedUsers);
+    console.log('Total reactions:', totalReactions);
+    console.log('Reaction counts:', reactionCounts);
+    
+    // Log first user to see structure
+    if (likedUsers.length > 0) {
+        console.log('First user structure:', likedUsers[0]);
+        console.log('Available fields:', Object.keys(likedUsers[0]));
+    }
+    console.log('==================================');
 
     return (
         <div
@@ -44,6 +90,40 @@ const ReactionDetailsModal = ({ isOpen, onClose, data, isLoading }) => {
                     </div>
                 </div>
 
+                {/* Tabs */}
+                <div className="border-b border-gray-200 px-6">
+                    <div className="flex space-x-1 overflow-x-auto">
+                        <button
+                            onClick={() => setActiveTab('all')}
+                            className={`px-4 py-3 text-sm font-semibold whitespace-nowrap transition-all ${
+                                activeTab === 'all'
+                                    ? 'text-blue-600 border-b-2 border-blue-600'
+                                    : 'text-gray-500 hover:text-gray-700'
+                            }`}
+                        >
+                            All {totalReactions > 0 && `(${totalReactions})`}
+                        </button>
+                        {Object.entries(reactionsMapping).map(([type, info]) => {
+                            const count = reactionCounts[type] || 0;
+                            if (count === 0) return null;
+                            return (
+                                <button
+                                    key={type}
+                                    onClick={() => setActiveTab(type)}
+                                    className={`px-4 py-3 text-sm font-semibold whitespace-nowrap transition-all flex items-center space-x-1 ${
+                                        activeTab === type
+                                            ? 'text-blue-600 border-b-2 border-blue-600'
+                                            : 'text-gray-500 hover:text-gray-700'
+                                    }`}
+                                >
+                                    <span className="text-lg">{info.emoji}</span>
+                                    <span>{count}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
                 {/* Content */}
                 <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
                     {isLoading ? (
@@ -52,56 +132,109 @@ const ReactionDetailsModal = ({ isOpen, onClose, data, isLoading }) => {
                                 <div className="absolute inset-0 border-4 border-gray-100 rounded-full"></div>
                                 <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
                             </div>
-                            <p className="text-gray-500 font-bold mt-6 tracking-wide uppercase text-xs">Fetching Data</p>
+                            <p className="text-gray-500 font-bold mt-6 tracking-wide uppercase text-xs">Loading...</p>
                         </div>
-                    ) : (
-                        <div className="space-y-4">
-                            {Object.entries(reactionsMapping).map(([type, info]) => {
-                                const count = reactionCounts[type] || 0;
-                                if (count === 0 && totalReactions > 0) return null;
-
-                                const percentage = totalReactions > 0 ? (count / totalReactions) * 100 : 0;
-
+                    ) : likedUsers && likedUsers.length > 0 ? (
+                        <div className="space-y-2">
+                            {(activeTab === 'all' 
+                                ? likedUsers 
+                                : likedUsers.filter((user) => user.reaction_type === parseInt(activeTab))
+                            ).map((user, index) => {
+                                // Extract user ID - handle both user_id and id fields
+                                const userId = user.user_id || user.id;
+                                const userName = user.name || user.username || 'Unknown User';
+                                const userAvatar = user.avatar_url || user.avatar || user.profile_picture;
+                                const userUsername = user.username || '';
+                                const userEmail = user.email || '';
+                                
                                 return (
                                     <div
-                                        key={type}
-                                        className={`group flex items-center gap-4 p-4 rounded-2xl border border-transparent hover:border-gray-100 hover:bg-white hover:shadow-xl hover:shadow-gray-100 transition-all duration-300`}
+                                        key={userId || index}
+                                        className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-all cursor-pointer group"
+                                        onClick={() => {
+                                            if (userId) {
+                                                navigate(`/profile/${userId}`);
+                                                onClose();
+                                            }
+                                        }}
                                     >
-                                        <div className={`flex-shrink-0 w-14 h-14 ${info.bgColor} rounded-2xl flex items-center justify-center text-3xl transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-sm`}>
-                                            {info.emoji}
+                                        <div className="flex-shrink-0">
+                                            <Avatar
+                                                src={userAvatar}
+                                                name={userName}
+                                                alt={userName}
+                                                size="md"
+                                            />
                                         </div>
-
                                         <div className="flex-1 min-w-0">
-                                            <div className="flex items-center justify-between mb-1.5">
-                                                <span className="font-bold text-gray-900">{info.name}</span>
-                                                <div className="flex items-center gap-2">
-                                                    <span className={`text-sm font-black ${info.textColor}`}>{count}</span>
-                                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{percentage.toFixed(0)}%</span>
-                                                </div>
+                                            <div className="flex items-center space-x-2">
+                                                <h4 className="font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+                                                    {userName}
+                                                </h4>
+                                                {user.verified && (
+                                                    <svg className="w-4 h-4 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                                    </svg>
+                                                )}
                                             </div>
-
-                                            <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                                                <div
-                                                    className={`h-full ${info.color} rounded-full transition-all duration-1000 ease-out`}
-                                                    style={{ width: `${percentage}%` }}
-                                                ></div>
-                                            </div>
+                                            <p className="text-sm text-gray-500 truncate">
+                                                {userUsername ? `@${userUsername}` : userEmail}
+                                            </p>
                                         </div>
+                                        {activeTab !== 'all' && user.reaction_type && (
+                                            <span className="text-2xl flex-shrink-0">
+                                                {reactionsMapping[user.reaction_type]?.emoji}
+                                            </span>
+                                        )}
                                     </div>
                                 );
                             })}
-
-                            {totalReactions === 0 && !isLoading && (
+                            {activeTab !== 'all' && likedUsers.filter((user) => user.reaction_type === parseInt(activeTab)).length === 0 && (
                                 <div className="text-center py-12 px-6">
-                                    <div className="w-20 h-20 bg-blue-50 rounded-3xl flex items-center justify-center mx-auto mb-6 transform -rotate-12">
-                                        <span className="text-4xl">✨</span>
+                                    <div className="w-20 h-20 bg-gray-50 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                                        <span className="text-4xl">{reactionsMapping[activeTab]?.emoji}</span>
                                     </div>
-                                    <h3 className="text-lg font-bold text-gray-900 mb-2">Be the first!</h3>
+                                    <h3 className="text-lg font-bold text-gray-900 mb-2">No {reactionsMapping[activeTab]?.name} reactions yet</h3>
                                     <p className="text-gray-500 text-sm leading-relaxed">
-                                        This post hasn't received any reactions yet. Spread some love and be the first one to react!
+                                        Be the first to react with {reactionsMapping[activeTab]?.emoji}!
                                     </p>
                                 </div>
                             )}
+                        </div>
+                    ) : totalReactions > 0 ? (
+                        <div className="text-center py-12 px-6">
+                            <div className="w-20 h-20 bg-yellow-50 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                                <span className="text-4xl">👥</span>
+                            </div>
+                            <h3 className="text-lg font-bold text-gray-900 mb-2">{totalReactions} Reactions</h3>
+                            <p className="text-gray-500 text-sm leading-relaxed mb-4">
+                                User details are not available for this post.
+                            </p>
+                            <div className="space-y-2">
+                                {Object.entries(reactionsMapping).map(([type, info]) => {
+                                    const count = reactionCounts[type] || 0;
+                                    if (count === 0) return null;
+                                    return (
+                                        <div key={type} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                            <div className="flex items-center space-x-2">
+                                                <span className="text-2xl">{info.emoji}</span>
+                                                <span className="font-medium text-gray-700">{info.name}</span>
+                                            </div>
+                                            <span className="font-bold text-gray-900">{count}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="text-center py-12 px-6">
+                            <div className="w-20 h-20 bg-blue-50 rounded-3xl flex items-center justify-center mx-auto mb-6 transform -rotate-12">
+                                <span className="text-4xl">✨</span>
+                            </div>
+                            <h3 className="text-lg font-bold text-gray-900 mb-2">No reactions yet</h3>
+                            <p className="text-gray-500 text-sm leading-relaxed">
+                                Be the first to react to this post!
+                            </p>
                         </div>
                     )}
                 </div>

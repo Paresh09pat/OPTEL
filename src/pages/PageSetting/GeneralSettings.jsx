@@ -1,144 +1,262 @@
 // components/GeneralSettings.js
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { toast } from 'react-toastify';
+import { baseUrl } from '../../utils/constant';
 
 const GeneralSettings = ({ formData, handleChange }) => {
+  const [categories, setCategories] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch categories from API
+  const getCategories = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get(`${baseUrl}/api/v1/pages/meta`);
+
+      if (res.data.ok === true) {
+        setCategories(res.data?.data?.categories || []);
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      toast.error('Failed to load categories');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch subcategories based on selected category
+  const getSubCategories = async (categoryId) => {
+    try {
+      const res = await axios.get(`${baseUrl}/api/v1/pages/meta?category_id=${categoryId}`);
+
+      if (res.data.ok === true) {
+        setSubCategories(res.data?.data?.sub_categories || []);
+      }
+    } catch (error) {
+      console.error('Error fetching subcategories:', error);
+      setSubCategories([]);
+    }
+  };
+
+  // Load categories on component mount
+  useEffect(() => {
+    getCategories();
+  }, []);
+
+  // Load subcategories when category changes
+  useEffect(() => {
+    if (formData.category) {
+      getSubCategories(formData.category);
+    } else {
+      setSubCategories([]);
+    }
+  }, [formData.category]);
+
+  // Handle category change
+  const handleCategoryChange = (e) => {
+    const selectedCategoryId = e.target.value;
+    handleChange(e);
+    // Reset subcategory when category changes
+    handleChange({ target: { name: 'subCategory', value: '' } });
+  };
 
   return (
     <div className="bg-white rounded-xl p-3.5 border border-[#d3d1d1]">
       <h2 className="text-xl font-semibold text-[#808080] text-center border-b border-[#d3d1d1] pb-2 mb-2">General Setting</h2>
       
       <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Page Name : <span className="text-red-500">*</span>
-            </label>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Page Name : <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="pageName"
+            value={formData.pageName}
+            onChange={handleChange}
+            placeholder="Page Name"
+            className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-[#1153e7]"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Category :</label>
+          <div className="relative">
+            <select
+              name="category"
+              value={formData.category}
+              onChange={handleCategoryChange}
+              disabled={loading}
+              className={`w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#1153e7] ${
+                loading ? 'bg-gray-100 cursor-not-allowed' : ''
+              }`}
+            >
+              <option value="" disabled hidden>
+                {loading ? 'Loading categories...' : 'Select Category'}
+              </option>
+              {categories?.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+            <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+              <svg
+                className="w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Sub-Category :</label>
+          <div className="relative">
+            <select
+              name="subCategory"
+              value={formData.subCategory}
+              onChange={handleChange}
+              disabled={!formData.category || subCategories.length === 0}
+              className={`w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#1153e7] ${
+                !formData.category || subCategories.length === 0 ? 'bg-gray-100 cursor-not-allowed' : ''
+              }`}
+            >
+              <option value="" disabled hidden>
+                Select Sub-Category
+              </option>
+              {subCategories?.map((subCategory) => (
+                <option key={subCategory.id} value={subCategory.id}>
+                  {subCategory.name}
+                </option>
+              ))}
+            </select>
+            <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+              <svg
+                className="w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Page URL :</label>
+          <div className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl flex items-center bg-gray-50">
+            <span className="text-gray-500">
+              https://demo.wowonder.com/
+            </span>
             <input
               type="text"
-              name="pageName"
-              value={formData.pageName}
+              name="pageUrl"
+              value={formData.pageUrl}
               onChange={handleChange}
-              placeholder="Page Name"
-              className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500"
-              required
+              className="flex-1 bg-transparent border-0 focus:outline-none ml-1"
             />
           </div>
+        </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Category :</label>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Call to action :</label>
+          <div className="relative">
             <select
-  name="category"
-  value={formData.category}
-  onChange={handleChange}
-  className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500"
->
-  {/* Show "Select Category" only if nothing is selected */}
-  {!formData.category && (
-    <option value="" disabled hidden>
-      Select Category
-    </option>
-  )}
-  <option value="HIP-HOP Music">HIP-HOP Music</option>
-  <option value="Rock Music">Rock Music</option>
-  <option value="Pop Music">Pop Music</option>
-  <option value="Jazz Music">Jazz Music</option>
-  <option value="Classical Music">Classical Music</option>
-</select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Sub-Category :</label>
-            <select
-  name="subCategory"
-  value={formData.subCategory}
-  onChange={handleChange}
-  className="w-full px-3 py-2 border border-[#d3d1d1]  rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500"
->
-  {/* Show placeholder only if nothing is selected */}
-  {!formData.subCategory && (
-    <option value="" disabled hidden>
-      Select Sub-Category
-    </option>
-  )}
-  <option value="HIP-HOP Music">HIP-HOP Music</option>
-  <option value="Rap">Rap</option>
-  <option value="Trap">Trap</option>
-  <option value="Old School">Old School</option>
-  <option value="Underground">Underground</option>
-</select>
-
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Call to action :</label>
-            <input
-              type="text"
               name="callToAction"
               value={formData.callToAction}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Call to target url :</label>
-            <input
-              type="url"
-              name="callToTargetUrl"
-              value={formData.callToTargetUrl}
-              onChange={handleChange}
-              placeholder="Url"
-              className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Page url :</label>
-            <input
-              type="url"
-              name="pageUrl"
-              placeholder="https://optel.com/"
-              value={formData.pageUrl}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">Users can post on my page :</label>
-            <div className="flex space-x-6">
-              <label className="flex items-center cursor-pointer">
-                <input
-                  type="radio"
-                  name="canPost"
-                  value="enable"
-                  checked={formData.canPost === 'enable'}
-                  onChange={handleChange}
-                  className="mr-2 text-orange-500 focus:ring-orange-500"
+              className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#1153e7]"
+            >
+              <option value="" disabled hidden>Select action</option>
+              <option value="read_more">Read more</option>
+              <option value="shop_now">Shop now</option>
+              <option value="view_more">View more</option>
+              <option value="visit_now">Visit now</option>
+              <option value="book_now">Book now</option>
+              <option value="learn_more">Learn more</option>
+              <option value="play_now">Play now</option>
+              <option value="bet_now">Bet now</option>
+              <option value="donate">Donate</option>
+              <option value="apply">Apply</option>
+              <option value="quote">Quote</option>
+              <option value="order">Order</option>
+            </select>
+            <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+              <svg
+                className="w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
                 />
-                <span className="text-sm text-gray-700">Enable</span>
-              </label>
-              <label className="flex items-center cursor-pointer">
-                <input
-                  type="radio"
-                  name="canPost"
-                  value="disable"
-                  checked={formData.canPost === 'disable'}
-                  onChange={handleChange}
-                  className="mr-2 text-orange-500 focus:ring-orange-500"
-                />
-                <span className="text-sm text-gray-700">Disable</span>
-              </label>
+              </svg>
             </div>
           </div>
+        </div>
 
-          <div className="flex items-center space-x-2 mt-4">
-            <span className="text-sm text-gray-700">Verification :</span>
-            <span className="text-green-500 text-sm flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24"><path fill="#8bc34a" d="M9 3L8 6H4l1 4l-3 2l3 2l-1 4h4l1 3l3-2l3 2l1-3h4l-1-4l3-2l-3-2l1-4h-4l-1-3l-3 2zm7 5l1 1l-7 7l-3-3l1-1l2 2z"></path></svg>
-              Verified
-            </span>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Call to target url :</label>
+          <input
+            type="url"
+            name="callToTargetUrl"
+            value={formData.callToTargetUrl}
+            onChange={handleChange}
+            placeholder="Url"
+            className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-[#1153e7]"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-3">Users can post on my page :</label>
+          <div className="flex space-x-6">
+            <label className="flex items-center cursor-pointer">
+              <input
+                type="radio"
+                name="canPost"
+                value="enable"
+                checked={formData.canPost === 'enable'}
+                onChange={handleChange}
+                className="mr-2 accent-[#1153e7] focus:ring-[#1153e7]"
+              />
+              <span className="text-sm text-gray-700">Enable</span>
+            </label>
+            <label className="flex items-center cursor-pointer">
+              <input
+                type="radio"
+                name="canPost"
+                value="disable"
+                checked={formData.canPost === 'disable'}
+                onChange={handleChange}
+                className="mr-2 accent-[#1153e7] focus:ring-[#1153e7]"
+              />
+              <span className="text-sm text-gray-700">Disable</span>
+            </label>
           </div>
         </div>
+      </div>
     </div>
   );
 };

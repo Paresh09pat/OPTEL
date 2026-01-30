@@ -778,9 +778,16 @@ const Home = () => {
 
         // Refetch the news feed to get updated data
         await getNewFeeds();
+      } else {
+        // Handle error response from API
+        const errorMessage = data?.message || 'Failed to add reaction';
+        toast.error(errorMessage);
+        console.error('Reaction failed:', data);
       }
     } catch (error) {
       console.error('Error adding reaction:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Error adding reaction';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -1497,6 +1504,7 @@ const Home = () => {
                     colorData={post?.color}
                     feeling={post?.feeling}
                     isFeelingPost={post?.is_feeling_post}
+                    likedUsers={post?.liked_users || []}
                   />
                 );
               })}

@@ -13,11 +13,13 @@ const CreatePage = () => {
     const [pageUrl, setPageUrl] = useState('');
     const [pageCategory, setPageCategory] = useState('');
     const [selectedCategoryId, setSelectedCategoryId] = useState('');
-    const [loading,setLoading] = useState(false);
-    const [categories,setCategories] = useState([]);
+    const [selectedSubCategoryId, setSelectedSubCategoryId] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [categories, setCategories] = useState([]);
+    const [subCategories, setSubCategories] = useState([]);
 
-   
-    
+
+
 
 
     const handleSubmit = async (e) => {
@@ -26,16 +28,6 @@ const CreatePage = () => {
         // Validate all mandatory fields
         if (!pageName.trim()) {
             toast.error('Please enter page name');
-            return;
-        }
-
-        if (!pageTitle.trim()) {
-            toast.error('Please enter page title');
-            return;
-        }
-
-        if (!pageDescription.trim()) {
-            toast.error('Please enter page description');
             return;
         }
 
@@ -49,31 +41,43 @@ const CreatePage = () => {
             return;
         }
 
-        // Combine domain with user input for page URL
-        const currentDomain = window.location.origin;
-        const fullPageUrl = pageUrl.startsWith('/') ? `${currentDomain}${pageUrl}` : `${currentDomain}/${pageUrl}`;
+        if (!selectedSubCategoryId) {
+            toast.error('Please select sub category');
+            return;
+        }
+
+        if (!pageDescription.trim()) {
+            toast.error('Please enter page description');
+            return;
+        }
+
+        // Validate description length
+        if (pageDescription.trim().length < 10 || pageDescription.trim().length > 200) {
+            toast.error('Page description must be between 10 and 200 characters');
+            return;
+        }
 
         const formData = {
-            page_name:pageName,
-            page_title:pageTitle,
-            page_description:pageDescription,
-            page_url:fullPageUrl,
-            page_category:selectedCategoryId,
+            page_name: pageName,
+            page_title: pageTitle || pageName, // Use page name as title if not provided
+            page_category: parseInt(selectedCategoryId),
+            sub_category: parseInt(selectedSubCategoryId),
+            website: pageUrl, // Send just the page URL slug without domain
+            page_description: pageDescription,
         };
 
         console.log('Submitting form...', formData);
-        // alert('Page created successfully!');
 
         const accessToken = localStorage.getItem("access_token");
         setLoading(true);
-        
+
         try {
             const response = await axios.post(`${baseUrl}/api/v1/pages`, formData, {
-              headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${accessToken}`,
-              },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`,
+                },
             })
             const data = await response.data;
             console.log(data, "data");
@@ -87,6 +91,8 @@ const CreatePage = () => {
                 setPageUrl('');
                 setPageCategory('');
                 setSelectedCategoryId('');
+                setSelectedSubCategoryId('');
+                setSubCategories([]);
                 // Navigate to pages
                 navigate('/pagescomp/mainpages');
             } else {
@@ -125,27 +131,56 @@ const CreatePage = () => {
         }
     };
 
-    const getCategories = async()=>{
-        try{
+    const handleCancel = () => {
+        // Reset all form fields
+        setPageName('');
+        setPageTitle('');
+        setPageDescription('');
+        setPageUrl('');
+        setPageCategory('');
+        setSelectedCategoryId('');
+        setSelectedSubCategoryId('');
+        setSubCategories([]);
+        // Navigate back
+        navigate(-1);
+    };
+
+    const getCategories = async () => {
+        try {
             const res = await axios.get(`${baseUrl}/api/v1/pages/meta`);
 
-            console.log("catt>>",res.data);
-            if(res.data.ok === true){
+            console.log("catt>>", res.data);
+            if (res.data.ok === true) {
                 setCategories(res.data?.data?.categories);
                 console.log(res.data.categories);
             }
         }
-        catch(error){
+        catch (error) {
             console.log(error);
         }
-        finally{
+        finally {
             setLoading(false);
         }
     }
 
-    useEffect(()=>{
+    const getSubCategories = async (categoryId) => {
+        try {
+            const res = await axios.get(`${baseUrl}/api/v1/pages/meta?category_id=${categoryId}`);
+
+            console.log("subcatt>>", res.data);
+            if (res.data.ok === true) {
+                setSubCategories(res.data?.data?.sub_categories || []);
+            }
+        }
+        catch (error) {
+            console.log(error);
+            setSubCategories([]);
+        }
+    }
+
+    useEffect(() => {
         getCategories();
-    },[]);
+    }, []);
 
     return (
         <div className="bg-[#EDF6F9] w-full min-h-screen flex items-center justify-start flex-col">
@@ -155,7 +190,7 @@ const CreatePage = () => {
                     <h1 className="text-2xl font-bold text-[#212121]">My Pages</h1>
                     <div className="flex gap-4 items-center">
                         <button className="border border-[#808080] py-1.5 px-4 rounded-2xl flex items-center gap-2 text-[#808080] text-base font-medium cursor-pointer hover:bg-gray-100 transition">
-                        <MdOutlineAddPhotoAlternate className="text-lg" /> Create Page
+                            <MdOutlineAddPhotoAlternate className="text-lg" /> Create Page
                         </button>
                     </div>
                 </div>
@@ -182,75 +217,39 @@ const CreatePage = () => {
                     <div className="flex flex-col gap-2">
                         <label
                             htmlFor="page-name"
-                            className="text-lg text-black flex items-center gap-2"
+                            className="text-base text-gray-600 font-medium"
                         >
-                            Page Name : <span className="text-red-500">*</span>
+                            Page name
                         </label>
                         <input
                             type="text"
                             id="page-name"
-                            className="w-full p-2 px-4 border border-[#212121] rounded-full"
-                            placeholder="Page Name"
+                            className="w-full p-3 px-4  border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-transparent"
+                            placeholder=""
                             value={pageName}
                             onChange={(e) => setPageName(e.target.value)}
                             required
                         />
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                        <label
-                            htmlFor="page-title"
-                            className="text-lg text-black flex items-center gap-2"
-                        >
-                            Page Title : <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            id="page-title"
-                            className="w-full p-2 px-4 border border-[#212121] rounded-full"
-                            placeholder="Page Title"
-                            value={pageTitle}
-                            onChange={(e) => setPageTitle(e.target.value)}
-                            required
-                        />
-                    </div>
-
-                    {/* Page Description */}
-                    <div className="flex flex-col gap-2">
-                        <label
-                            htmlFor="page-description"
-                            className="text-lg text-black flex items-center gap-2"
-                        >
-                            Page Description : <span className="text-red-500">*</span>
-                        </label>
-                        <textarea
-                            id="page-description"
-                            rows="4"
-                            className="w-full p-2 px-4 border border-[#212121] rounded-xl"
-                            placeholder="Page Description"
-                            value={pageDescription}
-                            onChange={(e) => setPageDescription(e.target.value)}
-                            required
-                        />
+                        <p className="text-sm text-gray-400">Your page title</p>
                     </div>
 
                     {/* Page URL */}
                     <div className="flex flex-col gap-2">
                         <label
                             htmlFor="page-url"
-                            className="text-lg text-black flex items-center gap-2"
+                            className="text-base text-gray-600 font-medium"
                         >
-                            Page URL : <span className="text-red-500">*</span>
+                            Page URL
                         </label>
-                        <div className="flex items-center">
-                            <span className="px-4 py-2 bg-gray-100 border border-r-0 border-[#212121] rounded-l-full text-gray-700 font-medium">
+                        <div className="w-full p-3 px-4  border border-gray-300 rounded-lg flex items-center">
+                            <span className="text-gray-500">
                                 {window.location.origin}/
                             </span>
                             <input
                                 type="text"
                                 id="page-url"
-                                className="flex-1 p-2 px-4 border border-[#212121] rounded-r-full focus:outline-none"
-                                placeholder="page-name"
+                                className="flex-1 bg-transparent border-0 focus:outline-none ml-1"
+                                placeholder=""
                                 value={pageUrl}
                                 onChange={(e) => {
                                     // Remove leading slash if user adds it
@@ -266,26 +265,34 @@ const CreatePage = () => {
                     <div className="flex flex-col gap-2">
                         <label
                             htmlFor="page-category"
-                            className="text-lg text-black flex items-center gap-2"
+                            className="text-base text-gray-600 font-medium"
                         >
-                            Page Category : <span className="text-red-500">*</span>
+                            Page Category
                         </label>
                         <div className="relative">
                             <select
                                 id="page-category"
-                                className="w-full p-2 px-4 border border-[#212121] rounded-full appearance-none cursor-pointer"
+                                className="w-full p-3 px-4  border border-gray-300 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-transparent"
                                 value={selectedCategoryId}
                                 onChange={(e) => {
-                                    const selectedId = parseInt(e.target.value);
+                                    const selectedId = e.target.value;
                                     setSelectedCategoryId(selectedId);
-                                    const selectedCategory = categories.find(cat => cat.id === selectedId);
+                                    const selectedCategory = categories.find(cat => cat.id == selectedId);
                                     setPageCategory(selectedCategory?.name || '');
+                                    // Reset subcategory when category changes
+                                    setSelectedSubCategoryId('');
+                                    // Fetch subcategories
+                                    if (selectedId) {
+                                        getSubCategories(selectedId);
+                                    } else {
+                                        setSubCategories([]);
+                                    }
                                 }}
                                 required
                             >
                                 <option value="">Select category</option>
-                                {categories?.map((category, index) => (
-                                    <option key={index} value={category.id} >
+                                {categories?.map((category) => (
+                                    <option key={category.id} value={category.id}>
                                         {category.name}
                                     </option>
                                 ))}
@@ -308,13 +315,85 @@ const CreatePage = () => {
                         </div>
                     </div>
 
-                    {/* Submit Button */}
-                    <div className="text-center">
+                    {/* Sub Category */}
+                    <div className="flex flex-col gap-2">
+                        <label
+                            htmlFor="sub-category"
+                            className="text-base text-gray-600 font-medium"
+                        >
+                            Sub Category
+                        </label>
+                        <div className="relative">
+                            <select
+                                id="sub-category"
+                                className="w-full p-3 px-4  border border-gray-300 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                                value={selectedSubCategoryId}
+                                onChange={(e) => {
+                                    setSelectedSubCategoryId(e.target.value);
+                                }}
+                                disabled={!selectedCategoryId || subCategories.length === 0}
+                                required
+                            >
+                                <option value="">Select sub category</option>
+                                {subCategories?.map((subCategory) => (
+                                    <option key={subCategory.id} value={subCategory.id}>
+                                        {subCategory.name}
+                                    </option>
+                                ))}
+                            </select>
+                            <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                                <svg
+                                    className="w-5 h-5 text-gray-400"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M19 9l-7 7-7-7"
+                                    />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Page Description */}
+                    <div className="flex flex-col gap-2">
+                        <label
+                            htmlFor="page-description"
+                            className="text-base text-gray-600 font-medium"
+                        >
+                            Page description
+                        </label>
+                        <textarea
+                            id="page-description"
+                            rows="5"
+                            className="w-full p-3 px-4  border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-transparent"
+                            placeholder=""
+                            value={pageDescription}
+                            onChange={(e) => setPageDescription(e.target.value)}
+                            required
+                        />
+                        <p className="text-sm text-gray-400">Your Page description. Between 10 and 200 characters max.</p>
+                    </div>
+
+                    {/* Submit and Cancel Buttons */}
+                    <div className="flex items-center justify-center gap-4 flex-wrap">
+                        <button
+                            type="button"
+                            onClick={handleCancel}
+                            className="w-[16rem] md:w-[15rem] h-[50px] border border-gray-400 text-gray-700 font-semibold text-[15px] md:text-[18px] py-2 px-8 rounded-lg hover:bg-gray-100 transition"
+                        >
+                            Cancel
+                        </button>
                         <button
                             type="submit"
-                            className="w-[16rem] md:w-[20rem] h-[50px] border border-[#A3D36C] text-[#76B82A] font-semibold text-[18px] md:text-[20px] py-2 px-8 rounded-lg hover:bg-[#8BC34B] hover:text-white transition"
+                            disabled={loading}
+                            className="w-[16rem] md:w-[15rem] h-[50px] bg-blue-600 text-white font-semibold text-[15px] md:text-[18px] py-2 px-8 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Publish Page
+                            {loading ? 'Publishing...' : 'Publish Page'}
                         </button>
                     </div>
                 </form>

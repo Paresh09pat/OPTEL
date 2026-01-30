@@ -31,6 +31,7 @@ const MainPageSetting = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [selectedImages, setSelectedImages] = useState({ avatar: null, cover: null });
   
   // Unified form data for all settings
   const [formData, setFormData] = useState({
@@ -138,63 +139,142 @@ const MainPageSetting = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  // Handle image changes from ProfilePictureAndCover component
+  const handleImageChange = (type, file) => {
+    console.log('handleImageChange called:', type, file);
+    setSelectedImages(prev => {
+      const updated = { ...prev, [type]: file };
+      console.log('Updated selectedImages:', updated);
+      return updated;
+    });
+  };
+
   // Save all changes
   const handleSaveAll = async () => {
     try {
       setSaving(true);
       const accessToken = localStorage.getItem('access_token');
       
-      // Build update data matching the API requirements
-      const updateData = {
-        page_name: formData.pageName,
-        page_title: formData.companyName,
-        page_description: formData.about,
-        about: formData.about,
-        website: formData.websiteUrl,
-        phone: formData.phone,
-        address: formData.location,
-      };
-
-      // Add page_category only if it's a valid number
-      if (formData.category && !isNaN(parseInt(formData.category))) {
-        updateData.page_category = parseInt(formData.category);
-      }
-
-      // Add optional fields only if they exist
-      if (formData.subCategory) updateData.sub_category = formData.subCategory;
-      if (formData.callToAction) updateData.call_to_action = formData.callToAction;
-      if (formData.callToTargetUrl) updateData.call_to_target_url = formData.callToTargetUrl;
-      if (formData.canPost) updateData.can_post = formData.canPost;
+      // Check if we have images to upload
+      const hasImages = selectedImages.avatar || selectedImages.cover;
       
-      // Add social links if they exist
-      if (formData.facebook) updateData.facebook = formData.facebook;
-      if (formData.twitter) updateData.twitter = formData.twitter;
-      if (formData.instagram) updateData.instagram = formData.instagram;
-      if (formData.vkontakte) updateData.vkontakte = formData.vkontakte;
-      if (formData.linkedin) updateData.linkedin = formData.linkedin;
-      if (formData.youtube) updateData.youtube = formData.youtube;
-
-      console.log('Saving page data:', updateData);
-      
-      const response = await axios.put(
-        `${baseUrl}/api/v1/pages/${pageId}`,
-        updateData,
-        {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
+      if (hasImages) {
+        // If images are selected, use FormData for multipart upload
+        const formDataToSend = new FormData();
+        
+        // Add all text fields
+        formDataToSend.append('page_name', formData.pageName);
+        formDataToSend.append('page_title', formData.companyName);
+        formDataToSend.append('page_description', formData.about);
+        formDataToSend.append('about', formData.about);
+        formDataToSend.append('website', formData.websiteUrl);
+        formDataToSend.append('phone', formData.phone);
+        formDataToSend.append('address', formData.location);
+        
+        // Add page_category only if it's a valid number
+        if (formData.category && !isNaN(parseInt(formData.category))) {
+          formDataToSend.append('page_category', parseInt(formData.category));
         }
-      );
-
-      console.log('Update response:', response.data);
-
-      if (response.data.api_status === 200 || response.data.ok === true) {
-        toast.success('Page updated successfully!');
-        // Refresh page data to show updated values
-        await fetchPageData();
+        
+        // Add optional fields only if they exist
+        if (formData.subCategory) formDataToSend.append('sub_category', formData.subCategory);
+        if (formData.callToAction) formDataToSend.append('call_to_action', formData.callToAction);
+        if (formData.callToTargetUrl) formDataToSend.append('call_to_target_url', formData.callToTargetUrl);
+        if (formData.canPost) formDataToSend.append('can_post', formData.canPost);
+        
+        // Add social links if they exist
+        if (formData.facebook) formDataToSend.append('facebook', formData.facebook);
+        if (formData.twitter) formDataToSend.append('twitter', formData.twitter);
+        if (formData.instagram) formDataToSend.append('instagram', formData.instagram);
+        if (formData.vkontakte) formDataToSend.append('vkontakte', formData.vkontakte);
+        if (formData.linkedin) formDataToSend.append('linkedin', formData.linkedin);
+        if (formData.youtube) formDataToSend.append('youtube', formData.youtube);
+        
+        // Add images if selected
+        if (selectedImages.avatar) {
+          formDataToSend.append('avatar', selectedImages.avatar);
+        }
+        if (selectedImages.cover) {
+          formDataToSend.append('cover', selectedImages.cover);
+        }
+        
+        console.log('Saving page data with images');
+        
+        const response = await axios.put(
+          `${baseUrl}/api/v1/pages/${pageId}`,
+          formDataToSend,
+          {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'multipart/form-data',
+            },
+          }
+        );
+        
+        console.log('Update response:', response.data);
+        
+        if (response.data.api_status === 200 || response.data.ok === true) {
+          toast.success('Page updated successfully!');
+          // Clear selected images after successful upload
+          setSelectedImages({ avatar: null, cover: null });
+          // Refresh page data to show updated values
+          await fetchPageData();
+        } else {
+          toast.error(response.data.message || 'Failed to update page');
+        }
       } else {
-        toast.error(response.data.message || 'Failed to update page');
+        // No images, use regular JSON request
+        const updateData = {
+          page_name: formData.pageName,
+          page_title: formData.companyName,
+          page_description: formData.about,
+          about: formData.about,
+          website: formData.websiteUrl,
+          phone: formData.phone,
+          address: formData.location,
+        };
+
+        // Add page_category only if it's a valid number
+        if (formData.category && !isNaN(parseInt(formData.category))) {
+          updateData.page_category = parseInt(formData.category);
+        }
+
+        // Add optional fields only if they exist
+        if (formData.subCategory) updateData.sub_category = formData.subCategory;
+        if (formData.callToAction) updateData.call_to_action = formData.callToAction;
+        if (formData.callToTargetUrl) updateData.call_to_target_url = formData.callToTargetUrl;
+        if (formData.canPost) updateData.can_post = formData.canPost;
+        
+        // Add social links if they exist
+        if (formData.facebook) updateData.facebook = formData.facebook;
+        if (formData.twitter) updateData.twitter = formData.twitter;
+        if (formData.instagram) updateData.instagram = formData.instagram;
+        if (formData.vkontakte) updateData.vkontakte = formData.vkontakte;
+        if (formData.linkedin) updateData.linkedin = formData.linkedin;
+        if (formData.youtube) updateData.youtube = formData.youtube;
+
+        console.log('Saving page data:', updateData);
+        
+        const response = await axios.put(
+          `${baseUrl}/api/v1/pages/${pageId}`,
+          updateData,
+          {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        console.log('Update response:', response.data);
+
+        if (response.data.api_status === 200 || response.data.ok === true) {
+          toast.success('Page updated successfully!');
+          // Refresh page data to show updated values
+          await fetchPageData();
+        } else {
+          toast.error(response.data.message || 'Failed to update page');
+        }
       }
     } catch (err) {
       console.error('Error updating page:', err);
@@ -233,7 +313,7 @@ const MainPageSetting = () => {
       case 'social-links':
         return <SocialLinks formData={formData} handleChange={handleChange} />;
       case 'profile-picture-cover':
-        return <ProfilePictureAndCover pageData={pageData} />;
+        return <ProfilePictureAndCover pageData={pageData} onImageChange={handleImageChange} />;
       case 'design':
         return <Design pageData={pageData} />;
       case 'admin':
@@ -348,7 +428,7 @@ const MainPageSetting = () => {
                     key={item.id}
                     onClick={() => setActiveMenuItem(item.id)}
                     className={`w-full flex items-center space-x-3 px-3 py-2 text-sm transition-colors ${activeMenuItem === item.id
-                      ? 'bg-gradient-to-r from-[rgba(96,161,249,1)] to-[rgba(17,83,231,1)] text-white'
+                      ? 'bg-gradient-to-r from-[rgba(17,83,231,1)] to-[rgba(96,161,249,1)] text-white'
                       : 'text-gray-700 hover:bg-gray-100'
                       }`}
                   >

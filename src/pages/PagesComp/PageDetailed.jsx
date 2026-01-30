@@ -30,6 +30,7 @@ const PageDetailed = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [totalPosts, setTotalPosts] = useState(0);
+  const [activeTab, setActiveTab] = useState('posts'); // 'posts', 'about', 'info'
 
   const accessToken = useMemo(() => localStorage.getItem('access_token'), []);
 
@@ -439,11 +440,18 @@ const PageDetailed = () => {
                 )}
               </div>
               <p className="text-gray-500 mb-2">@{page.page_name}</p>
-              {page.category_name && (
-                <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full font-medium mb-3">
-                  {page.category_name}
-                </span>
-              )}
+              <div className="flex items-center gap-2 flex-wrap mb-3">
+                {page.category_name && (
+                  <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full font-medium">
+                    {page.category_name}
+                  </span>
+                )}
+                {page.sub_category_name && (
+                  <span className="inline-block px-3 py-1 bg-purple-100 text-purple-700 text-sm rounded-full font-medium">
+                    {page.sub_category_name}
+                  </span>
+                )}
+              </div>
 
               <div className="flex items-center gap-6 flex-wrap text-sm">
                 <div className="flex items-center gap-2 text-gray-700">

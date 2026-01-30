@@ -20,7 +20,7 @@ const Admin = () => {
         <input
           type="text"
           placeholder="Search"
-          className="w-full md:w-64 px-3 py-2 pl-10 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500"
+          className="w-full md:w-64 px-3 py-2 pl-10 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-[#1153e7]"
         />
       </div>
 
