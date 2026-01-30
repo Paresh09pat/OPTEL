@@ -1419,7 +1419,7 @@ const Home = () => {
 
             <div className="mb-4 md:mb-6 mt-4 flex flex-col gap-4 md:gap-6 smooth-content-transition ">
               {newFeeds?.map((post) => {
-                const postId = post?.post_id;
+                const postId = post?.id || post?.post_id;
                 // Get comments for this post from state, with fallback to ref
                 const commentsForPost = postComments[postId] || [];
 
@@ -1430,6 +1430,7 @@ const Home = () => {
 
                   <PostCard
                     key={postId}
+                    id={postId}
                     post_id={postId}
 
                     user={post?.author || post?.publisher}

@@ -13,7 +13,9 @@ import Avatar from '../../Avatar';
 import SharePopup from './SharePopup';
 import Poll from './Poll';
 import ReactionDetailsModal from './ReactionDetailsModal';
-const PostCard = ({ user, content, image, video, audio, file, likes, comments, shares, saves, timeAgo, post_id, handleLike, handleDislike, isLiked, commentsData, savePost, isSaved, blog, multipleImages, hasMultipleImages, reportPost, hidePost, iframelink, postfile, postFileName, getNewsFeed, openImagePopup, handleReaction, postReaction, postReactionCounts, currentReaction, userReaction, postType, pollOptions, handlePollVote, isPollLoading, colorId, colorData, feeling, isFeelingPost, likedUsers }) => {
+const PostCard = ({ id, user, content, image, video, audio, file, likes, comments, shares, saves, timeAgo, post_id, handleLike, handleDislike, isLiked, commentsData, savePost, isSaved, blog, multipleImages, hasMultipleImages, reportPost, hidePost, iframelink, postfile, postFileName, getNewsFeed, openImagePopup, handleReaction, postReaction, postReactionCounts, currentReaction, userReaction, postType, pollOptions, handlePollVote, isPollLoading, colorId, colorData, feeling, isFeelingPost, likedUsers }) => {
+  // Use id as the primary identifier, fallback to post_id for backward compatibility
+  const postIdentifier = id || post_id;
   const navigate = useNavigate();
   const { userData } = useUser();
   const [clickedComments, setClickedComments] = useState(false);
@@ -65,6 +67,8 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
   const [isVideoMuted, setIsVideoMuted] = useState(true);
   // Add state for video progress
   const [videoProgress, setVideoProgress] = useState(0);
+  // Add state for image slider
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const buildAuthHeaders = useCallback(() => {
     const accessToken = localStorage.getItem("access_token");
     const headers = {
@@ -75,6 +79,27 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
       headers.Authorization = `Bearer ${accessToken}`;
     }
     return headers;
+  }, []);
+
+  // Reset image slider when post changes
+  useEffect(() => {
+    setCurrentImageIndex(0);
+  }, [post_id]);
+
+  // Image slider navigation handlers
+  const handlePrevImage = useCallback((e) => {
+    e.stopPropagation();
+    setCurrentImageIndex(prev => prev === 0 ? multipleImages.length - 1 : prev - 1);
+  }, [multipleImages]);
+
+  const handleNextImage = useCallback((e) => {
+    e.stopPropagation();
+    setCurrentImageIndex(prev => prev === multipleImages.length - 1 ? 0 : prev + 1);
+  }, [multipleImages]);
+
+  const handleDotClick = useCallback((index, e) => {
+    e.stopPropagation();
+    setCurrentImageIndex(index);
   }, []);
 
   console.log("postID",post_id)
@@ -256,7 +281,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
     }
     try {
       const response = await axios.get(
-        `${baseUrl}/api/v1/posts/${post_id}/comments?per_page=20&include_replies=true&include_replies_data=true`,
+        `${baseUrl}/api/v1/posts/${postIdentifier}/comments?per_page=20&include_replies=true&include_replies_data=true`,
         {
           // params: { per_page: 20 },
           headers: buildAuthHeaders()
@@ -305,7 +330,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
         setIsLoadingComments(false);
       }
     }
-  }, [post_id, buildAuthHeaders]);
+  }, [postIdentifier, buildAuthHeaders]);
 
   const fetchReactionDetails = useCallback(async () => {
     setIsLoadingReactionDetails(true);
@@ -328,7 +353,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
     // Set the data immediately - no need to fetch again
     setReactionDetails(reactionData);
     setIsLoadingReactionDetails(false);
-  }, [post_id, postReactionCounts, likedUsers]);
+  }, [postIdentifier, postReactionCounts, likedUsers]);
 
   const handleClickComments = useCallback(async () => {
     try {
@@ -354,8 +379,8 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
   }, []);
 
   const handleDislikeClick = useCallback(() => {
-    handleDislike(post_id);
-  }, [handleDislike, post_id]);
+    handleDislike(postIdentifier);
+  }, [handleDislike, postIdentifier]);
 
   // Get reaction emoji based on reaction type
   const getReactionEmoji = (reactionType) => {
@@ -458,7 +483,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
   };
 
   const handleReactionClick = (reactionType) => {
-    handleReaction(post_id, reactionType);
+    handleReaction(postIdentifier, reactionType);
     setShowReactionPopup(false);
   };
 
@@ -539,26 +564,26 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
   }, [showSharePopup]);
 
   const handleSavePost = useCallback(() => {
-    savePost(post_id);
+    savePost(postIdentifier);
     setShowOptionsMenu(false);
-  }, [savePost, post_id]);
+  }, [savePost, postIdentifier]);
 
   const handleReportPost = useCallback(() => {
-    reportPost(post_id);
+    reportPost(postIdentifier);
     setShowOptionsMenu(false);
-  }, [post_id]);
+  }, [postIdentifier]);
 
   const handleOpenInNewTab = useCallback(() => {
-    window.open(`/post/${post_id}`, '_blank');
+    window.open(`/post/${postIdentifier}`, '_blank');
     setShowOptionsMenu(false);
-  }, [post_id]);
+  }, [postIdentifier]);
 
   const handleHidePost = useCallback(async () => {
     setShowOptionsMenu(false);
     try {
       const response = await axios.post(
         `${baseUrl}/api/v1/posts/hide`,
-        { post_id: post_id },
+        { post_id: postIdentifier },
         {
           headers: buildAuthHeaders()
         }
@@ -579,7 +604,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
       const errorMsg = error?.response?.data?.message || 'Error hiding post';
       toast.error(errorMsg);
     }
-  }, [post_id, buildAuthHeaders, getNewsFeed]);
+  }, [postIdentifier, buildAuthHeaders, getNewsFeed]);
 
   const handleDeletePost = useCallback(async () => {
     setShowOptionsMenu(false);
@@ -591,7 +616,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
     setLoading(true);
     try {
       const response = await axios.delete(
-        `${baseUrl}/api/v1/posts/${post_id}`,
+        `${baseUrl}/api/v1/posts/${postIdentifier}`,
         {
           headers: buildAuthHeaders()
         }
@@ -613,25 +638,25 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
     } finally {
       setLoading(false);
     }
-  }, [post_id, buildAuthHeaders, getNewsFeed]);
+  }, [postIdentifier, buildAuthHeaders, getNewsFeed]);
 
   const handleShareToTimeline = useCallback(() => {
-    console.log('Share to timeline:', post_id);
+    console.log('Share to timeline:', postIdentifier);
     // Don't close popup
-  }, [post_id]);
+  }, [postIdentifier]);
 
   const handleShareToPage = useCallback(() => {
-    console.log('Share to page:', post_id);
+    console.log('Share to page:', postIdentifier);
     // Don't close popup
-  }, [post_id]);
+  }, [postIdentifier]);
 
   const handleShareToGroup = useCallback(() => {
-    console.log('Share to group:', post_id);
+    console.log('Share to group:', postIdentifier);
     // Don't close popup
-  }, [post_id]);
+  }, [postIdentifier]);
 
   const handleSocialShare = useCallback((platform) => {
-    const postUrl = `${window.location.origin}/post/${post_id}`;
+    const postUrl = `${window.location.origin}/post/${postIdentifier}`;
     const postText = content || 'Check out this post!';
 
     let shareUrl = '';
@@ -667,7 +692,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
 
     window.open(shareUrl, '_blank', 'width=600,height=400');
     // Don't close popup after sharing
-  }, [post_id, content]);
+  }, [postIdentifier, content]);
 
   const handleCommentPost = useCallback(async () => {
     if (!commentInput.trim()) {
@@ -680,7 +705,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
 
     try {
       const response = await axios.post(
-        `${baseUrl}/api/v1/posts/${post_id}/comments`,
+        `${baseUrl}/api/v1/posts/${postIdentifier}/comments`,
         { text: comment },
         {
           headers: buildAuthHeaders()
@@ -700,7 +725,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
       console.error('Error posting comment:', error);
       toast.error(error?.response?.data?.message || error?.message || 'Something went wrong while posting your comment.');
     }
-  }, [post_id, commentInput, buildAuthHeaders, fetchPostComments]);
+  }, [postIdentifier, commentInput, buildAuthHeaders, fetchPostComments]);
 
   // Handle emoji selection for main comment input
   const onEmojiClick = useCallback((emojiData) => {
@@ -1290,7 +1315,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
 
 
   return (
-    <div className="bg-white rounded-xl overflow-hidden border border-[#d3d1d1] smooth-content-transition max-w-full" key={post_id}>
+    <div className="bg-white rounded-xl overflow-hidden border border-[#d3d1d1] smooth-content-transition max-w-full" key={postIdentifier}>
       <div className="p-4 flex items-center justify-between">
         <div
           className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity"
@@ -1446,48 +1471,81 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
         </div>
       )}
 
-      {/* Handle multiple images */}
+      {/* Handle multiple images - Slider/Carousel */}
       {multipleImages && multipleImages.length > 0 && (
-        <div className="w-full bg-gray-50">
-          <div className={`grid gap-1 ${multipleImages.length === 1 ? 'grid-cols-1' : multipleImages.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`} style={{ width: '100%', height: 'auto', display: 'grid' }}>
-            {multipleImages.map((img, index) => (
-              <div key={img.id || index} className={`relative overflow-hidden ${multipleImages.length === 1 ? 'col-span-1' : multipleImages.length === 2 ? 'col-span-1' : index === 0 ? 'col-span-2 row-span-2' : 'col-span-1'}`} style={{ minHeight: '200px', maxHeight: multipleImages.length === 1 ? '600px' : '400px' }}>
-                <img
-                  src={img.image || img.image_org}
-                  alt={`Post image ${index + 1}`}
-                  className="w-full h-full cursor-pointer hover:scale-105 transition-transform duration-200"
-                  style={{ 
-                    objectFit: multipleImages.length === 1 ? 'contain' : 'cover',
-                    minHeight: '200px',
-                    maxHeight: multipleImages.length === 1 ? '600px' : '400px',
-                    width: '100%',
-                    height: '100%',
-                    display: 'block',
-                    maxWidth: '100%'
-                  }}
-                  onClick={() => {
-                    if (openImagePopup && multipleImages) {
-                      openImagePopup(multipleImages, index);
-                    }
-                  }}
-                  onLoad={() => {
-                    // console.log('Image loaded successfully:', img.image || img.image_org);
-                  }}
-                  onError={(e) => {
-                    console.error('Image failed to load:', img.image || img.image_org);
-                    // Show a placeholder instead of hiding the image
-                    e.target.src = '/perimg.png';
-                    e.target.className = 'w-full h-full object-cover opacity-50';
-                  }}
-                />
-                {/* Show overlay with count for images beyond the first few */}
-                {index === 2 && multipleImages.length > 3 && (
-                  <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                    <span className="text-white text-2xl font-bold">+{multipleImages.length - 3}</span>
-                  </div>
-                )}
-              </div>
-            ))}
+        <div className="relative w-full bg-gray-50 overflow-hidden" style={{ maxHeight: '600px' }}>
+          {/* Image Container */}
+          <div className="relative w-full h-full flex items-center justify-center" style={{ minHeight: '400px', maxHeight: '600px' }}>
+            <img
+              src={multipleImages[currentImageIndex]?.image || multipleImages[currentImageIndex]?.image_org}
+              alt={`Post image ${currentImageIndex + 1}`}
+              className="w-full h-full cursor-pointer transition-opacity duration-300"
+              style={{ 
+                objectFit: 'contain',
+                maxHeight: '600px',
+                width: '100%',
+                height: 'auto',
+                display: 'block'
+              }}
+              onClick={() => {
+                if (openImagePopup && multipleImages) {
+                  openImagePopup(multipleImages, currentImageIndex);
+                }
+              }}
+              onError={(e) => {
+                console.error('Image failed to load:', multipleImages[currentImageIndex]?.image);
+                e.target.src = '/perimg.png';
+                e.target.className = 'w-full h-full object-cover opacity-50';
+              }}
+            />
+
+            {/* Navigation Arrows - Only show if more than 1 image */}
+            {multipleImages.length > 1 && (
+              <>
+                {/* Previous Button */}
+                <button
+                  onClick={handlePrevImage}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-all duration-200"
+                  aria-label="Previous image"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+
+                {/* Next Button */}
+                <button
+                  onClick={handleNextImage}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-all duration-200"
+                  aria-label="Next image"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+
+                {/* Image Counter */}
+                <div className="absolute top-4 right-4 bg-black/60 text-white px-3 py-1 rounded-full text-sm font-medium">
+                  {currentImageIndex + 1} / {multipleImages.length}
+                </div>
+
+                {/* Dot Indicators */}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                  {multipleImages.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={(e) => handleDotClick(index, e)}
+                      className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                        index === currentImageIndex 
+                          ? 'bg-white w-6' 
+                          : 'bg-white/50 hover:bg-white/75'
+                      }`}
+                      aria-label={`Go to image ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -2572,7 +2630,7 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
       <SharePopup
         isOpen={showSharePopup}
         onClose={() => setShowSharePopup(false)}
-        postId={post_id}
+        postId={postIdentifier}
         content={content}
         onShareToTimeline={handleShareToTimeline}
         onShareToPage={handleShareToPage}
