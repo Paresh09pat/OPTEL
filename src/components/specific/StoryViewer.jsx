@@ -490,25 +490,31 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
   return (
     <div
       className="fixed inset-0 z-[60] bg-black flex items-center justify-center"
+      onClick={(e) => {
+        // Close modal when clicking on the backdrop (not on the story content)
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
       onMouseDown={(e) => {
-        // Don't pause if clicking on delete modal
-        if (!deleteModalOpen) {
+        // Don't pause if clicking on delete modal or backdrop
+        if (!deleteModalOpen && e.target !== e.currentTarget) {
           handleMouseDown();
         }
       }}
       onMouseUp={(e) => {
-        // Don't resume if delete modal is open
-        if (!deleteModalOpen) {
+        // Don't resume if delete modal is open or clicking on backdrop
+        if (!deleteModalOpen && e.target !== e.currentTarget) {
           handleMouseUp();
         }
       }}
       onTouchStart={(e) => {
-        if (!deleteModalOpen) {
+        if (!deleteModalOpen && e.target !== e.currentTarget) {
           handleMouseDown();
         }
       }}
       onTouchEnd={(e) => {
-        if (!deleteModalOpen) {
+        if (!deleteModalOpen && e.target !== e.currentTarget) {
           handleMouseUp();
         }
       }}
@@ -548,7 +554,10 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
 
 
         {/* Story Container */}
-        <div className="relative w-full max-w-md h-full flex flex-col items-center justify-center">
+        <div 
+          className="relative w-full max-w-md h-full flex flex-col items-center justify-center"
+          onClick={(e) => e.stopPropagation()}
+        >
           {/* Story Image Container - Centered */}
           <div className="relative w-full h-full flex items-center justify-center">
             {/* Progress Bars - Instagram Style */}
