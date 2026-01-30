@@ -10,10 +10,12 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
     groupUrl: 'https://ouptel.com/',
     groupType: 'public',
     joinPrivacy: 'public',
-    groupCategory: ''
+    groupCategory: '',
+    groupSubCategory: ''
   });
 
   const [categories, setCategories] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
   const [privacyOptions, setPrivacyOptions] = useState([]);
   const [joinPrivacyOptions, setJoinPrivacyOptions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -71,6 +73,31 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
     }
   };
 
+  // Fetch subcategories based on selected category
+  const fetchSubCategories = async (categoryId) => {
+    try {
+      const accessToken = localStorage.getItem('access_token');
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_URL}/api/v1/groups/meta?category_id=${categoryId}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          }
+        }
+      );
+
+      if (response.data && response.data.ok && response.data.data) {
+        setSubCategories(response.data.data.sub_categories || []);
+      } else {
+        setSubCategories([]);
+      }
+    } catch (err) {
+      console.error('Error fetching subcategories:', err);
+      setSubCategories([]);
+    }
+  };
+
   // Load meta data when component mounts
   useEffect(() => {
     fetchGroupMeta();
@@ -90,6 +117,11 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
       return;
     }
 
+    if (!formData.groupSubCategory) {
+      toast.error('Please select a sub category');
+      return;
+    }
+
     try {
       setSubmitting(true);
       
@@ -99,6 +131,7 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
         group_name: formData.groupName.trim(),
         group_title: formData.groupName.trim(), // Using same as group_name for now
         category: parseInt(formData.groupCategory),
+        sub_category: parseInt(formData.groupSubCategory),
         privacy: formData.groupType,
         join_privacy: formData.joinPrivacy
       };
@@ -137,8 +170,10 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
             groupUrl: 'https://ouptel.com/',
             groupType: 'public',
             joinPrivacy: 'public',
-            groupCategory: categories.length > 0 ? categories[0].id.toString() : ''
+            groupCategory: categories.length > 0 ? categories[0].id.toString() : '',
+            groupSubCategory: ''
           });
+          setSubCategories([]);
           setSubmitSuccess(false);
           
           // Close modal after success
@@ -214,11 +249,11 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
         </div>
 
         {/* Form */}
-        <div className="p-8 md:p-12 space-y-8">
+        <div className="p-8 md:p-12 space-y-6">
           {/* Group Name */}
-          <div className="space-y-3">
-            <label className="text-xl font-semibold text-gray-900 flex items-center gap-1">
-              Group Name : <span className="text-red-500">*</span>
+          <div className="flex flex-col gap-2">
+            <label className="text-base text-gray-600 font-medium">
+              Group Name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -226,14 +261,14 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
               value={formData.groupName}
               onChange={handleChange}
               placeholder="Group Name"
-              className="w-full px-6 py-4 text-lg border-2 border-gray-900 rounded-full focus:outline-none focus:border-blue-600 transition-colors placeholder-gray-400"
+              className="w-full p-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-transparent"
             />
           </div>
 
           {/* Group Description */}
-          <div className="space-y-3">
-            <label className="text-xl font-semibold text-gray-900">
-              Group Description :
+          <div className="flex flex-col gap-2">
+            <label className="text-base text-gray-600 font-medium">
+              Group Description
             </label>
             <textarea
               name="groupDescription"
@@ -241,14 +276,14 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
               onChange={handleChange}
               placeholder="Group Description"
               rows={5}
-              className="w-full px-6 py-4 text-lg border-2 border-gray-900 rounded-3xl focus:outline-none focus:border-blue-600 transition-colors resize-none placeholder-gray-400"
+              className="w-full p-3 px-4 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-transparent"
             />
           </div>
 
           {/* Group URL */}
-          <div className="space-y-3">
-            <label className="text-xl font-semibold text-gray-900 flex items-center gap-1">
-              Group URL : <span className="text-red-500">*</span>
+          <div className="flex flex-col gap-2">
+            <label className="text-base text-gray-600 font-medium">
+              Group URL <span className="text-red-500">*</span>
             </label>
             <input
               type="url"
@@ -256,21 +291,21 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
               value={formData.groupUrl}
               onChange={handleChange}
               placeholder="https://ouptel.com/"
-              className="w-full px-6 py-4 text-lg border-2 border-gray-900 rounded-full focus:outline-none focus:border-blue-600 transition-colors placeholder-gray-400"
+              className="w-full p-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-transparent"
             />
           </div>
 
           {/* Group Type */}
-          <div className="space-y-3">
-            <label className="text-xl font-semibold text-gray-900 flex items-center gap-1">
-              Group type : <span className="text-red-500">*</span>
+          <div className="flex flex-col gap-2">
+            <label className="text-base text-gray-600 font-medium">
+              Group type <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <select
                 name="groupType"
                 value={formData.groupType}
                 onChange={handleChange}
-                className="w-full px-6 py-4 text-lg border-2 border-gray-900 rounded-full focus:outline-none focus:border-blue-600 transition-colors appearance-none bg-white text-gray-700 cursor-pointer"
+                className="w-full p-3 px-4 border border-gray-300 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-transparent"
               >
                 {privacyOptions.map((option) => (
                   <option key={option} value={option}>
@@ -278,21 +313,35 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
                   </option>
                 ))}
               </select>
-              <FiChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-600 pointer-events-none" />
+              <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                <svg
+                  className="w-5 h-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </div>
             </div>
           </div>
 
           {/* Join Privacy */}
-          <div className="space-y-3">
-            <label className="text-xl font-semibold text-gray-900 flex items-center gap-1">
-              Join Privacy : <span className="text-red-500">*</span>
+          <div className="flex flex-col gap-2">
+            <label className="text-base text-gray-600 font-medium">
+              Join Privacy <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <select
                 name="joinPrivacy"
                 value={formData.joinPrivacy}
                 onChange={handleChange}
-                className="w-full px-6 py-4 text-lg border-2 border-gray-900 rounded-full focus:outline-none focus:border-blue-600 transition-colors appearance-none bg-white text-gray-700 cursor-pointer"
+                className="w-full p-3 px-4 border border-gray-300 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-transparent"
               >
                 {joinPrivacyOptions.map((option) => (
                   <option key={option} value={option}>
@@ -300,29 +349,109 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
                   </option>
                 ))}
               </select>
-              <FiChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-600 pointer-events-none" />
+              <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                <svg
+                  className="w-5 h-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </div>
             </div>
           </div>
 
           {/* Group Category */}
-          <div className="space-y-3">
-            <label className="text-xl font-semibold text-gray-900 flex items-center gap-1">
+          <div className="flex flex-col gap-2">
+            <label className="text-base text-gray-600 font-medium">
               Group Category <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <select
                 name="groupCategory"
                 value={formData.groupCategory}
-                onChange={handleChange}
-                className="w-full px-6 py-4 text-lg border-2 border-gray-900 rounded-full focus:outline-none focus:border-blue-600 transition-colors appearance-none bg-white text-gray-700 cursor-pointer"
+                onChange={(e) => {
+                  const selectedId = e.target.value;
+                  setFormData(prev => ({
+                    ...prev,
+                    groupCategory: selectedId,
+                    groupSubCategory: '' // Reset subcategory when category changes
+                  }));
+                  // Fetch subcategories
+                  if (selectedId) {
+                    fetchSubCategories(selectedId);
+                  } else {
+                    setSubCategories([]);
+                  }
+                }}
+                className="w-full p-3 px-4 border border-gray-300 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-transparent"
               >
+                <option value="">Select category</option>
                 {categories.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.name}
                   </option>
                 ))}
               </select>
-              <FiChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-600 pointer-events-none" />
+              <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                <svg
+                  className="w-5 h-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          {/* Group Sub Category */}
+          <div className="flex flex-col gap-2">
+            <label className="text-base text-gray-600 font-medium">
+              Sub Category <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <select
+                name="groupSubCategory"
+                value={formData.groupSubCategory}
+                onChange={handleChange}
+                disabled={!formData.groupCategory || subCategories.length === 0}
+                className="w-full p-3 px-4 border border-gray-300 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <option value="">Select sub category</option>
+                {subCategories.map((subCategory) => (
+                  <option key={subCategory.id} value={subCategory.id}>
+                    {subCategory.name}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                <svg
+                  className="w-5 h-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </div>
             </div>
           </div>
 
@@ -340,17 +469,17 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className={`px-32 py-4 text-2xl font-semibold rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl ${
+              className={`w-[16rem] md:w-[15rem] h-[50px] font-semibold text-[15px] md:text-[18px] rounded-lg transition-all duration-300 ${
                 submitting
                   ? 'bg-gray-400 text-white cursor-not-allowed'
                   : submitSuccess
-                  ? 'bg-green-600 text-white border-3 border-green-600'
-                  : 'text-blue-600 bg-white border-3 border-blue-600 hover:bg-blue-600 hover:text-white'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
             >
               {submitting ? (
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                <div className="flex items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                   Creating...
                 </div>
               ) : submitSuccess ? (
