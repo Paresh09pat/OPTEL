@@ -145,6 +145,13 @@ const Chatbox = ({ onClose, isMobile = false }) => {
     }
   }, [storyUpdateTrigger]);
 
+  // Fetch stories on component mount
+  useEffect(() => {
+    fetchUserStories();
+    fetchNotificationCount();
+    fetchFriendRequestsCount();
+  }, []);
+
   const fetchNotificationCount = async () => {
     try {
       const accessToken = localStorage.getItem("access_token");
@@ -310,42 +317,47 @@ const Chatbox = ({ onClose, isMobile = false }) => {
         <div className={`w-full xl:p-1 lg:p-1 rounded-lg bg-white shadow-[#EDF6F9] shadow-md border border-[#d3d1d1] sticky top-5 z-10 profile-section  ${notificationsOpen ? 'min-h-[70vh]' : ''}`}>
           <div className="flex xl:p-1 lg:p-1 items-center justify-between">
             <div className="relative">
-              {/* Story indicator border - Instagram style gradient ring with click animation */}
+              {/* Story indicator border - Instagram style gradient ring */}
               {userStories && userStories.length > 0 && (
                 <div
-                  className="absolute inset-[-3px] rounded-full z-[-1]"
+                  className="absolute inset-[-5px] rounded-full z-0 p-[3px]"
                   style={{
-                    background: 'conic-gradient(from 0deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%, #f09433 100%)',
-                    animation: storyBorderAnimating ? 'spin-gradient-once 0.6s ease-out' : 'none',
+                    background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
                   }}
-                />
+                >
+                  <div className="w-full h-full rounded-full bg-white p-[2px]">
+                    <div className="w-full h-full rounded-full bg-[#EDF6F9]" />
+                  </div>
+                </div>
               )}
               <div
-                className="relative w-[58px] h-[58px] rounded-full bg-[#EDF6F9] border-[4px] border-inset border-[#ffffff] shadow-md shadow-blue-400 cursor-pointer hover:opacity-90 transition-opacity z-10"
+                className="relative w-[58px] h-[58px] rounded-full bg-white p-[2px] shadow-lg cursor-pointer hover:opacity-90 transition-opacity z-10"
                 onClick={handleProfileImageClick}
               >
-                {userData?.avatar_url ? (
-                  <img
-                    src={userData.avatar_url || "https://img.freepik.com/premium-vector/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4866.jpg?semt=ais_hybrid&w=740&q=80"}
-                    alt="Profile"
-                    className="w-full h-full object-cover rounded-full"
-                    onError={(e) => {
-                      e.target.src = "https://img.freepik.com/premium-vector/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4866.jpg?semt=ais_hybrid&w=740&q=80";
-                    }}
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gray-300 flex items-center justify-center">
-                    <FaUser className="text-gray-600 text-xl" />
-                  </div>
-                )}
+                <div className="w-full h-full rounded-full overflow-hidden bg-[#EDF6F9]">
+                  {userData?.avatar_url ? (
+                    <img
+                      src={userData.avatar_url || "https://img.freepik.com/premium-vector/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4866.jpg?semt=ais_hybrid&w=740&q=80"}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.src = "https://img.freepik.com/premium-vector/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4866.jpg?semt=ais_hybrid&w=740&q=80";
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-300 flex items-center justify-center">
+                      <FaUser className="text-gray-600 text-xl" />
+                    </div>
+                  )}
+                </div>
                 <div
-                  className="grid place-items-center absolute -right-1 -bottom-1 bg-black w-5 h-5 rounded-full border-inset border-[2px] shadow-2xl shadow-blue-400 border-white cursor-pointer hover:bg-gray-800 transition-colors z-10"
+                  className="grid place-items-center absolute -right-1 -bottom-1 bg-blue-600 w-6 h-6 rounded-full border-[2px] border-white cursor-pointer hover:bg-blue-700 transition-colors z-20 shadow-md"
                   onClick={(e) => {
                     e.stopPropagation();
                     setStoryModalOpen(true);
                   }}
                 >
-                  <FaPlus className='text-white size-[10px]' />
+                  <FaPlus className='text-white size-[12px]' />
                 </div>
               </div>
             </div>

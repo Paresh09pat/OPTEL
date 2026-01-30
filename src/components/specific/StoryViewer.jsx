@@ -549,8 +549,8 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
 
         {/* Story Container */}
         <div className="relative w-full max-w-md h-full flex flex-col items-center justify-center">
-          {/* Story Image Container */}
-          <div className="relative w-full flex-shrink-0">
+          {/* Story Image Container - Centered */}
+          <div className="relative w-full h-full flex items-center justify-center">
             {/* Progress Bars - Instagram Style */}
             <div className="absolute top-0 left-0 right-0 flex gap-2 z-50 p-3">
               {stories.map((story, index) => (
@@ -577,9 +577,34 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
               ))}
             </div>
 
-            {/* Story Counter */}
-            <div className="absolute top-14 left-3 text-white text-xs font-semibold z-50 drop-shadow-lg">
-              {currentStoryIndex + 1} / {stories.length}
+            {/* User Info - Top Left (Instagram Style) */}
+            <div 
+              className="absolute top-14 left-3 flex items-center gap-3 z-50 cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => {
+                const userId = currentUser?.user_id || currentUser?.id;
+                if (userId) {
+                  onClose();
+                  navigate(`/profile/${userId}`);
+                }
+              }}
+            >
+              <img
+                src={currentUser?.avatar_url || currentUser?.avatar || '/user.png'}
+                alt={currentUser?.name || currentUser?.username || 'User'}
+                className="w-10 h-10 rounded-full border-2 border-white object-cover"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = '/user.png';
+                }}
+              />
+              <div>
+                <h3 className="text-white font-semibold drop-shadow-lg text-sm">
+                  {currentUser?.name || currentUser?.username || 'Unknown User'}
+                </h3>
+                <p className="text-white/80 text-xs drop-shadow-md">
+                  {currentStory?.time_text || 'Just now'}
+                </p>
+              </div>
             </div>
 
             {/* Views Button - Only for current user's stories */}
@@ -598,163 +623,137 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
               </button>
             )}
 
-            {/* Top gradient overlay for better progress bar visibility */}
-            <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-black/60 via-black/30 to-transparent pointer-events-none z-40" />
+            {/* Top gradient overlay for better visibility */}
+            <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/70 via-black/30 to-transparent pointer-events-none z-40" />
 
+            {/* Centered Story Image */}
             <img
               src={currentStory?.thumbnail}
               alt={currentStory?.title || 'Story'}
-              className="w-full h-auto max-h-[70vh] object-contain"
+              className="w-full h-full object-contain"
             />
-          </div>
 
-          {/* Story Info Section - Below Image */}
-          <div className="w-full bg-black/90 backdrop-blur-md p-6 mt-auto">
-            <div 
-              className="flex items-center gap-3 mb-3 cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={() => {
-                // Navigate to user profile
-                const userId = currentUser?.user_id || currentUser?.id;
-                if (userId) {
-                  onClose(); // Close story viewer first
-                  navigate(`/profile/${userId}`);
-                }
-              }}
-            >
-              <img
-                src={currentUser?.avatar_url || currentUser?.avatar || '/user.png'}
-                alt={currentUser?.name || currentUser?.username || 'User'}
-                className="w-10 h-10 rounded-full border-2 border-white object-cover"
-                onError={(e) => {
-                  e.target.onerror = null; // Prevent infinite loop
-                  e.target.src = '/user.png'; // Fallback to default avatar
-                }}
-              />
-              <div>
-                <h3 className="text-white font-semibold drop-shadow-lg">{currentUser?.name || currentUser?.username || 'Unknown User'}</h3>
-                <p className="text-white/80 text-sm drop-shadow-md">{currentStory?.time_text || 'Just now'}</p>
-              </div>
-            </div>
-            {currentStory?.title && (
-              <h4 className="text-white font-medium mb-2 drop-shadow-lg">{currentStory.title}</h4>
-            )}
-            {currentStory?.description && (
-              <div className="text-white/90 text-sm drop-shadow-md">
-                {isDescriptionExpanded ? (
-                  <div>
-                    <p className="whitespace-pre-wrap break-words">{currentStory.description}</p>
-                    {currentStory.description.length > 100 && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIsDescriptionExpanded(false);
-                        }}
-                        onMouseDown={(e) => e.stopPropagation()}
-                        onMouseUp={(e) => e.stopPropagation()}
-                        className="text-white/70 hover:text-white font-medium mt-1 inline-block"
-                      >
-                        Show less
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <div>
-                    <p className="line-clamp-2">
-                      {currentStory.description.length > 100
-                        ? `${currentStory.description.substring(0, 100)}...`
-                        : currentStory.description}
-                    </p>
-                    {currentStory.description.length > 100 && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIsDescriptionExpanded(true);
-                        }}
-                        onMouseDown={(e) => e.stopPropagation()}
-                        onMouseUp={(e) => e.stopPropagation()}
-                        className="text-white/70 hover:text-white font-medium mt-1 inline-block"
-                      >
-                        Read more
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Reaction Button */}
-            <div className="relative mt-4 flex items-center gap-2">
-              <button
-                data-story-reaction-button
-                className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-black/30 hover:bg-black/50 transition-all duration-200 cursor-pointer ${storyReactions[currentStory?.id] ? 'text-blue-400' : 'text-white'
-                  }`}
-                onClick={(e) => {
-                  e.stopPropagation(); // Prevent triggering story pause/play
-                  // Pause story when clicking reaction button
-                  setIsPaused(true);
-                  stopProgress();
-                  // Toggle popup visibility
-                  setShowReactionPopup(!showReactionPopup);
-                }}
-                onMouseDown={(e) => e.stopPropagation()} // Prevent triggering story pause
-                onMouseUp={(e) => e.stopPropagation()} // Prevent triggering story play
-                disabled={reacting}
-              >
-                {storyReactions[currentStory?.id] ? (
-                  <>
-                    <span className="text-xl">{getReactionEmoji(storyReactions[currentStory?.id])}</span>
-                    <span className="text-sm font-medium">{getReactionLabel(storyReactions[currentStory?.id])}</span>
-                  </>
-                ) : (
-                  <>
-                    <ThumbsUp className="w-5 h-5" />
-                    <span className="text-sm font-medium">React</span>
-                  </>
-                )}
-              </button>
-
-              {/* Reaction Popup */}
-              {showReactionPopup && (
-                <div
-                  className="absolute bottom-full left-0 mb-2 z-20"
-                  data-story-reaction-popup
-                  onMouseLeave={handlePopupMouseLeave}
-                  onMouseDown={(e) => e.stopPropagation()} // Prevent triggering story pause
-                  onMouseUp={(e) => e.stopPropagation()} // Prevent triggering story play
-                >
-                  <div className="bg-white rounded-full shadow-2xl border-2 border-gray-300 p-3 flex items-center space-x-2">
-                    {[
-                      { emoji: '👍', type: 1, label: 'Like' },
-                      { emoji: '❤️', type: 2, label: 'Love' },
-                      { emoji: '😂', type: 3, label: 'Haha' },
-                      { emoji: '😮', type: 4, label: 'Wow' },
-                      { emoji: '😢', type: 5, label: 'Sad' },
-                      { emoji: '😡', type: 6, label: 'Angry' }
-                    ].map((reaction) => {
-                      const isCurrentReaction = storyReactions[currentStory?.id] === reaction.type;
-                      return (
+            {/* Bottom Info Section - Description and Reactions */}
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent backdrop-blur-sm p-6 z-50">
+              {currentStory?.title && (
+                <h4 className="text-white font-medium mb-2 drop-shadow-lg">{currentStory.title}</h4>
+              )}
+              {currentStory?.description && (
+                <div className="text-white/90 text-sm drop-shadow-md mb-4">
+                  {isDescriptionExpanded ? (
+                    <div>
+                      <p className="whitespace-pre-wrap break-words">{currentStory.description}</p>
+                      {currentStory.description.length > 100 && (
                         <button
-                          key={reaction.type}
                           onClick={(e) => {
-                            e.stopPropagation(); // Prevent triggering story pause/play
-                            handleReactionClick(reaction.type);
+                            e.stopPropagation();
+                            setIsDescriptionExpanded(false);
                           }}
-                          onMouseDown={(e) => e.stopPropagation()} // Prevent triggering story pause
-                          onMouseUp={(e) => e.stopPropagation()} // Prevent triggering story play
-                          className={`w-10 h-10 flex items-center justify-center text-2xl hover:scale-125 transition-all duration-200 rounded-full relative ${isCurrentReaction
-                            ? 'bg-blue-100 ring-2 ring-blue-500'
-                            : 'hover:bg-gray-100'
-                            }`}
-                          title={`${reaction.label}${isCurrentReaction ? ' - Current' : ''}`}
-                          disabled={reacting}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onMouseUp={(e) => e.stopPropagation()}
+                          className="text-white/70 hover:text-white font-medium mt-1 inline-block"
                         >
-                          {reaction.emoji}
+                          Show less
                         </button>
-                      );
-                    })}
-                  </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="line-clamp-2">
+                        {currentStory.description.length > 100
+                          ? `${currentStory.description.substring(0, 100)}...`
+                          : currentStory.description}
+                      </p>
+                      {currentStory.description.length > 100 && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIsDescriptionExpanded(true);
+                          }}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onMouseUp={(e) => e.stopPropagation()}
+                          className="text-white/70 hover:text-white font-medium mt-1 inline-block"
+                        >
+                          Read more
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
+
+              {/* Reaction Button */}
+              <div className="relative flex items-center gap-2">
+                <button
+                  data-story-reaction-button
+                  className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-black/30 hover:bg-black/50 transition-all duration-200 cursor-pointer ${storyReactions[currentStory?.id] ? 'text-blue-400' : 'text-white'
+                    }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsPaused(true);
+                    stopProgress();
+                    setShowReactionPopup(!showReactionPopup);
+                  }}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onMouseUp={(e) => e.stopPropagation()}
+                  disabled={reacting}
+                >
+                  {storyReactions[currentStory?.id] ? (
+                    <>
+                      <span className="text-xl">{getReactionEmoji(storyReactions[currentStory?.id])}</span>
+                      <span className="text-sm font-medium">{getReactionLabel(storyReactions[currentStory?.id])}</span>
+                    </>
+                  ) : (
+                    <>
+                      <ThumbsUp className="w-5 h-5" />
+                      <span className="text-sm font-medium">React</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Reaction Popup */}
+                {showReactionPopup && (
+                  <div
+                    className="absolute bottom-full left-0 mb-2 z-20"
+                    data-story-reaction-popup
+                    onMouseLeave={handlePopupMouseLeave}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onMouseUp={(e) => e.stopPropagation()}
+                  >
+                    <div className="bg-white rounded-full shadow-2xl border-2 border-gray-300 p-3 flex items-center space-x-2">
+                      {[
+                        { emoji: '👍', type: 1, label: 'Like' },
+                        { emoji: '❤️', type: 2, label: 'Love' },
+                        { emoji: '😂', type: 3, label: 'Haha' },
+                        { emoji: '😮', type: 4, label: 'Wow' },
+                        { emoji: '😢', type: 5, label: 'Sad' },
+                        { emoji: '😡', type: 6, label: 'Angry' }
+                      ].map((reaction) => {
+                        const isCurrentReaction = storyReactions[currentStory?.id] === reaction.type;
+                        return (
+                          <button
+                            key={reaction.type}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleReactionClick(reaction.type);
+                            }}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onMouseUp={(e) => e.stopPropagation()}
+                            className={`w-10 h-10 flex items-center justify-center text-2xl hover:scale-125 transition-all duration-200 rounded-full relative ${isCurrentReaction
+                              ? 'bg-blue-100 ring-2 ring-blue-500'
+                              : 'hover:bg-gray-100'
+                              }`}
+                            title={`${reaction.label}${isCurrentReaction ? ' - Current' : ''}`}
+                            disabled={reacting}
+                          >
+                            {reaction.emoji}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

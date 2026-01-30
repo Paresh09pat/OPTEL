@@ -1,18 +1,16 @@
-import React, { useCallback, useEffect, useState, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
+import axios from 'axios';
+import { toast } from 'react-toastify';
+import Loader from '../components/loading/Loader';
 import CreatePostSection from '../components/specific/Home/CreatePostSection';
-import FeedCard from '../components/specific/Home/FeedCard';
 import InfiniteFriendSuggestions from '../components/specific/Home/InfiniteFriendSuggestions';
 import PostCard from '../components/specific/Home/PostCard';
 import QuickActionsSection from '../components/specific/Home/QuickActionSection';
-import ScrollableSection from '../components/specific/Home/ScrollableSection';
 import StoriesSection from '../components/specific/Home/StoriesSection';
-import Loader from '../components/loading/Loader';
 import StoryViewer from '../components/specific/StoryViewer';
-import { useUser } from '../context/UserContext';
-import axios from 'axios';
-import { toast } from 'react-toastify';
 import { dummyFriendSuggestions } from '../constants/friendSuggestions';
+import { useUser } from '../context/UserContext';
 
 const feedCards = [
   {
@@ -1420,7 +1418,7 @@ const Home = () => {
 
             <div className="mb-4 md:mb-6 mt-4 flex flex-col gap-4 md:gap-6 smooth-content-transition ">
               {newFeeds?.map((post) => {
-                const postId = post?.id;
+                const postId = post?.post_id;
                 // Get comments for this post from state, with fallback to ref
                 const commentsForPost = postComments[postId] || [];
 

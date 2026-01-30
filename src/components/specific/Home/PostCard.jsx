@@ -76,6 +76,8 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
     }
     return headers;
   }, []);
+
+  console.log("postID",post_id)
   const findParentCommentId = useCallback((replyId) => {
     const normalizedReplyId = Number(replyId);
     for (const [commentId, replies] of Object.entries(commentReplies)) {
@@ -588,9 +590,8 @@ const PostCard = ({ user, content, image, video, audio, file, likes, comments, s
 
     setLoading(true);
     try {
-      const response = await axios.post(
-        `${baseUrl}/api/v1/posts/delete`,
-        { post_id: post_id },
+      const response = await axios.delete(
+        `${baseUrl}/api/v1/posts/${post_id}`,
         {
           headers: buildAuthHeaders()
         }

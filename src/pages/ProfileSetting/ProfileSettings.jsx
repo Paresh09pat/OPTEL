@@ -399,7 +399,7 @@ const ProfileSettings = () => {
               value={formData.aboutMe}
               onChange={handleChange}
               rows={4}
-              className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
 
@@ -420,7 +420,7 @@ const ProfileSettings = () => {
                 value={formData.location}
                 onChange={handleChange}
                 placeholder="Location"
-                className="flex-1 px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="flex-1 px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
               <button
                 type="button"
@@ -454,7 +454,7 @@ const ProfileSettings = () => {
               value={formData.school}
               onChange={handleChange}
               placeholder="School"
-              className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
             <div className="mt-2">
               <label className="flex items-center cursor-pointer">
@@ -532,7 +532,7 @@ const ProfileSettings = () => {
               value={formData.college}
               onChange={handleChange}
               placeholder="College Name"
-              className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
 
@@ -545,7 +545,7 @@ const ProfileSettings = () => {
               value={formData.university}
               onChange={handleChange}
               placeholder="University Name"
-              className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
         </div>
@@ -554,8 +554,8 @@ const ProfileSettings = () => {
             <button 
               type="submit"
               disabled={updateLoading}
-              className={`w-32 mx-auto bg-blue-500 text-white py-2 px-4 rounded-lg font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 text-sm ${
-                updateLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-600 cursor-pointer'
+              className={`w-32 mx-auto bg-[#1153e7] text-white py-2 px-4 rounded-lg font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-[#1153e7] focus:ring-offset-2 text-sm ${
+                updateLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#0d3fb8] cursor-pointer'
               }`}
             >
               {updateLoading ? (
