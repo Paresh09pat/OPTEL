@@ -88,8 +88,9 @@ const Profile = () => {
             );
 
             const data = response.data;
-            if (data.ok === true && data.data) {
-                setFriends(data.data.friends || []);
+            // The friends data is directly in data.data array
+            if (data.ok === true && Array.isArray(data.data)) {
+                setFriends(data.data);
             }
         } catch (err) {
             console.error('Error fetching friends:', err);
