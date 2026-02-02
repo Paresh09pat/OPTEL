@@ -14,9 +14,14 @@ import SharePopup from './SharePopup';
 import Poll from './Poll';
 import ReactionDetailsModal from './ReactionDetailsModal';
 import ReportPostModal from '../../ReportPostModal';
+import DeletePostModal from './DeletePostModal';
 const PostCard = ({ id, user, content, image, video, audio, file, likes, comments, shares, saves, timeAgo, post_id, handleLike, handleDislike, isLiked, commentsData, savePost, isSaved, blog, multipleImages, hasMultipleImages, reportPost, hidePost, iframelink, postfile, postFileName, getNewsFeed, openImagePopup, handleReaction, postReaction, postReactionCounts, currentReaction, userReaction, postType, pollOptions, handlePollVote, isPollLoading, colorId, colorData, feeling, isFeelingPost, likedUsers }) => {
-  // Use id as the primary identifier, fallback to post_id for backward compatibility
+  // Use id as the primary identifier for most operations (comments, reactions, etc.)
+  // Use post_id for post-specific operations (delete post, hide post, etc.)
   const postIdentifier = id || post_id;
+  const postIdForPostOperations = post_id || id;
+  
+  console.log('PostCard IDs:', { id, post_id, postIdentifier, postIdForPostOperations });
   const navigate = useNavigate();
   const { userData } = useUser();
   const [clickedComments, setClickedComments] = useState(false);
@@ -72,6 +77,8 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   // Add state for report modal
   const [showReportModal, setShowReportModal] = useState(false);
+  // Add state for delete post modal
+  const [showDeletePostModal, setShowDeletePostModal] = useState(false);
   const buildAuthHeaders = useCallback(() => {
     const accessToken = localStorage.getItem("access_token");
     const headers = {
@@ -105,7 +112,6 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
     setCurrentImageIndex(index);
   }, []);
 
-  console.log("postID",post_id)
   const findParentCommentId = useCallback((replyId) => {
     const normalizedReplyId = Number(replyId);
     for (const [commentId, replies] of Object.entries(commentReplies)) {
@@ -567,9 +573,9 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
   }, [showSharePopup]);
 
   const handleSavePost = useCallback(() => {
-    savePost(postIdentifier);
+    savePost(postIdForPostOperations);
     setShowOptionsMenu(false);
-  }, [savePost, postIdentifier]);
+  }, [savePost, postIdForPostOperations]);
 
   const handleReportPost = useCallback(async () => {
     setShowOptionsMenu(false);
@@ -580,7 +586,7 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
     setLoading(true);
     try {
       const response = await axios.post(
-        `${baseUrl}/api/v1/posts/${postIdentifier}/report`,
+        `${baseUrl}/api/v1/posts/${postIdForPostOperations}/report`,
         {
           reason: reason,
           text: text
@@ -604,7 +610,7 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
     } finally {
       setLoading(false);
     }
-  }, [postIdentifier, buildAuthHeaders]);
+  }, [postIdForPostOperations, buildAuthHeaders]);
 
   const handleOpenInNewTab = useCallback(() => {
     window.open(`/post/${postIdentifier}`, '_blank');
@@ -641,15 +647,12 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
 
   const handleDeletePost = useCallback(async () => {
     setShowOptionsMenu(false);
+    setShowDeletePostModal(false);
     
-    // Show confirmation before deleting
-    const confirmed = window.confirm('Are you sure you want to delete this post? This action cannot be undone.');
-    if (!confirmed) return;
-
     setLoading(true);
     try {
       const response = await axios.delete(
-        `${baseUrl}/api/v1/posts/${postIdentifier}`,
+        `${baseUrl}/api/v1/posts/${postIdForPostOperations}`,
         {
           headers: buildAuthHeaders()
         }
@@ -671,7 +674,12 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
     } finally {
       setLoading(false);
     }
-  }, [postIdentifier, buildAuthHeaders, getNewsFeed]);
+  }, [postIdForPostOperations, buildAuthHeaders, getNewsFeed]);
+
+  const handleDeletePostClick = useCallback(() => {
+    setShowOptionsMenu(false);
+    setShowDeletePostModal(true);
+  }, []);
 
   const handleShareToTimeline = useCallback(() => {
     console.log('Share to timeline:', postIdentifier);
@@ -1425,7 +1433,7 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
               {/* Delete Post - Only show for post owner */}
               {(user?.user_id === currentUserId || user?.id === currentUserId || String(user?.user_id) === String(currentUserId) || String(user?.id) === String(currentUserId)) && (
                 <button
-                  onClick={handleDeletePost}
+                  onClick={handleDeletePostClick}
                   className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 transition-colors text-sm font-medium cursor-pointer border-t border-gray-200"
                 >
                   Delete Post
@@ -1872,10 +1880,16 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
             <span className="text-sm font-medium">Share</span>
           </button>
 
-          {/* change the color of bookmark button when saved like we see like button */}
-
-          <button className="flex items-center space-x-2 text-gray-600 hover:text-yellow-500 transition-colors cursor-pointer" onClick={() => savePost(post_id)} >
-            {isSaved ? <IoBookmark className="w-5 h-5 text-blue-900" /> : <Bookmark className="w-5 h-5 text-blue-900 hover:text-blue-500 transition-colors hover:scale-105  " />}
+          {/* Bookmark button - changes color when saved */}
+          <button 
+            className="flex items-center space-x-2 transition-colors cursor-pointer" 
+            onClick={() => savePost(postIdForPostOperations)}
+          >
+            {isSaved ? (
+              <IoBookmark className="w-5 h-5 text-yellow-500 hover:text-yellow-600 transition-colors" />
+            ) : (
+              <Bookmark className="w-5 h-5 text-gray-600 hover:text-yellow-500 transition-colors hover:scale-105" />
+            )}
           </button>
         </div>
         {clickedComments && (
@@ -2684,6 +2698,13 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
         isOpen={showReportModal}
         onClose={() => setShowReportModal(false)}
         onSubmit={handleReportSubmit}
+        isLoading={loading}
+      />
+
+      <DeletePostModal
+        isOpen={showDeletePostModal}
+        onClose={() => setShowDeletePostModal(false)}
+        onConfirm={handleDeletePost}
         isLoading={loading}
       />
 

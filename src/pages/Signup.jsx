@@ -359,7 +359,7 @@ const Signup = () => {
                     <label htmlFor="accept-terms" className="text-gray-600">
                       By creating an account, you agree to our{' '}
                       <Link to="/terms-and-conditions" className="text-blue-600 hover:text-blue-800 hover:underline font-medium transition-colors">
-                        Terms of Service
+                        Terms & Condition
                       </Link>
                       {' '}and{' '}
                       <Link to="/privacy-policy" className="text-blue-600 hover:text-blue-800 hover:underline font-medium transition-colors">

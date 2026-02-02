@@ -594,30 +594,40 @@ const Home = () => {
 
       const data = await response.data;
       if (data?.ok === true) {
+        // Get the new saved state from API response
+        const newSavedState = data?.data?.is_saved !== undefined ? data.data.is_saved : !wasSaved;
+        
         // Update the saved state
         setSavedPosts(prev => {
           const newSavedPosts = new Set(prev);
-          if (wasSaved) {
-            newSavedPosts.delete(post_id);
-          } else {
+          if (newSavedState) {
             newSavedPosts.add(post_id);
+          } else {
+            newSavedPosts.delete(post_id);
           }
           // Save to localStorage
           localStorage.setItem("saved_posts", JSON.stringify([...newSavedPosts]));
           return newSavedPosts;
         });
 
-        // Update the saved state in newFeeds
+        // Update the saved state in newFeeds - check both id and post_id
         setNewFeeds(prev =>
-          prev.map(post =>
-            post.id === post_id
-              ? { ...post, is_post_saved: !wasSaved }
-              : post
-          )
+          prev.map(post => {
+            const matchesPost = post.id === post_id || post.post_id === post_id;
+            return matchesPost
+              ? { ...post, is_post_saved: newSavedState }
+              : post;
+          })
         );
+        
+        // Show success message
+        toast.success(data?.message || (newSavedState ? 'Post saved successfully' : 'Post unsaved successfully'));
       } else {
+        toast.error(data?.message || 'Failed to save post');
       }
     } catch (error) {
+      console.error('Error saving post:', error);
+      toast.error(error?.response?.data?.message || 'Error saving post');
     } finally {
       setLoading(false);
     }
@@ -1251,72 +1261,25 @@ const Home = () => {
     setLoading(true);
     try {
       const accessToken = localStorage.getItem("access_token");
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/stories/view-all`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/stories/user-stories`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken}`,
           "Accept": "application/json"
         },
+        body: JSON.stringify({
+          limit: 20,
+          offset: 0
+        }),
       });
 
       const data = await response.json();
 
       if (data?.api_status === 200 && data?.stories && Array.isArray(data.stories)) {
-        // Get current timestamp
-        const now = Math.floor(Date.now() / 1000);
-
-        // Group stories by user_id and filter out expired stories
-        const storiesByUser = {};
-
-        data.stories.forEach(story => {
-          // Check if story is expired
-          const expireTimestamp = typeof story.expire === 'string' ? parseInt(story.expire, 10) : story.expire;
-          if (expireTimestamp && expireTimestamp < now) {
-            return; // Skip expired stories
-          }
-
-          const userId = story.user_id;
-
-          if (!storiesByUser[userId]) {
-            storiesByUser[userId] = {
-              user_id: userId,
-              id: userId,
-              username: story.user_data?.username || story.user_data?.name || 'User',
-              first_name: story.user_data?.name || story.user_data?.username || 'User',
-              last_name: '',
-              avatar: story.user_data?.avatar || '',
-              avatar_url: story.user_data?.avatar_url || story.user_data?.avatar || '/perimg.png',
-              verified: story.user_data?.verified || false,
-              stories: []
-            };
-          }
-
-          // Transform story data to match StoryViewer expectations
-          const postedTimestamp = typeof story.posted === 'string' ? parseInt(story.posted, 10) : story.posted;
-          const transformedStory = {
-            id: story.id,
-            thumbnail: story.thumbnail,
-            title: story.title || '',
-            description: story.description || '',
-            posted: postedTimestamp,
-            expire: expireTimestamp,
-            time_text: formatTimeAgo(postedTimestamp),
-            user_reaction: null // Will be fetched when viewing if needed
-          };
-
-          storiesByUser[userId].stories.push(transformedStory);
-        });
-
-        // Convert object to array, filter out users with no stories, and sort stories by posted time (newest first)
-        const groupedStories = Object.values(storiesByUser)
-          .filter(user => user.stories.length > 0) // Only include users with active stories
-          .map(user => ({
-            ...user,
-            stories: user.stories.sort((a, b) => (b.posted || 0) - (a.posted || 0))
-          }));
-
-        setAllUsersStories(groupedStories);
+        // The user-stories API already returns stories grouped by user with the correct structure
+        // Each item has: user_id, username, name, avatar, avatar_url, verified, stories[]
+        setAllUsersStories(data.stories);
       } else {
         setAllUsersStories([]);
       }
@@ -1448,9 +1411,9 @@ const Home = () => {
 
 
                   <PostCard
-                    key={postId}
-                    id={postId}
-                    post_id={postId}
+                    key={post?.id || postId}
+                    id={post?.id || postId}
+                    post_id={post?.post_id || postId}
 
                     user={post?.author || post?.publisher}
                     content={post?.post_text || post?.postText}

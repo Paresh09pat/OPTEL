@@ -1,12 +1,20 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { FaTimes, FaChevronLeft, FaChevronRight, FaTrash } from 'react-icons/fa';
 import { toast } from 'react-toastify';
-import { ThumbsUp, Eye } from 'lucide-react';
+import { ThumbsUp, Eye, Play, Pause } from 'lucide-react';
 import DeleteStoryModal from './DeleteStoryModal';
 import { baseUrl } from '../../utils/constant';
 import axios from 'axios';
 import { useUser } from '../../context/UserContext';
 import { useNavigate } from 'react-router-dom';
+
+// Helper function to format time (seconds to MM:SS)
+const formatTime = (seconds) => {
+  if (!seconds || isNaN(seconds)) return '0:00';
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
 
 const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, isCurrentUserStories = false }) => {
   const { notifyStoryUpdate } = useUser();
@@ -31,6 +39,12 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
   const [viewsCount, setViewsCount] = useState(0);
   // Description expansion state
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  // Video ref and state
+  const videoRef = useRef(null);
+  const [videoDuration, setVideoDuration] = useState(null);
+  const [videoCurrentTime, setVideoCurrentTime] = useState(0);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(true); // Start as true to assume playing
+  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
 
   // Keep refs in sync
   useEffect(() => {
@@ -71,12 +85,18 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
     }
   }, [stopProgress]);
 
-  // Handle progress bar
+  // Handle progress bar - syncs with video playback for video stories
   const startProgress = useCallback(() => {
     stopProgress();
     if (isPaused || deleteModalOpen) return;
 
-    const duration = 5000; // 5 seconds per story
+    // For video stories, progress is handled by video timeupdate event
+    if (currentStory?.type === 'video') {
+      return; // Don't use interval-based progress for videos
+    }
+
+    // For image stories, use interval-based progress
+    const duration = 5000; // 5 seconds for images
     const interval = 50; // Update every 50ms for smoother animation
     const increment = (100 / duration) * interval;
 
@@ -90,7 +110,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
         return newProgress;
       });
     }, interval);
-  }, [isPaused, deleteModalOpen, stopProgress, nextStory]);
+  }, [isPaused, deleteModalOpen, stopProgress, nextStory, currentStory]);
 
   // Build auth headers
   const buildAuthHeaders = useCallback(() => {
@@ -196,6 +216,12 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
   const handleStoryReaction = useCallback(async (storyId, reactionType) => {
     if (!storyId || reacting) return;
 
+    // Pause video if it's playing
+    const wasVideoPlaying = isVideoPlaying;
+    if (videoRef.current && currentStory?.type === 'video') {
+      videoRef.current.pause();
+    }
+
     setReacting(true);
     try {
       const response = await axios.post(
@@ -229,40 +255,33 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
           toast.success(`${getReactionLabel(reactionType)} story!`);
         }
         setShowReactionPopup(false);
-        // Resume story after reaction
-        setIsPaused(false);
-        if (isOpen && stories && stories.length > 0) {
-          startProgress();
+        
+        // Resume video if it was playing before
+        if (videoRef.current && currentStory?.type === 'video' && wasVideoPlaying) {
+          videoRef.current.play();
         }
       } else {
         toast.error(data?.message || 'Failed to react to story');
-        // Resume story even if reaction failed
-        setIsPaused(false);
-        if (isOpen && stories && stories.length > 0) {
-          startProgress();
+        // Resume video if it was playing before
+        if (videoRef.current && currentStory?.type === 'video' && wasVideoPlaying) {
+          videoRef.current.play();
         }
       }
     } catch (error) {
       console.error('Error reacting to story:', error);
       toast.error(error?.response?.data?.message || error?.message || 'Something went wrong while reacting to the story.');
-      // Resume story even if error occurred
-      setIsPaused(false);
-      if (isOpen && stories && stories.length > 0) {
-        startProgress();
+      // Resume video if it was playing before
+      if (videoRef.current && currentStory?.type === 'video' && wasVideoPlaying) {
+        videoRef.current.play();
       }
     } finally {
       setReacting(false);
     }
-  }, [buildAuthHeaders, reacting, isOpen, stories, startProgress]);
+  }, [buildAuthHeaders, reacting, currentStory, isVideoPlaying]);
 
   // Handle popup close
   const handlePopupMouseLeave = () => {
     setShowReactionPopup(false);
-    // Resume story when leaving popup
-    setIsPaused(false);
-    if (isOpen && stories && stories.length > 0) {
-      startProgress();
-    }
   };
 
   const handleReactionClick = (reactionType) => {
@@ -274,11 +293,6 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
   const handleClickOutside = (e) => {
     if (showReactionPopup && !e.target.closest('[data-story-reaction-popup]') && !e.target.closest('[data-story-reaction-button]')) {
       setShowReactionPopup(false);
-      // Resume story when clicking outside reaction area
-      setIsPaused(false);
-      if (isOpen && stories && stories.length > 0) {
-        startProgress();
-      }
     }
   };
 
@@ -307,6 +321,8 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
       setIsPaused(false);
       setShowReactionPopup(false);
       setIsDescriptionExpanded(false);
+      setIsVideoPlaying(true); // Assume video will play
+      
       // Initialize reactions from story data if available
       const initialReactions = {};
       stories.forEach(story => {
@@ -315,6 +331,15 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
         }
       });
       setStoryReactions(initialReactions);
+      
+      // Try to play video after a short delay if it's a video story
+      setTimeout(() => {
+        if (videoRef.current && stories[0]?.type === 'video') {
+          videoRef.current.play().catch(err => {
+            console.log('Auto-play prevented, will play on user interaction:', err);
+          });
+        }
+      }, 100);
     } else {
       stopProgress();
       setProgress(0);
@@ -334,6 +359,10 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
       setProgress(0);
       setShowReactionPopup(false); // Close reaction popup when story changes
       setIsDescriptionExpanded(false); // Reset description expansion when story changes
+      setIsVideoLoaded(false); // Reset video loaded state
+      setVideoDuration(null); // Reset video duration
+      setVideoCurrentTime(0); // Reset video current time
+      setIsVideoPlaying(true); // Reset to playing state (optimistic)
 
       let markSeenTimer = null;
       let progressTimer = null;
@@ -347,35 +376,137 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
         }, 500); // 500ms delay to ensure story is displayed
       }
 
-      // Small delay to ensure state is updated, then start progress
-      progressTimer = setTimeout(() => {
-        startProgress();
-      }, 50);
+      // For image stories, start progress immediately
+      // For video stories, progress is handled by video timeupdate event
+      if (currentStory?.type !== 'video') {
+        progressTimer = setTimeout(() => {
+          startProgress();
+        }, 50);
+      }
 
       // Return cleanup function that clears both timers
       return () => {
         if (markSeenTimer) clearTimeout(markSeenTimer);
         if (progressTimer) clearTimeout(progressTimer);
         stopProgress();
+        // Pause video if it's playing
+        if (videoRef.current) {
+          videoRef.current.pause();
+          videoRef.current.currentTime = 0;
+        }
       };
     }
 
     return () => {
       stopProgress();
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.currentTime = 0;
+      }
     };
   }, [currentStoryIndex, isOpen, isPaused, deleteModalOpen, startProgress, stopProgress, stories, markStoryAsSeen]);
 
   const handleMouseDown = () => {
+    // Don't pause on mouse down for video stories - use play/pause button instead
+    if (currentStory?.type === 'video') {
+      return;
+    }
     setIsPaused(true);
     stopProgress();
   };
 
   const handleMouseUp = () => {
+    // Don't resume on mouse up for video stories
+    if (currentStory?.type === 'video') {
+      return;
+    }
     setIsPaused(false);
     if (isOpen && stories && stories.length > 0) {
       startProgress();
     }
   };
+
+  // Toggle video play/pause
+  const toggleVideoPlayPause = useCallback(() => {
+    if (videoRef.current) {
+      if (isVideoPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+    }
+  }, [isVideoPlaying]);
+
+  // Handle video loaded metadata - get duration and start playing
+  const handleVideoLoadedMetadata = useCallback(() => {
+    if (videoRef.current) {
+      const duration = videoRef.current.duration;
+      setVideoDuration(duration);
+      setIsVideoLoaded(true);
+      
+      // Force auto-play the video
+      const playPromise = videoRef.current.play();
+      
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setIsVideoPlaying(true);
+            console.log('Video auto-play successful');
+          })
+          .catch(err => {
+            console.error('Error auto-playing video:', err);
+            setIsVideoPlaying(false);
+            // Try to play with muted if autoplay fails
+            videoRef.current.muted = true;
+            videoRef.current.play()
+              .then(() => {
+                setIsVideoPlaying(true);
+                console.log('Video playing muted');
+              })
+              .catch(e => {
+                console.error('Failed to play even muted:', e);
+              });
+          });
+      }
+    }
+  }, []);
+
+  // Handle video time update - update progress bar
+  const handleVideoTimeUpdate = useCallback(() => {
+    if (videoRef.current) {
+      const currentTime = videoRef.current.currentTime;
+      const duration = videoRef.current.duration;
+      
+      setVideoCurrentTime(currentTime);
+      
+      // Update videoDuration if not set yet
+      if (!videoDuration && duration) {
+        setVideoDuration(duration);
+      }
+      
+      // Update progress bar based on video playback
+      if (duration) {
+        const progressPercent = (currentTime / duration) * 100;
+        setProgress(progressPercent);
+      }
+    }
+  }, [videoDuration]);
+
+  // Handle video ended - move to next story
+  const handleVideoEnded = useCallback(() => {
+    setIsVideoPlaying(false);
+    nextStory();
+  }, [nextStory]);
+
+  // Handle video play event
+  const handleVideoPlay = useCallback(() => {
+    setIsVideoPlaying(true);
+  }, []);
+
+  // Handle video pause event
+  const handleVideoPause = useCallback(() => {
+    setIsVideoPlaying(false);
+  }, []);
 
   // Open delete confirmation modal
   const handleDeleteClick = () => {
@@ -561,34 +692,40 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
           {/* Story Image Container - Centered */}
           <div className="relative w-full h-full flex items-center justify-center">
             {/* Progress Bars - Instagram Style */}
-            <div className="absolute top-0 left-0 right-0 flex gap-2 z-50 p-3">
-              {stories.map((story, index) => (
-                <div
-                  key={story.id}
-                  className="flex-1 h-2 bg-gray-800/60 rounded-sm overflow-hidden border border-white/20"
-                >
+            <div className="absolute top-0 left-0 right-0 z-50 p-3">
+              {/* Story Progress Bars */}
+              <div className="flex gap-2 mb-2">
+                {stories.map((story, index) => (
                   <div
-                    className="h-full bg-white rounded-sm"
-                    style={{
-                      width: index < currentStoryIndex
-                        ? '100%'
-                        : index === currentStoryIndex
-                          ? `${progress}%`
-                          : '0%',
-                      transition: index === currentStoryIndex && !isPaused && !deleteModalOpen
-                        ? 'width 0.05s linear'
-                        : index < currentStoryIndex
-                          ? 'width 0.3s ease-out'
-                          : 'none',
-                    }}
-                  />
-                </div>
-              ))}
+                    key={story.id}
+                    className="flex-1 h-1 bg-gray-800/60 rounded-sm overflow-hidden border border-white/20"
+                  >
+                    <div
+                      className="h-full bg-white rounded-sm"
+                      style={{
+                        width: index < currentStoryIndex
+                          ? '100%'
+                          : index === currentStoryIndex
+                            ? `${progress}%`
+                            : '0%',
+                        transition: index === currentStoryIndex && !isPaused && !deleteModalOpen
+                          ? 'width 0.05s linear'
+                          : index < currentStoryIndex
+                            ? 'width 0.3s ease-out'
+                            : 'none',
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* Video Timeline - Only for video stories */}
+           
             </div>
 
             {/* User Info - Top Left (Instagram Style) */}
             <div 
-              className="absolute top-14 left-3 flex items-center gap-3 z-50 cursor-pointer hover:opacity-80 transition-opacity"
+              className="absolute top-20 left-3 flex items-center gap-3 z-50 cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => {
                 const userId = currentUser?.user_id || currentUser?.id;
                 if (userId) {
@@ -625,7 +762,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
                   fetchStoryViews(currentStory.id);
                   setShowViewsModal(true);
                 }}
-                className="absolute top-14 right-3 flex items-center gap-1.5 text-white text-xs font-semibold z-50 bg-black/40 hover:bg-black/60 px-2.5 py-1.5 rounded-full transition-colors backdrop-blur-sm"
+                className="absolute top-20 right-3 flex items-center gap-1.5 text-white text-xs font-semibold z-50 bg-black/40 hover:bg-black/60 px-2.5 py-1.5 rounded-full transition-colors backdrop-blur-sm"
               >
                 <Eye className="w-3.5 h-3.5" />
                 <span>{currentStory?.views || viewsCount || 0}</span>
@@ -635,12 +772,71 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
             {/* Top gradient overlay for better visibility */}
             <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/70 via-black/30 to-transparent pointer-events-none z-40" />
 
-            {/* Centered Story Image */}
-            <img
-              src={currentStory?.thumbnail}
-              alt={currentStory?.title || 'Story'}
-              className="w-full h-full object-contain"
-            />
+            {/* Centered Story Media - Image or Video */}
+            {currentStory?.type === 'video' ? (
+              <div className="relative w-full max-h-[70vh] flex items-center justify-center">
+                <video
+                  ref={videoRef}
+                  src={currentStory?.media_url}
+                  className="w-full max-h-[70vh] object-contain cursor-pointer"
+                  playsInline
+                  autoPlay
+                  preload="auto"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleVideoPlayPause();
+                  }}
+                  onLoadedMetadata={handleVideoLoadedMetadata}
+                  onLoadedData={() => {
+                    // Try to play when data is loaded
+                    if (videoRef.current && !isVideoPlaying) {
+                      videoRef.current.play().catch(err => {
+                        console.log('Play on loaded data failed:', err);
+                      });
+                    }
+                  }}
+                  onCanPlay={() => {
+                    // Try to play when video can play
+                    if (videoRef.current && !isVideoPlaying) {
+                      videoRef.current.play().catch(err => {
+                        console.log('Play on can play failed:', err);
+                      });
+                    }
+                  }}
+                  onTimeUpdate={handleVideoTimeUpdate}
+                  onEnded={handleVideoEnded}
+                  onPlay={handleVideoPlay}
+                  onPause={handleVideoPause}
+                  onError={(e) => {
+                    console.error('Error loading video:', e);
+                    toast.error('Failed to load video');
+                  }}
+                />
+                
+                {/* Play Icon Overlay - Shows when video is paused */}
+                {!isVideoPlaying && (
+                  <div 
+                    className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (videoRef.current) {
+                        videoRef.current.play();
+                      }
+                    }}
+                  >
+                    <div className="bg-black/60 backdrop-blur-sm rounded-full p-4 pointer-events-auto cursor-pointer">
+                      <Play className="w-12 h-12 text-white" fill="white" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <img
+                src={currentStory?.thumbnail || currentStory?.media_url}
+                alt={currentStory?.title || 'Story'}
+                className="w-full h-full object-contain"
+              />
+            )}
 
             {/* Bottom Info Section - Description and Reactions */}
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent backdrop-blur-sm p-6 z-50">
@@ -699,8 +895,10 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
                     }`}
                   onClick={(e) => {
                     e.stopPropagation();
-                    setIsPaused(true);
-                    stopProgress();
+                    // Pause video when opening reaction popup
+                    if (videoRef.current && currentStory?.type === 'video') {
+                      videoRef.current.pause();
+                    }
                     setShowReactionPopup(!showReactionPopup);
                   }}
                   onMouseDown={(e) => e.stopPropagation()}

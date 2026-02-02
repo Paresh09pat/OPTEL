@@ -1,17 +1,22 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const PrivacyPolicy = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6 sm:p-8">
         <div className="mb-6">
-          <Link to="/" className="text-blue-600 hover:text-blue-800 flex items-center gap-2 mb-4">
+          <button 
+            onClick={() => navigate(-1)} 
+            className="text-blue-600 hover:text-blue-800 flex items-center gap-2 mb-4"
+          >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            Back to Home
-          </Link>
+            Back
+          </button>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Ouptel.com विस्तृत गोपनीयता नीति</h1>
           <p className="text-xl text-gray-700 mb-4">Privacy Policy</p>
           <p className="text-sm text-gray-600">
@@ -25,7 +30,7 @@ const PrivacyPolicy = () => {
           <section>
             <h2 className="text-2xl font-semibold text-gray-900 mb-3">🔷 1. प्रस्तावना</h2>
             <p>
-              Ouptel.com आपकी गोपनीयता का सम्मान करता है और आपकी व्यक्तिगत जानकारी को सुरक्षित रखना हमारा कर्तव्य है। 
+              Ouptel.com आपकी गोपनीयता का सम्मान करता है और आपकी व्यक्तिगत जानकारी को सुरक्षित रखना हमारा कर्तव्य है।
               यह नीति बताती है कि हम क्या जानकारी एकत्र करते हैं, उसका उपयोग कैसे होता है और आपकी सुरक्षा कैसे की जाती है।
             </p>
           </section>
@@ -106,7 +111,7 @@ const PrivacyPolicy = () => {
           <section>
             <h2 className="text-2xl font-semibold text-gray-900 mb-3">🔷 7. बच्चों की सुरक्षा</h2>
             <p>
-              12 वर्ष से कम आयु के बच्चों से जानबूझकर डेटा नहीं लिया जाता। 
+              12 वर्ष से कम आयु के बच्चों से जानबूझकर डेटा नहीं लिया जाता।
               यदि कोई खाता इस आयु सीमा के अंतर्गत आता है, तो उसे हटाया जा सकता है।
             </p>
           </section>
@@ -154,7 +159,7 @@ const PrivacyPolicy = () => {
           <section>
             <h2 className="text-2xl font-semibold text-gray-900 mb-3">🔷 12. डाटा होस्टिंग और लोकेशन</h2>
             <p>
-              Ouptel के सर्वर भारत, सिंगापुर और जर्मनी में स्थित हैं। 
+              Ouptel के सर्वर भारत, सिंगापुर और जर्मनी में स्थित हैं।
               डेटा क्षेत्रीय कानूनों (जैसे GDPR, IT Act 2000) के अनुसार स्टोर और प्रोसेस किया जाता है।
             </p>
           </section>
