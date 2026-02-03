@@ -449,6 +449,33 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
     return feelings[feelingKey] || '😊';
   };
 
+  // Get activity emoji and label based on post type
+  const getActivityInfo = (postType, postText) => {
+    const activities = {
+      'traveling': { emoji: '✈️', label: 'Traveling to', prefix: 'traveling to' },
+      'watching': { emoji: '📺', label: 'Watching', prefix: 'watching' },
+      'listening': { emoji: '🎵', label: 'Listening to', prefix: 'listening to' },
+      'playing': { emoji: '🎮', label: 'Playing', prefix: 'playing' },
+      'reading': { emoji: '📖', label: 'Reading', prefix: 'reading' },
+      'reaction': { emoji: '💭', label: 'Reacted', prefix: '' }
+    };
+    
+    const activity = activities[postType];
+    if (!activity) return null;
+    
+    // Extract the activity target from post text (e.g., "Traveling to India" -> "India")
+    let target = postText || '';
+    if (activity.prefix && postText) {
+      const regex = new RegExp(`^${activity.prefix}\\s+(.+)`, 'i');
+      const match = postText.match(regex);
+      if (match && match[1]) {
+        target = match[1].split('\n')[0].trim(); // Get first line after prefix
+      }
+    }
+    
+    return { ...activity, target };
+  };
+
   // Get total reaction count - use likes prop which contains reactions_count from API
   const getTotalReactionCount = () => {
     // If postReactionCounts exists, calculate from it (for detailed breakdown)
@@ -1366,7 +1393,7 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
 
 
   return (
-    <div className="bg-white rounded-xl overflow-hidden border border-[#d3d1d1] smooth-content-transition max-w-full" key={postIdentifier}>
+    <div className="bg-white rounded-xl overflow-hidden border border-[#d3d1d1] smooth-content-transition max-w-full hover:shadow-md hover:border-blue-300 transition-all duration-200" key={postIdentifier}>
       <div className="p-4 flex items-center justify-between">
         <div
           className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity"
@@ -1398,6 +1425,24 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
                   </div>
                 </>
               )}
+              {(() => {
+                const activityInfo = getActivityInfo(postType, content);
+                if (activityInfo && !isFeelingPost) {
+                  return (
+                    <>
+                      <span className="text-sm text-gray-500">•</span>
+                      <div className="flex items-center space-x-1">
+                        <span className="text-base leading-none">{activityInfo.emoji}</span>
+                        <span className="text-sm text-gray-500">{activityInfo.label}</span>
+                        {activityInfo.target && (
+                          <span className="text-sm font-medium text-gray-700">{activityInfo.target}</span>
+                        )}
+                      </div>
+                    </>
+                  );
+                }
+                return null;
+              })()}
             </div>
           </div>
         </div>
@@ -1483,6 +1528,19 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
                     <span className="text-lg font-medium opacity-90">Feeling {feeling.label}</span>
                   </div>
                 )}
+                {/* Show activity in colored post */}
+                {(() => {
+                  const activityInfo = getActivityInfo(postType, content);
+                  if (activityInfo && !isFeelingPost) {
+                    return (
+                      <div className="mb-4 flex items-center justify-center space-x-2">
+                        <span className="text-3xl">{activityInfo.emoji}</span>
+                        <span className="text-lg font-medium opacity-90">{activityInfo.label} {activityInfo.target}</span>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
                 <div
                   className="text-xl md:text-2xl font-medium leading-relaxed"
                   style={{
@@ -1506,6 +1564,19 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
                   <span className="text-base font-medium">Feeling {feeling.label}</span>
                 </div>
               )}
+              {/* Show activity in regular post */}
+              {(() => {
+                const activityInfo = getActivityInfo(postType, content);
+                if (activityInfo && !isFeelingPost) {
+                  return (
+                    <div className="mb-3 flex items-center space-x-2 text-gray-600">
+                      <span className="text-2xl">{activityInfo.emoji}</span>
+                      <span className="text-base font-medium">{activityInfo.label} {activityInfo.target}</span>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
               <div
                 className="text-gray-800 prose prose-sm max-w-none"
                 style={{

@@ -83,9 +83,9 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
         try {
             const response = await axios.get('https://admin.ouptel.in/api/v1/posts/colored');
             const data = response.data;
-            
+
             console.log('Colored backgrounds response:', data);
-            
+
             // API returns: { ok: true, data: { colored_posts: [...], total: n } }
             const coloredPosts = data?.data?.colored_posts;
             if (Array.isArray(coloredPosts)) {
@@ -133,7 +133,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
             // Get a free API key from https://developers.giphy.com/
             const GIPHY_API_KEY = import.meta.env.VITE_GIPHY_API_KEY || 'GlVGYHkr3WSBnllca54iNt0yFbjz7Z65'; // Demo key - replace with your own
             const limit = 20;
-            
+
             let url;
             if (query.trim()) {
                 url = `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(query)}&limit=${limit}&offset=${offset}&rating=g`;
@@ -224,9 +224,9 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
                     }));
                     setSelectedFiles((prev) => [...prev, ...newFiles]);
                 } else {
-                    setSelectedFiles([{ 
-                        name: files[0].name, 
-                        type, 
+                    setSelectedFiles([{
+                        name: files[0].name,
+                        type,
                         file: files[0],
                         preview: URL.createObjectURL(files[0]) // Create preview URL once
                     }]);
@@ -313,11 +313,11 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
             // Prepare post text - include activity label if not already in text
             let finalPostText = postText.trim() || '';
             const activityLabel = activityType === 'feeling' ? `Feeling ${activityValue}` :
-                                 activityType === 'traveling' ? `Traveling to ${activityValue}` :
-                                 activityType === 'listening' ? `Listening to ${activityValue}` :
-                                 activityType === 'watching' ? `Watching ${activityValue}` :
-                                 activityType === 'playing' ? `Playing ${activityValue}` :
-                                 activityType === 'reaction' ? activityValue : '';
+                activityType === 'traveling' ? `Traveling to ${activityValue}` :
+                    activityType === 'listening' ? `Listening to ${activityValue}` :
+                        activityType === 'watching' ? `Watching ${activityValue}` :
+                            activityType === 'playing' ? `Playing ${activityValue}` :
+                                activityType === 'reaction' ? activityValue : '';
 
             // If post text is empty or doesn't include the activity, prepend it
             if (!finalPostText || !finalPostText.toLowerCase().includes(activityValue.toLowerCase())) {
@@ -597,7 +597,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
                     post_data: data.post_data,
                     poll_options: data.poll_options
                 });
-                
+
                 if (showNotification) {
                     showNotification("Poll created successfully!", 'success');
                 } else {
@@ -665,7 +665,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
         const hasGif = selectedGif && selectedGif.url;
         const hasFeeling = selectedFeeling && selectedFeeling.value;
         const hasActivity = selectedActivity && selectedActivity.value;
-        
+
         // Check if poll is valid (if showPoll is true, it must have question and at least one option)
         let hasValidPoll = false;
         if (pollData && pollData.showPoll) {
@@ -711,7 +711,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
 
         setLoading(true);
 
-       
+
         try {
             const accessToken = localStorage.getItem("access_token");
             const user_id = localStorage.getItem("user_id");
@@ -820,9 +820,9 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
             });
             selectedFiles.forEach((fileObj) => {
                 // Check if it's a file type (not image, video, or audio)
-                if (fileObj.file && fileObj.type === 'file' && 
-                    !fileObj.file.type.startsWith("image/") && 
-                    !fileObj.file.type.startsWith("video/") && 
+                if (fileObj.file && fileObj.type === 'file' &&
+                    !fileObj.file.type.startsWith("image/") &&
+                    !fileObj.file.type.startsWith("video/") &&
                     !fileObj.file.type.startsWith("audio/")) {
                     console.log("Appending file:", fileObj.file.name, fileObj.file.type);
                     formData.append("postFile", fileObj.file);
@@ -1105,7 +1105,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
                             toast.error('Please enter some text');
                             return;
                         }
-                        
+
                         setLoading(true);
                         try {
                             const accessToken = localStorage.getItem('access_token');
@@ -1311,9 +1311,9 @@ const CreatePostPopup = ({
                     });
                 } else {
                     // Replace existing for video/audio/file
-                    const newFile = { 
-                        name: files[0].name, 
-                        type, 
+                    const newFile = {
+                        name: files[0].name,
+                        type,
                         file: files[0],
                         preview: URL.createObjectURL(files[0]) // Create preview URL once
                     };
@@ -1355,7 +1355,7 @@ const CreatePostPopup = ({
         };
     }, [isOpen, onClose]);
 
-    if (!isOpen) return null;   
+    if (!isOpen) return null;
 
     const handlePost = async () => {
         console.log('Posting:', { postText, commentsEnabled, showSharing, showPoll, pollQuestion, pollOptions, pollDuration });
@@ -1437,10 +1437,10 @@ const CreatePostPopup = ({
                         onChange={(e) => setPostText(e.target.value)}
                         placeholder={
                             showPoll ? "What's on your mind? (Poll will be included)" :
-                            selectedActivity ? `${selectedActivity.label}...` :
-                            selectedFeeling ? `Feeling ${selectedFeeling.label}...` :
-                            isPagePost ? "Share something on this page..." :
-                            "What's on your mind?"
+                                selectedActivity ? `${selectedActivity.label}...` :
+                                    selectedFeeling ? `Feeling ${selectedFeeling.label}...` :
+                                        isPagePost ? "Share something on this page..." :
+                                            "What's on your mind?"
                         }
                         className="w-full resize-none border-none outline-none text-lg placeholder-gray-500 min-h-[120px]"
                         rows="5"
@@ -1619,34 +1619,31 @@ const CreatePostPopup = ({
 
                     {/* Selected Activity Preview */}
                     {selectedActivity && (
-                        <div className={`mt-4 mb-4 p-3 rounded-lg border relative ${
-                            selectedActivity.type === 'traveling' ? 'bg-blue-50 border-blue-200' :
-                            selectedActivity.type === 'listening' ? 'bg-cyan-50 border-cyan-200' :
-                            selectedActivity.type === 'watching' ? 'bg-pink-50 border-pink-200' :
-                            selectedActivity.type === 'playing' ? 'bg-orange-50 border-orange-200' :
-                            'bg-red-50 border-red-200'
-                        }`}>
+                        <div className={`mt-4 mb-4 p-3 rounded-lg border relative ${selectedActivity.type === 'traveling' ? 'bg-blue-50 border-blue-200' :
+                                selectedActivity.type === 'listening' ? 'bg-cyan-50 border-cyan-200' :
+                                    selectedActivity.type === 'watching' ? 'bg-pink-50 border-pink-200' :
+                                        selectedActivity.type === 'playing' ? 'bg-orange-50 border-orange-200' :
+                                            'bg-red-50 border-red-200'
+                            }`}>
                             <div className="flex items-center justify-between mb-2">
-                                <span className={`text-sm font-medium ${
-                                    selectedActivity.type === 'traveling' ? 'text-blue-800' :
-                                    selectedActivity.type === 'listening' ? 'text-cyan-800' :
-                                    selectedActivity.type === 'watching' ? 'text-pink-800' :
-                                    selectedActivity.type === 'playing' ? 'text-orange-800' :
-                                    'text-red-800'
-                                }`}>
+                                <span className={`text-sm font-medium ${selectedActivity.type === 'traveling' ? 'text-blue-800' :
+                                        selectedActivity.type === 'listening' ? 'text-cyan-800' :
+                                            selectedActivity.type === 'watching' ? 'text-pink-800' :
+                                                selectedActivity.type === 'playing' ? 'text-orange-800' :
+                                                    'text-red-800'
+                                    }`}>
                                     {selectedActivity.type.charAt(0).toUpperCase() + selectedActivity.type.slice(1)}
                                 </span>
                                 <button
                                     onClick={() => {
                                         setSelectedActivity(null);
                                     }}
-                                    className={`p-1 rounded-full transition-colors ${
-                                        selectedActivity.type === 'traveling' ? 'text-blue-600 hover:text-blue-800 hover:bg-blue-100' :
-                                        selectedActivity.type === 'listening' ? 'text-cyan-600 hover:text-cyan-800 hover:bg-cyan-100' :
-                                        selectedActivity.type === 'watching' ? 'text-pink-600 hover:text-pink-800 hover:bg-pink-100' :
-                                        selectedActivity.type === 'playing' ? 'text-orange-600 hover:text-orange-800 hover:bg-orange-100' :
-                                        'text-red-600 hover:text-red-800 hover:bg-red-100'
-                                    }`}
+                                    className={`p-1 rounded-full transition-colors ${selectedActivity.type === 'traveling' ? 'text-blue-600 hover:text-blue-800 hover:bg-blue-100' :
+                                            selectedActivity.type === 'listening' ? 'text-cyan-600 hover:text-cyan-800 hover:bg-cyan-100' :
+                                                selectedActivity.type === 'watching' ? 'text-pink-600 hover:text-pink-800 hover:bg-pink-100' :
+                                                    selectedActivity.type === 'playing' ? 'text-orange-600 hover:text-orange-800 hover:bg-orange-100' :
+                                                        'text-red-600 hover:text-red-800 hover:bg-red-100'
+                                        }`}
                                     title={`Remove ${selectedActivity.type}`}
                                 >
                                     <X className="w-4 h-4" />
@@ -1687,13 +1684,12 @@ const CreatePostPopup = ({
                                                     setShowColoredPostModal(true);
                                                     setShowColorSection(false);
                                                 }}
-                                                className={`flex-shrink-0 w-14 h-14 rounded-full border-3 transition-all hover:scale-110 ${
-                                                    selectedColorBg?.id === colorBg.id 
-                                                        ? 'border-indigo-600 ring-4 ring-indigo-200' 
+                                                className={`flex-shrink-0 w-14 h-14 rounded-full border-3 transition-all hover:scale-110 ${selectedColorBg?.id === colorBg.id
+                                                        ? 'border-indigo-600 ring-4 ring-indigo-200'
                                                         : 'border-gray-300 hover:border-indigo-400'
-                                                }`}
-                                                style={{ 
-                                                    background: colorBg.color_1 && colorBg.color_2 
+                                                    }`}
+                                                style={{
+                                                    background: colorBg.color_1 && colorBg.color_2
                                                         ? `linear-gradient(135deg, ${colorBg.color_1} 0%, ${colorBg.color_2} 100%)`
                                                         : colorBg.color_1 || '#000',
                                                     boxShadow: selectedColorBg?.id === colorBg.id ? '0 4px 12px rgba(99, 102, 241, 0.3)' : '0 2px 4px rgba(0,0,0,0.1)'
@@ -1853,25 +1849,21 @@ const CreatePostPopup = ({
 
                             {/* Reactions/Activities - Main Button */}
                             <button
-                                className={`flex items-center space-x-3 p-3 cursor-pointer transition-all duration-200 ${
-                                    selectedFeeling || selectedActivity ? 'bg-teal-100 rounded-lg border-2 border-teal-300' : 'hover:bg-teal-50'
-                                }`}
+                                className={`flex items-center space-x-3 p-3 cursor-pointer transition-all duration-200 ${selectedFeeling || selectedActivity ? 'bg-teal-100 rounded-lg border-2 border-teal-300' : 'hover:bg-teal-50'
+                                    }`}
                                 onClick={() => setShowActivityModal(true)}
                                 title={selectedFeeling || selectedActivity ? `${selectedFeeling?.label || selectedActivity?.label} selected - click to change` : "Select reaction or activity"}
                             >
-                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
-                                    selectedFeeling || selectedActivity ? 'bg-teal-200' : 'bg-yellow-100'
-                                }`}>
-                                    <Smile className={`w-5 h-5 transition-colors ${
-                                        selectedFeeling || selectedActivity ? 'text-teal-700' : 'text-yellow-600'
-                                    }`} />
+                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${selectedFeeling || selectedActivity ? 'bg-teal-200' : 'bg-yellow-100'
+                                    }`}>
+                                    <Smile className={`w-5 h-5 transition-colors ${selectedFeeling || selectedActivity ? 'text-teal-700' : 'text-yellow-600'
+                                        }`} />
                                 </div>
-                                <span className={`font-medium transition-colors ${
-                                    selectedFeeling || selectedActivity ? 'text-teal-800' : 'text-gray-700'
-                                }`}>
-                                    {selectedFeeling ? selectedFeeling.label : 
-                                     selectedActivity ? selectedActivity.label : 
-                                     'Reactions'}
+                                <span className={`font-medium transition-colors ${selectedFeeling || selectedActivity ? 'text-teal-800' : 'text-gray-700'
+                                    }`}>
+                                    {selectedFeeling ? selectedFeeling.label :
+                                        selectedActivity ? selectedActivity.label :
+                                            'Reactions'}
                                 </span>
                             </button>
 
@@ -1890,16 +1882,15 @@ const CreatePostPopup = ({
                             </button>
 
                             {/* Color */}
-                            <button 
+                            <button
                                 type="button"
-                                className={`flex items-center space-x-3 p-3 cursor-pointer transition-all duration-200 ${
-                                    showColorSection || selectedColorBg ? 'bg-indigo-100 rounded-lg border-2 border-indigo-300' : 'hover:bg-indigo-50'
-                                }`}
+                                className={`flex items-center space-x-3 p-3 cursor-pointer transition-all duration-200 ${showColorSection || selectedColorBg ? 'bg-indigo-100 rounded-lg border-2 border-indigo-300' : 'hover:bg-indigo-50'
+                                    }`}
                                 onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
                                     console.log('Color button clicked!', { showColorSection, coloredBackgrounds: coloredBackgrounds.length });
-                                    
+
                                     // Fetch colors if not already fetched
                                     if (!coloredBackgrounds || coloredBackgrounds.length === 0) {
                                         console.log('Fetching colored backgrounds...');
@@ -1909,17 +1900,17 @@ const CreatePostPopup = ({
                                             console.error('fetchColoredBackgrounds is not available');
                                         }
                                     }
-                                    
+
                                     // Toggle color selection section
                                     const newState = !showColorSection;
                                     console.log('Setting showColorSection to:', newState);
                                     setShowColorSection(newState);
-                                    
+
                                     // Close other modals
                                     if (setShowGifSearch) setShowGifSearch(false);
                                     if (setShowFeelingModal) setShowFeelingModal(false);
                                     if (setShowActivityModal) setShowActivityModal(false);
-                                    
+
                                     // Scroll to color section after a brief delay
                                     if (newState) {
                                         setTimeout(() => {
@@ -1933,16 +1924,13 @@ const CreatePostPopup = ({
                                 }}
                                 title={selectedColorBg ? "Colored post selected" : "Create colored post"}
                             >
-                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
-                                    showColorSection || selectedColorBg ? 'bg-indigo-200' : 'bg-indigo-100'
-                                }`}>
-                                    <Palette className={`w-5 h-5 transition-colors ${
-                                        showColorSection || selectedColorBg ? 'text-indigo-700' : 'text-indigo-600'
-                                    }`} />
+                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${showColorSection || selectedColorBg ? 'bg-indigo-200' : 'bg-indigo-100'
+                                    }`}>
+                                    <Palette className={`w-5 h-5 transition-colors ${showColorSection || selectedColorBg ? 'text-indigo-700' : 'text-indigo-600'
+                                        }`} />
                                 </div>
-                                <span className={`font-medium transition-colors ${
-                                    showColorSection || selectedColorBg ? 'text-indigo-800' : 'text-gray-700'
-                                }`}>
+                                <span className={`font-medium transition-colors ${showColorSection || selectedColorBg ? 'text-indigo-800' : 'text-gray-700'
+                                    }`}>
                                     {showColorSection ? 'Hide Colors' : selectedColorBg ? 'Color Selected' : 'Color'}
                                 </span>
                             </button>
@@ -2075,7 +2063,7 @@ const CreatePostPopup = ({
                             toast.error('Please enter some text');
                             return;
                         }
-                        
+
                         try {
                             const accessToken = localStorage.getItem('access_token');
                             const requestData = {
@@ -2303,11 +2291,10 @@ const FeelingSelectionModal = ({ isOpen, onClose, onSelectFeeling, selectedFeeli
                             <button
                                 key={feeling.value}
                                 onClick={() => onSelectFeeling(feeling)}
-                                className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all cursor-pointer hover:scale-105 ${
-                                    selectedFeeling?.value === feeling.value
+                                className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all cursor-pointer hover:scale-105 ${selectedFeeling?.value === feeling.value
                                         ? `${feeling.color} ${feeling.borderColor} border-2`
                                         : 'bg-gray-50 border-gray-200 hover:border-gray-300'
-                                }`}
+                                    }`}
                             >
                                 <span className="text-4xl mb-2">{feeling.emoji}</span>
                                 <span className={`text-sm font-medium ${selectedFeeling?.value === feeling.value ? feeling.textColor : 'text-gray-700'}`}>
@@ -2325,60 +2312,52 @@ const FeelingSelectionModal = ({ isOpen, onClose, onSelectFeeling, selectedFeeli
 // Reactions Main Modal Component - Shows all activity types
 const ReactionsMainModal = ({ isOpen, onClose, onSelectActivityType, selectedFeeling, selectedActivity, onClearSelection }) => {
     const activities = [
-        { 
-            type: 'feeling', 
-            label: 'Feeling', 
-            emoji: '😊', 
-            color: 'bg-yellow-100', 
-            textColor: 'text-yellow-700', 
+        {
+            type: 'feeling',
+            label: 'Feeling',
+            emoji: '😊',
+            color: 'bg-yellow-100',
+            textColor: 'text-yellow-700',
             borderColor: 'border-yellow-300',
             description: 'How are you feeling?'
         },
-        { 
-            type: 'traveling', 
-            label: 'Traveling to', 
-            emoji: '✈️', 
-            color: 'bg-blue-100', 
-            textColor: 'text-blue-700', 
+        {
+            type: 'traveling',
+            label: 'Traveling to',
+            emoji: '✈️',
+            color: 'bg-blue-100',
+            textColor: 'text-blue-700',
             borderColor: 'border-blue-300',
             description: 'Where are you traveling?'
         },
-        { 
-            type: 'listening', 
-            label: 'Listening to', 
-            emoji: '🎵', 
-            color: 'bg-cyan-100', 
-            textColor: 'text-cyan-700', 
+        {
+            type: 'listening',
+            label: 'Listening to',
+            emoji: '🎵',
+            color: 'bg-cyan-100',
+            textColor: 'text-cyan-700',
             borderColor: 'border-cyan-300',
             description: 'What are you listening to?'
         },
-        { 
-            type: 'watching', 
-            label: 'Watching', 
-            emoji: '📺', 
-            color: 'bg-pink-100', 
-            textColor: 'text-pink-700', 
+        {
+            type: 'watching',
+            label: 'Watching',
+            emoji: '📺',
+            color: 'bg-pink-100',
+            textColor: 'text-pink-700',
             borderColor: 'border-pink-300',
             description: 'What are you watching?'
         },
-        { 
-            type: 'playing', 
-            label: 'Playing', 
-            emoji: '🎮', 
-            color: 'bg-orange-100', 
-            textColor: 'text-orange-700', 
+        {
+            type: 'playing',
+            label: 'Playing',
+            emoji: '🎮',
+            color: 'bg-orange-100',
+            textColor: 'text-orange-700',
             borderColor: 'border-orange-300',
             description: 'What are you playing?'
         },
-        { 
-            type: 'reaction', 
-            label: 'Reaction', 
-            emoji: '👍', 
-            color: 'bg-red-100', 
-            textColor: 'text-red-700', 
-            borderColor: 'border-red-300',
-            description: 'Select a reaction'
-        },
+
     ];
 
     useEffect(() => {
@@ -2449,22 +2428,20 @@ const ReactionsMainModal = ({ isOpen, onClose, onSelectActivityType, selectedFee
                 <div className="flex-1 overflow-y-auto p-4 md:p-6">
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                         {activities.map((activity) => {
-                            const isSelected = (selectedFeeling && activity.type === 'feeling') || 
-                                             (selectedActivity && selectedActivity.type === activity.type);
+                            const isSelected = (selectedFeeling && activity.type === 'feeling') ||
+                                (selectedActivity && selectedActivity.type === activity.type);
                             return (
                                 <button
                                     key={activity.type}
                                     onClick={() => onSelectActivityType(activity.type)}
-                                    className={`flex flex-col items-center justify-center p-6 rounded-lg border-2 transition-all cursor-pointer hover:scale-105 ${
-                                        isSelected
+                                    className={`flex flex-col items-center justify-center p-6 rounded-lg border-2 transition-all cursor-pointer hover:scale-105 ${isSelected
                                             ? `${activity.color} ${activity.borderColor} border-2`
                                             : 'bg-gray-50 border-gray-200 hover:border-gray-300'
-                                    }`}
+                                        }`}
                                 >
                                     <span className="text-5xl mb-3">{activity.emoji}</span>
-                                    <span className={`text-base font-semibold mb-1 ${
-                                        isSelected ? activity.textColor : 'text-gray-700'
-                                    }`}>
+                                    <span className={`text-base font-semibold mb-1 ${isSelected ? activity.textColor : 'text-gray-700'
+                                        }`}>
                                         {activity.label}
                                     </span>
                                     <span className="text-xs text-gray-500 text-center">
@@ -2521,12 +2498,7 @@ const ActivitySelectionModal = ({ isOpen, onClose, activityType, onSelectActivit
             emoji: '🎮',
             prefix: 'Playing'
         },
-        reaction: {
-            title: 'Reaction',
-            placeholder: 'Select a reaction',
-            emoji: '😊',
-            prefix: 'Reaction'
-        }
+
     };
 
     const config = activityConfig[activityType] || {};
@@ -2614,16 +2586,14 @@ const ActivitySelectionModal = ({ isOpen, onClose, activityType, onSelectActivit
                                     <button
                                         key={reaction.value}
                                         onClick={() => setSelectedReaction(reaction.value)}
-                                        className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all cursor-pointer hover:scale-105 ${
-                                            selectedReaction === reaction.value
+                                        className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all cursor-pointer hover:scale-105 ${selectedReaction === reaction.value
                                                 ? 'bg-blue-100 border-blue-500'
                                                 : 'bg-gray-50 border-gray-200 hover:border-gray-300'
-                                        }`}
+                                            }`}
                                     >
                                         <span className="text-4xl mb-2">{reaction.emoji}</span>
-                                        <span className={`text-sm font-medium ${
-                                            selectedReaction === reaction.value ? 'text-blue-700' : 'text-gray-700'
-                                        }`}>
+                                        <span className={`text-sm font-medium ${selectedReaction === reaction.value ? 'text-blue-700' : 'text-gray-700'
+                                            }`}>
                                             {reaction.label}
                                         </span>
                                     </button>
@@ -2737,7 +2707,7 @@ const ColoredPostModal = ({ isOpen, onClose, colorBg, postText, setPostText, onP
                             maxLength={200}
                             autoFocus
                         />
-                        
+
                         {/* Character Counter */}
                         <div
                             className="absolute bottom-4 right-4 text-sm font-medium opacity-70"

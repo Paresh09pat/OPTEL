@@ -172,8 +172,10 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
 
       const data = response.data;
       if (data?.ok === true || data?.api_status === 200) {
-        setStoryViews(data?.data?.views || []);
-        setViewsCount(data?.data?.total || data?.data?.views?.length || 0);
+        // Handle both response formats: data.users or data.data.views
+        const views = data?.users || data?.data?.views || [];
+        setStoryViews(views);
+        setViewsCount(data?.total || views.length || 0);
       } else {
         toast.error(data?.message || 'Failed to fetch story views');
       }
@@ -1043,7 +1045,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
                 <div className="divide-y divide-gray-100">
                   {storyViews.map((view, index) => (
                     <div 
-                      key={index} 
+                      key={view.user_id || view.id || index} 
                       className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors cursor-pointer"
                       onClick={() => {
                         const userId = view.user_id || view.id;
@@ -1055,11 +1057,12 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
                       }}
                     >
                       <img
-                        src={view.avatar || view.avatar_url || '/default-avatar.png'}
+                        src={view.avatar_url || view.avatar || '/user.png'}
                         alt={view.name || view.username}
                         className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
                         onError={(e) => {
-                          e.target.src = '/default-avatar.png';
+                          e.target.onerror = null;
+                          e.target.src = '/user.png';
                         }}
                       />
                       <div className="flex-1">
@@ -1069,10 +1072,37 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
                         {view.username && view.name && (
                           <p className="text-xs text-gray-500">@{view.username}</p>
                         )}
-                        {view.time_text && (
-                          <p className="text-xs text-gray-400 mt-0.5">{view.time_text}</p>
+                        {(view.time_text || view.viewed_at) && (
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {view.time_text || (() => {
+                              try {
+                                const date = new Date(view.viewed_at);
+                                const now = new Date();
+                                const diffMs = now - date;
+                                const diffMins = Math.floor(diffMs / 60000);
+                                const diffHours = Math.floor(diffMs / 3600000);
+                                const diffDays = Math.floor(diffMs / 86400000);
+                                
+                                if (diffMins < 1) return 'Just now';
+                                if (diffMins < 60) return `${diffMins}m ago`;
+                                if (diffHours < 24) return `${diffHours}h ago`;
+                                if (diffDays < 7) return `${diffDays}d ago`;
+                                return date.toLocaleDateString();
+                              } catch (e) {
+                                return view.viewed_at;
+                              }
+                            })()}
+                          </p>
                         )}
                       </div>
+                      {view.verified && (
+                        <img 
+                          src="/icons/verified.png" 
+                          alt="Verified" 
+                          className="w-4 h-4"
+                          title="Verified User"
+                        />
+                      )}
                     </div>
                   ))}
                 </div>
