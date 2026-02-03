@@ -52,6 +52,7 @@ import JobDetailed from "./pages/JobDetailed";
 import OfferDetailed from "./pages/OfferDetailed";
 import Wallet from "./pages/Wallet";
 import VerifyAccount from "./pages/VerifyAccount";
+import Subscriptions from "./pages/Subscriptions";
 import Contact from "./pages/Contact";
 import Developers from "./pages/Developers";
 import AboutUs from "./pages/AboutUs";
@@ -119,6 +120,7 @@ function App() {
               <Route path="/profile/:userId" element={<Profile />} />
               <Route path="/profile-settings" element={<MainProfileSetting />} />
               <Route path="/wallet" element={<Wallet />} />
+              <Route path="/subscriptions" element={<Subscriptions />} />
               <Route path="/verify-account" element={<VerifyAccount />} />
               <Route path="/PageProfile" element={<PageProfile />} />
             </Route>

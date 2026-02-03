@@ -13,9 +13,7 @@ const ProfileSettings = () => {
     workingAt: '',
     companyWebsite: '',
     website: '',
-    relationship: '',
-    college: '',
-    university: ''
+    relationship: ''
   });
   const [userData, setUserData] = useState(null);
   const [userLoading, setUserLoading] = useState(true);
@@ -60,9 +58,7 @@ const ProfileSettings = () => {
             workingAt: data.user_data.working || '',
             companyWebsite: data.user_data.working_link || '',
             website: data.user_data.website || '',
-            relationship: data.user_data.relationship_id !== undefined ? getRelationshipText(data.user_data.relationship_id) : 'Single',
-            college: '', // This field might not be in API
-            university: '' // This field might not be in API
+            relationship: data.user_data.relationship_id !== undefined ? getRelationshipText(data.user_data.relationship_id) : 'Single'
           });
         } else {
           throw new Error(data.api_text || 'Failed to fetch user data');
@@ -85,9 +81,7 @@ const ProfileSettings = () => {
           workingAt: 'Apple',
           companyWebsite: 'Apple',
           website: 'Apple',
-          relationship: 'Single',
-          college: 'College Name',
-          university: 'University Name'
+          relationship: 'Single'
         });
       } finally {
         setUserLoading(false);
@@ -331,9 +325,7 @@ const ProfileSettings = () => {
               workingAt: refreshData.user_data.working || '',
               companyWebsite: refreshData.user_data.working_link || '',
               website: refreshData.user_data.website || '',
-              relationship: refreshData.user_data.relationship_id !== undefined ? getRelationshipText(refreshData.user_data.relationship_id) : 'Single',
-              college: '',
-              university: ''
+              relationship: refreshData.user_data.relationship_id !== undefined ? getRelationshipText(refreshData.user_data.relationship_id) : 'Single'
             });
           }
         } catch (refreshErr) {
@@ -521,32 +513,6 @@ const ProfileSettings = () => {
                 <option value="Widowed">Widowed</option>
               </select>
             </div>
-          </div>
-
-          {/* College */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">College :</label>
-            <input
-              type="text"
-              name="college"
-              value={formData.college}
-              onChange={handleChange}
-              placeholder="College Name"
-              className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-          </div>
-
-          {/* University */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">University :</label>
-            <input
-              type="text"
-              name="university"
-              value={formData.university}
-              onChange={handleChange}
-              placeholder="University Name"
-              className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
           </div>
         </div>
 

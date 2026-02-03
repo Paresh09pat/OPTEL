@@ -93,18 +93,31 @@ const PostDetail = () => {
           // Save status
           is_post_saved: data.post_data.is_post_saved || data.post_data.saved_post,
           
-          // Media
+          // Media - Images
           postPhoto: data.post_data.postPhoto || data.post_data.post_photo,
           post_photo: data.post_data.postPhoto || data.post_data.post_photo,
           post_photo_url: data.post_data.post_photo_url || data.post_data.postPhoto,
+          
+          // Media - Videos
+          post_video: data.post_data.post_video,
+          post_video_url: data.post_data.post_video_url,
+          
+          // Media - Files
           postFile: data.post_data.postFile || data.post_data.post_file,
           post_file: data.post_data.postFile || data.post_data.post_file,
-          postFile_full: data.post_data.postFile_full || data.post_data.post_file_full,
+          postFile_full: data.post_data.postFile_full || data.post_data.post_file_full || data.post_data.post_file_url,
+          post_file_url: data.post_data.post_file_url,
           postFileName: data.post_data.postFileName || data.post_data.post_file_name,
+          
+          // Media - YouTube
           postYoutube: data.post_data.postYoutube || data.post_data.post_youtube,
           post_youtube: data.post_data.postYoutube || data.post_data.post_youtube,
+          
+          // Media - Audio
           post_record: data.post_data.post_record,
           post_record_url: data.post_data.post_record_url,
+          
+          // Media - Albums
           album_images: data.post_data.album_images || data.post_data.photo_album,
           photo_multi: data.post_data.photo_multi || data.post_data.photo_album,
           
@@ -131,7 +144,7 @@ const PostDetail = () => {
           postFeeling: data.post_data.postFeeling || data.post_data.feeling?.key,
           
           // Publisher/User
-          publisher: data.post_data.publisher || data.post_data.user_data,
+          publisher: data.post_data.publisher || data.post_data.user_data || data.post_data.author,
           
           // Time
           time: data.post_data.time || data.post_data.post_time,
@@ -454,6 +467,15 @@ const PostDetail = () => {
       return `https://ouptel.com/${url.replace(/^\//, '')}`;
     };
 
+    // Check for video first (post_video_url or post_file_url for videos)
+    if (post?.post_type === 'video') {
+      const videoUrl = post?.post_video_url || post?.post_file_url;
+      if (videoUrl) {
+        return { video: ensureFullUrl(videoUrl) };
+      }
+    }
+
+    // Check for audio in post_record_url
     if (post?.post_record_url) {
       const isAudio = post?.post_type === 'audio' ||
         post?.post_record_url.includes('/audio/') ||

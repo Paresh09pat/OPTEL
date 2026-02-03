@@ -580,6 +580,8 @@ const SavedPosts = () => {
                   postReactionCounts={post?.reaction_counts}
                   currentReaction={post?.user_reaction}
                   userReaction={post?.user_reaction}
+                  colorId={post?.color_id || 0}
+                  colorData={post?.color_data}
                 />
               );
             })}

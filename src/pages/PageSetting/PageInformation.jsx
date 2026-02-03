@@ -2,6 +2,13 @@
 import React from 'react';
 
 const PageInformation = ({ formData, handleChange }) => {
+  // Validate phone number (only digits, max 10)
+  const handlePhoneChange = (e) => {
+    const value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+    if (value.length <= 10) {
+      handleChange({ target: { name: 'phone', value } });
+    }
+  };
 
   return (
     <div className="bg-white rounded-xl p-3.5 border border-[#808080]">
@@ -25,28 +32,39 @@ const PageInformation = ({ formData, handleChange }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Phone <span className="text-red-500">*</span>
+            </label>
             <input
               type="tel"
               name="phone"
               value={formData.phone}
-              onChange={handleChange}
-              placeholder=""
+              onChange={handlePhoneChange}
+              placeholder="Enter 10 digit phone number"
+              maxLength={10}
+              pattern="[0-9]{10}"
+              required
               className="w-full px-3 py-2 border border-[#212121] rounded-3xl focus:outline-none focus:ring-2 focus:ring-[#1153e7]"
             />
+            {formData.phone && formData.phone.length < 10 && (
+              <p className="text-xs text-red-500 mt-1">Phone number must be 10 digits</p>
+            )}
           </div>
         </div>
 
         {/* Location and Website - Side by Side */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Location <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               name="location"
               value={formData.location}
               onChange={handleChange}
               placeholder="Enter a location"
+              required
               className="w-full px-3 py-2 border border-[#212121] rounded-3xl focus:outline-none focus:ring-2 focus:ring-[#1153e7]"
             />
           </div>

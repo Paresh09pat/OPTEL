@@ -1449,7 +1449,7 @@ const Home = () => {
                     handlePollVote={(optionId) => handlePollVote(postId, optionId)}
                     isPollLoading={loading}
                     colorId={post?.color_id}
-                    colorData={post?.color}
+                    colorData={post?.color_data || post?.color}
                     feeling={post?.feeling}
                     isFeelingPost={post?.is_feeling_post}
                     likedUsers={post?.liked_users || []}

@@ -152,6 +152,22 @@ const MainPageSetting = () => {
   // Save all changes
   const handleSaveAll = async () => {
     try {
+      // Validate required fields
+      if (!formData.phone || formData.phone.trim() === '') {
+        toast.error('Phone number is required');
+        return;
+      }
+
+      if (formData.phone.length !== 10) {
+        toast.error('Phone number must be exactly 10 digits');
+        return;
+      }
+
+      if (!formData.location || formData.location.trim() === '') {
+        toast.error('Location is required');
+        return;
+      }
+
       setSaving(true);
       const accessToken = localStorage.getItem('access_token');
       
@@ -176,8 +192,12 @@ const MainPageSetting = () => {
           formDataToSend.append('page_category', parseInt(formData.category));
         }
         
+        // Add sub_category as integer if it exists
+        if (formData.subCategory && !isNaN(parseInt(formData.subCategory))) {
+          formDataToSend.append('sub_category', parseInt(formData.subCategory));
+        }
+        
         // Add optional fields only if they exist
-        if (formData.subCategory) formDataToSend.append('sub_category', formData.subCategory);
         if (formData.callToAction) formDataToSend.append('call_to_action', formData.callToAction);
         if (formData.callToTargetUrl) formDataToSend.append('call_to_target_url', formData.callToTargetUrl);
         if (formData.canPost) formDataToSend.append('can_post', formData.canPost);
@@ -239,8 +259,12 @@ const MainPageSetting = () => {
           updateData.page_category = parseInt(formData.category);
         }
 
+        // Add sub_category as integer if it exists
+        if (formData.subCategory && !isNaN(parseInt(formData.subCategory))) {
+          updateData.sub_category = parseInt(formData.subCategory);
+        }
+        
         // Add optional fields only if they exist
-        if (formData.subCategory) updateData.sub_category = formData.subCategory;
         if (formData.callToAction) updateData.call_to_action = formData.callToAction;
         if (formData.callToTargetUrl) updateData.call_to_target_url = formData.callToTargetUrl;
         if (formData.canPost) updateData.can_post = formData.canPost;

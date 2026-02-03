@@ -287,14 +287,26 @@ const Profile = () => {
                             avatar_url: post.avatar_url || post.avatar || userData.user_data.avatar_url
                         };
 
+                        // Handle reactions object from timeline API
+                        const reactions = post.reactions || {};
+                        const reactionCounts = reactions.total > 0 ? {
+                            1: reactions.like || 0,
+                            2: reactions.love || 0,
+                            3: reactions.haha || 0,
+                            4: reactions.wow || 0,
+                            5: reactions.sad || 0,
+                            6: reactions.angry || 0
+                        } : {};
+
                         return {
                             id: post.id || post.post_id,
+                            post_id: post.post_id || post.id,
                             author: postUser,
                             post_text: post.postText || post.post_text || post.text || '',
                             post_type: post.postType || post.post_type,
                             poll_id: post.poll_id,
                             poll_options: post.poll_options,
-                            reactions_count: post.reactions_count || post.likes_count || 0,
+                            reactions_count: post.reactions_count || reactions.total || 0,
                             comments_count: post.comments_count || 0,
                             shares_count: post.shares_count || 0,
                             is_liked: post.is_liked || false,
@@ -309,10 +321,17 @@ const Profile = () => {
                             post_youtube: post.post_youtube || post.postYoutube,
                             album_images: post.album_images,
                             multi_image_post: post.multi_image_post,
-                            reaction_counts: post.reaction_counts,
-                            user_reaction: post.user_reaction,
-                            current_reaction: post.current_reaction,
-                            blog: post.blog
+                            reaction_counts: reactionCounts,
+                            user_reaction: reactions.user_reaction || post.user_reaction,
+                            current_reaction: reactions.user_reaction || post.current_reaction,
+                            blog: post.blog,
+                            // Colored post support - handle both color object and color_id
+                            color_id: post.color_id || (post.color && post.color.color_id) || 0,
+                            color_data: post.color && (post.color.color_1 || post.color.color_2) ? {
+                                color_1: post.color.color_1,
+                                color_2: post.color.color_2,
+                                text_color: post.color.text_color
+                            } : null
                         };
                     });
                     
@@ -1824,6 +1843,7 @@ const Profile = () => {
 
                                         return {
                                             id: post.id || post.post_id,
+                                            post_id: post.post_id || post.id,
                                             author: postUser,
                                             post_text: post.postText || post.post_text || post.text || '',
                                             post_type: post.postType || post.post_type,
@@ -1893,7 +1913,8 @@ const Profile = () => {
                     return (
                         <div key={postId} className="mb-4">
                             <PostCard
-                                post_id={postId}
+                                id={post?.id || postId}
+                                post_id={post?.post_id || postId}
                                 user={post?.author || post?.publisher}
                                 content={post?.post_text || post?.postText}
                                 blog={post?.blog}
@@ -1944,6 +1965,7 @@ const Profile = () => {
 
                                                         return {
                                                             id: post.id || post.post_id,
+                                                            post_id: post.post_id || post.id,
                                                             author: postUser,
                                                             post_text: post.postText || post.post_text || post.text || '',
                                                             post_type: post.postType || post.post_type,
@@ -1998,6 +2020,8 @@ const Profile = () => {
                                 pollOptions={post?.poll_options}
                                 handlePollVote={(optionId) => handlePollVote(postId, optionId)}
                                 isPollLoading={loading}
+                                colorId={post?.color_id || 0}
+                                colorData={post?.color_data}
                             />
                         </div>
                     );

@@ -367,23 +367,37 @@ const GeneralSettings = () => {
                   selected={selectedDate && !isNaN(selectedDate.getTime()) ? selectedDate : null}
                   onChange={handleDateChange}
                   dateFormat="dd/MM/yyyy"
-                  placeholderText="Select your Birthdate"
-                  maxDate={new Date()}
+                  placeholderText="Select your Birthdate (must be 14+ years old)"
+                  maxDate={(() => {
+                    const date = new Date();
+                    date.setFullYear(date.getFullYear() - 14);
+                    return date;
+                  })()}
+                  minDate={(() => {
+                    const date = new Date();
+                    date.setFullYear(date.getFullYear() - 120);
+                    return date;
+                  })()}
                   showYearDropdown
                   showMonthDropdown
                   dropdownMode="select"
-                  className="w-full px-3 py-2 pr-10 border-0 focus:outline-none"
-                  customInput={
-                    <input
-                      type="text"
-                      value={formData.birthdate || ""}
-                      placeholder="Select your Birthdate"
-                      readOnly
-                      className="w-full px-3 py-2 pr-10 border-0 focus:outline-none cursor-pointer bg-transparent"
-                    />
-                  }
+                  yearDropdownItemNumber={100}
+                  scrollableYearDropdown
+                  className="w-full px-3 py-2 pr-10 border-0 focus:outline-none cursor-pointer rounded-3xl"
+                  wrapperClassName="w-full"
+                  calendarClassName="shadow-lg"
                 />
-                <FiCalendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 size-5 pointer-events-none" />
+                <FiCalendar 
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 size-5 cursor-pointer" 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const datePickerInput = e.currentTarget.previousElementSibling?.querySelector('input');
+                    if (datePickerInput) {
+                      datePickerInput.focus();
+                      datePickerInput.click();
+                    }
+                  }}
+                />
               </div>
             </div>
 
