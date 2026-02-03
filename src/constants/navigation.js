@@ -1,5 +1,6 @@
 // src/constants/navigation.js
 import { BiSolidOffer } from 'react-icons/bi'
+import { IoGameController } from 'react-icons/io5'
 import albumsIcon from '/icons/album.png'
 import blogIcon from '/icons/blog.png'
 import exploreIcon from '/icons/compass.png'
@@ -86,6 +87,13 @@ export const navigationItems = [
     path: '/market',
     icon: marketIcon,
     color: 'bg-purple-100', // Default background color for icon
+  },
+  {
+    id: 'games',
+    name: 'Games',
+    path: '/games',
+    icon: IoGameController,
+    color: 'bg-green-100', // Default background color for icon
   },
   // {
   //   id: 'more',

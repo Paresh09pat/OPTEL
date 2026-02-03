@@ -56,6 +56,7 @@ import Subscriptions from "./pages/Subscriptions";
 import Contact from "./pages/Contact";
 import Developers from "./pages/Developers";
 import AboutUs from "./pages/AboutUs";
+import Games from "./pages/Games";
 import { ToastContainer } from "react-toastify";
 
 function App() {
@@ -110,6 +111,7 @@ function App() {
               <Route path="/offers/:offerId" element={<OfferDetailed />} />
               <Route path="/market" element={<Market />} />
               <Route path="/market/:productId" element={<ProductDetail />} />
+              <Route path="/games" element={<Games />} />
               <Route path="/more" element={<More />} />
               <Route path="/chat-detailed/:chatId" element={<ChatDetailed />} />
               <Route path="/my-albums" element={<MyAlbums />} />

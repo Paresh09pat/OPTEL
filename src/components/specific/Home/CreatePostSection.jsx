@@ -31,7 +31,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
     const [albumName, setAlbumName] = useState('');
     const [groupId, setGroupId] = useState('');
     const [postType, setPostType] = useState('text');
-    const [postPrivacy, setPostPrivacy] = useState('1'); // Default to 1 (public with comments enabled)
+    const [postPrivacy, setPostPrivacy] = useState('0'); // Default to 0 (public with comments enabled)
 
     // Poll state
     const [showPoll, setShowPoll] = useState(false);
@@ -404,7 +404,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
                 setAlbumName("");
                 setGroupId("");
                 setPostType("text");
-                setPostPrivacy("1");
+                setPostPrivacy("0");
             } else {
                 const errorMessage = data.message || `Failed to create ${activityType} post`;
                 console.error(`Failed to create ${activityType} post:`, errorMessage);
@@ -506,7 +506,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
                 setAlbumName("");
                 setGroupId("");
                 setPostType("text");
-                setPostPrivacy("1");
+                setPostPrivacy("0");
             } else {
                 const errorMessage = data.message || "Failed to create GIF post";
                 console.error("Failed to create GIF post:", errorMessage);
@@ -627,7 +627,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
                 setAlbumName("");
                 setGroupId("");
                 setPostType("text");
-                setPostPrivacy("1");
+                setPostPrivacy("0");
 
                 // Reset poll state
                 resetPoll();
@@ -883,7 +883,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
                 setAlbumName("");
                 setGroupId("");
                 setPostType("text");
-                setPostPrivacy("1");
+                setPostPrivacy("0");
                 setShowGifSearch(false);
                 setShowFeelingModal(false);
                 setShowActivityModal(false);
@@ -1960,9 +1960,9 @@ const CreatePostPopup = ({
                                 checked={commentsEnabled}
                                 onChange={(e) => {
                                     setCommentsEnabled(e.target.checked);
-                                    // When checkbox is checked (comments disabled), set privacy to 0
-                                    // When unchecked (comments enabled), set privacy to 1
-                                    setPostPrivacy(e.target.checked ? '0' : '1');
+                                    // When checkbox is checked (comments disabled), set privacy to 1
+                                    // When unchecked (comments enabled/public), set privacy to 0
+                                    setPostPrivacy(e.target.checked ? '1' : '0');
                                 }}
                                 className="w-4 h-4 text-blue-600 rounded"
                             />

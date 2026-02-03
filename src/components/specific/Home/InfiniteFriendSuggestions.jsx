@@ -65,8 +65,8 @@ const InfiniteFriendSuggestions = ({ friendSuggestions, onAddFriend, followedUse
         fetchFriendSuggestions();
     }, []); // Only run on mount
 
-    // Handle friend request
-    const handleSendFriendRequest = useCallback(async (userId) => {
+    // Handle friend request (send or cancel)
+    const handleSendFriendRequest = useCallback(async (userId, isCancel = false) => {
         // Set loading state for this user
         setLoadingUsers(prev => {
             const newSet = new Set(prev);
@@ -88,38 +88,48 @@ const InfiniteFriendSuggestions = ({ friendSuggestions, onAddFriend, followedUse
             );
 
             if (response.data?.api_status === 200) {
-                // Update local state to mark user as requested
-                setRequestedUsers(prev => {
-                    const newSet = new Set(prev);
-                    newSet.add(userId);
-                    return newSet;
-                });
-                
-                // Also update displayedFriends to reflect the change
+                // Update displayedFriends to reflect the change
                 setDisplayedFriends(prev => 
-                    prev.map(friend => 
-                        friend.id === userId || friend.user_id === userId
-                            ? { ...friend, is_following: true }
-                            : friend
-                    )
+                    prev.map(friend => {
+                        if (friend.id === userId || friend.user_id === userId) {
+                            // Toggle friend_request_sent status
+                            return { 
+                                ...friend, 
+                                friend_request_sent: !friend.friend_request_sent,
+                                is_following: !friend.friend_request_sent // Update is_following as well
+                            };
+                        }
+                        return friend;
+                    })
                 );
 
+                // Update requestedUsers set
+                setRequestedUsers(prev => {
+                    const newSet = new Set(prev);
+                    if (isCancel) {
+                        newSet.delete(userId);
+                    } else {
+                        newSet.add(userId);
+                    }
+                    return newSet;
+                });
+
                 // Show success message
-                const successMessage = response.data?.follow_status === 'followed' 
-                    ? 'Friend request sent successfully!' 
+                const successMessage = isCancel 
+                    ? response.data?.message || 'Friend request cancelled!'
                     : response.data?.message || 'Friend request sent successfully!';
                 toast.success(successMessage);
                 
                 // Call the original onAddFriend if provided (for parent component state updates)
-                if (onAddFriend) {
+                if (onAddFriend && !isCancel) {
                     onAddFriend(userId);
                 }
             } else {
-                throw new Error(response.data?.message || 'Failed to send friend request');
+                throw new Error(response.data?.message || 'Failed to process friend request');
             }
         } catch (err) {
-            console.error('Error sending friend request:', err);
-            const errorMessage = err.response?.data?.message || err.message || 'Failed to send friend request';
+            console.error('Error processing friend request:', err);
+            const errorMessage = err.response?.data?.message || err.message || 'Failed to process friend request';
             toast.error(errorMessage);
         } finally {
             // Clear loading state for this user
@@ -253,7 +263,7 @@ const InfiniteFriendSuggestions = ({ friendSuggestions, onAddFriend, followedUse
                         <FriendSuggestionCard
                             key={`${friend.id}-${index}`}
                             user={friend}
-                            onAddFriend={() => handleSendFriendRequest(friend.id || friend.user_id)}
+                            onAddFriend={(isCancel) => handleSendFriendRequest(friend.id || friend.user_id, isCancel)}
                             followedUsers={followedUsers}
                             requestedUsers={requestedUsers}
                             loadingUsers={loadingUsers}
@@ -276,13 +286,22 @@ const FriendSuggestionCard = ({ user, onAddFriend, followedUsers, requestedUsers
     const navigate = useNavigate();
     const userId = user.id || user.user_id;
     const isFollowed = followedUsers.has(userId);
-    const isRequested = requestedUsers.has(userId) || user.is_following === true;
+    // Check both requestedUsers set and friend_request_sent from API
+    const isRequested = requestedUsers.has(userId) || user.friend_request_sent === true;
     const isLoading = loadingUsers.has(userId);
-    const isDisabled = isFollowed || isRequested || isLoading;
+    const isDisabled = isFollowed || isLoading;
 
     const handleUserClick = () => {
         if (userId) {
             navigate(`/profile/${userId}`);
+        }
+    };
+
+    const handleButtonClick = (e) => {
+        e.stopPropagation();
+        if (!isDisabled) {
+            // Pass isCancel flag if it's a cancel request
+            onAddFriend(isRequested);
         }
     };
 
@@ -315,26 +334,25 @@ const FriendSuggestionCard = ({ user, onAddFriend, followedUsers, requestedUsers
                     {user.username}
                 </p>
                 <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        if (!isDisabled) {
-                            onAddFriend();
-                        }
-                    }}
+                    onClick={handleButtonClick}
                     disabled={isDisabled}
                     className={`px-2 md:px-3 py-1.5 rounded-md text-xs md:text-sm w-full font-medium transition-colors flex items-center justify-center gap-2
                  ${isDisabled
                             ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                            : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 cursor-pointer'
+                            : isRequested
+                                ? 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 cursor-pointer'
+                                : 'bg-blue-500 text-white hover:bg-blue-600 cursor-pointer'
                         }`}
                 >
                     {isLoading ? (
                         <>
-                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-600"></div>
-                            <span>Sending...</span>
+                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                            <span>{isRequested ? 'Cancelling...' : 'Sending...'}</span>
                         </>
-                    ) : isFollowed || isRequested ? (
-                        "Requested"
+                    ) : isFollowed ? (
+                        "Followed"
+                    ) : isRequested ? (
+                        "Cancel"
                     ) : (
                         "Add Friend"
                     )}

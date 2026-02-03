@@ -79,6 +79,9 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
   const [showReportModal, setShowReportModal] = useState(false);
   // Add state for delete post modal
   const [showDeletePostModal, setShowDeletePostModal] = useState(false);
+  // Add local state for saved status to provide instant visual feedback
+  const [localIsSaved, setLocalIsSaved] = useState(isSaved);
+  
   const buildAuthHeaders = useCallback(() => {
     const accessToken = localStorage.getItem("access_token");
     const headers = {
@@ -90,6 +93,11 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
     }
     return headers;
   }, []);
+
+  // Update local saved state when prop changes
+  useEffect(() => {
+    setLocalIsSaved(isSaved);
+  }, [isSaved]);
 
   // Reset image slider when post changes
   useEffect(() => {
@@ -573,6 +581,8 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
   }, [showSharePopup]);
 
   const handleSavePost = useCallback(() => {
+    // Toggle local state immediately for instant visual feedback
+    setLocalIsSaved(prev => !prev);
     savePost(postIdForPostOperations);
     setShowOptionsMenu(false);
   }, [savePost, postIdForPostOperations]);
@@ -1882,11 +1892,15 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
 
           {/* Bookmark button - changes color when saved */}
           <button 
-            className="flex items-center space-x-2 transition-colors cursor-pointer" 
-            onClick={() => savePost(postIdForPostOperations)}
+            className="flex items-center space-x-2 transition-all duration-200 cursor-pointer" 
+            onClick={() => {
+              // Toggle local state immediately for instant visual feedback
+              setLocalIsSaved(prev => !prev);
+              savePost(postIdForPostOperations);
+            }}
           >
-            {isSaved ? (
-              <IoBookmark className="w-5 h-5 text-yellow-500 hover:text-yellow-600 transition-colors" />
+            {localIsSaved ? (
+              <IoBookmark className="w-5 h-5 text-yellow-500 hover:text-yellow-600 transition-colors animate-in zoom-in-50 duration-200" />
             ) : (
               <Bookmark className="w-5 h-5 text-gray-600 hover:text-yellow-500 transition-colors hover:scale-105" />
             )}
