@@ -75,10 +75,6 @@ const Home = () => {
     const saved = localStorage.getItem("liked_posts");
     return saved ? new Set(JSON.parse(saved)) : new Set();
   }); // Track which posts are liked
-  const [savedPosts, setSavedPosts] = useState(() => {
-    const saved = localStorage.getItem("saved_posts");
-    return saved ? new Set(JSON.parse(saved)) : new Set();
-  }); // Track which posts are saved
   const [postComments, setPostComments] = useState({}); // Track comments for each post
   const [notification, setNotification] = useState({ show: false, message: '', type: 'success' });
 
@@ -355,22 +351,6 @@ const Home = () => {
         setNewFeeds([]);
         }
       }
-
-      // Initialize saved posts from API data
-      const feedData = data?.data || data || [];
-      if (Array.isArray(feedData)) {
-        const savedFromAPI = new Set();
-        feedData.forEach(post => {
-          if (post.is_post_saved) {
-            savedFromAPI.add(post.id);
-          }
-        });
-        setSavedPosts(prev => {
-          const combined = new Set([...prev, ...savedFromAPI]);
-          localStorage.setItem("saved_posts", JSON.stringify([...combined]));
-          return combined;
-        });
-      }
     } catch (error) {
       setError(error.message);
     } finally {
@@ -570,10 +550,12 @@ const Home = () => {
   }
 
   const savePost = async (post_id) => {
-    setLoading(true);
     try {
       const accessToken = localStorage.getItem("access_token");
-      const wasSaved = savedPosts.has(post_id);
+      
+      // Find the current saved state from the post in newFeeds
+      const post = newFeeds.find(p => p.id === post_id || p.post_id === post_id);
+      const wasSaved = post?.is_saved || post?.is_post_saved || false;
 
       // Use DELETE method to unsave, POST method to save
       const response = wasSaved
@@ -597,26 +579,13 @@ const Home = () => {
         // Get the new saved state from API response
         const newSavedState = data?.data?.is_saved !== undefined ? data.data.is_saved : !wasSaved;
         
-        // Update the saved state
-        setSavedPosts(prev => {
-          const newSavedPosts = new Set(prev);
-          if (newSavedState) {
-            newSavedPosts.add(post_id);
-          } else {
-            newSavedPosts.delete(post_id);
-          }
-          // Save to localStorage
-          localStorage.setItem("saved_posts", JSON.stringify([...newSavedPosts]));
-          return newSavedPosts;
-        });
-
         // Update the saved state in newFeeds - check both id and post_id
         setNewFeeds(prev =>
-          prev.map(post => {
-            const matchesPost = post.id === post_id || post.post_id === post_id;
+          prev.map(p => {
+            const matchesPost = p.id === post_id || p.post_id === post_id;
             return matchesPost
-              ? { ...post, is_post_saved: newSavedState }
-              : post;
+              ? { ...p, is_saved: newSavedState, is_post_saved: newSavedState }
+              : p;
           })
         );
         
@@ -628,8 +597,6 @@ const Home = () => {
     } catch (error) {
       console.error('Error saving post:', error);
       toast.error(error?.response?.data?.message || 'Error saving post');
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -1310,7 +1277,6 @@ const Home = () => {
 
 
   const handleStoryClick = (user) => {
-
     setSelectedUserForStories(user);
     setShowStoriesPreview(true);
   };
@@ -1424,7 +1390,7 @@ const Home = () => {
                     handleLike={handleLike}
 
                     isLiked={post?.is_liked || likedPosts.has(postId)}
-                    isSaved={savedPosts.has(postId)}
+                    isSaved={post?.is_saved || post?.is_post_saved || false}
                     fetchComments={fetchComments}
                     commentsData={commentsForPost}
                     savePost={savePost}
@@ -1519,7 +1485,8 @@ const Home = () => {
           currentUser={{
             name: `${selectedUserForStories.first_name || ''} ${selectedUserForStories.last_name || ''}`.trim() || selectedUserForStories.username,
             username: selectedUserForStories.username,
-            avatar_url: selectedUserForStories.avatar_url || selectedUserForStories.avatar
+            avatar_url: selectedUserForStories.avatar_url || selectedUserForStories.avatar,
+            user_id: selectedUserForStories.user_id || selectedUserForStories.id
           }}
           isCurrentUserStories={(selectedUserForStories.user_id || selectedUserForStories.id)?.toString() === localStorage.getItem('user_id')?.toString()}
           onStoryDeleted={() => {
@@ -1527,6 +1494,17 @@ const Home = () => {
             getuserStories();
             getAllUsersStories();
           }}
+          allUserStories={(() => {
+            const currentUserId = localStorage.getItem('user_id');
+            // Filter out current user's stories from the list for navigation
+            const filteredStories = allUsersStories.filter(u => (u.user_id || u.id)?.toString() !== currentUserId?.toString());
+            return filteredStories;
+          })()}
+          initialUserIndex={(() => {
+            const currentUserId = localStorage.getItem('user_id');
+            const filteredStories = allUsersStories.filter(u => (u.user_id || u.id)?.toString() !== currentUserId?.toString());
+            return filteredStories.findIndex(u => (u.user_id || u.id)?.toString() === (selectedUserForStories.user_id || selectedUserForStories.id)?.toString());
+          })()}
         />
       )}
 

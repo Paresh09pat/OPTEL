@@ -16,9 +16,10 @@ const formatTime = (seconds) => {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
-const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, isCurrentUserStories = false }) => {
+const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, isCurrentUserStories = false, allUserStories = [], initialUserIndex = 0 }) => {
   const { notifyStoryUpdate } = useUser();
   const navigate = useNavigate();
+  const [currentUserIndex, setCurrentUserIndex] = useState(initialUserIndex); // Index of current user in allUserStories
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const progressIntervalRef = useRef(null);
@@ -26,6 +27,8 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const storiesRef = useRef(stories);
   const currentStoryIndexRef = useRef(0);
+  const currentUserIndexRef = useRef(initialUserIndex);
+  const allUserStoriesRef = useRef(allUserStories);
   // Reaction states
   const [showReactionPopup, setShowReactionPopup] = useState(false);
   const [hoverTimeout, setHoverTimeout] = useState(null);
@@ -46,15 +49,21 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
   const [isVideoPlaying, setIsVideoPlaying] = useState(true); // Start as true to assume playing
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
 
+  // Get current user's stories and user info
+  const currentUserStories = allUserStories.length > 0 ? allUserStories[currentUserIndex]?.stories || stories : stories;
+  const currentUserInfo = allUserStories.length > 0 ? allUserStories[currentUserIndex] : currentUser;
+
   // Keep refs in sync
   useEffect(() => {
-    storiesRef.current = stories;
+    storiesRef.current = currentUserStories;
     currentStoryIndexRef.current = currentStoryIndex;
-  }, [stories, currentStoryIndex]);
+    currentUserIndexRef.current = currentUserIndex;
+    allUserStoriesRef.current = allUserStories;
+  }, [currentUserStories, currentStoryIndex, currentUserIndex, allUserStories]);
 
-  const currentStory = stories && stories.length > 0 ? stories[currentStoryIndex] : null;
+  const currentStory = currentUserStories && currentUserStories.length > 0 ? currentUserStories[currentStoryIndex] : null;
 
-  // Define progress functions first (needed by hover handlers)
+  // Define progress functions first (needed by other functions)
   const stopProgress = useCallback(() => {
     if (progressIntervalRef.current) {
       clearInterval(progressIntervalRef.current);
@@ -71,7 +80,17 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
       setProgress(0);
       setCurrentStoryIndex(prev => prev + 1);
     } else {
-      onClose();
+      // Move to next user's stories if available
+      const currentUserIdx = currentUserIndexRef.current;
+      const usersLength = allUserStoriesRef.current?.length || 0;
+
+      if (usersLength > 0 && currentUserIdx < usersLength - 1) {
+        setCurrentUserIndex(prev => prev + 1);
+        setCurrentStoryIndex(0);
+        setProgress(0);
+      } else {
+        onClose();
+      }
     }
   }, [stopProgress, onClose]);
 
@@ -82,6 +101,33 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
     if (currentIdx > 0) {
       setProgress(0);
       setCurrentStoryIndex(prev => prev - 1);
+    }
+  }, [stopProgress]);
+
+  // Navigate to next user's stories
+  const nextUser = useCallback(() => {
+    stopProgress();
+    const currentIdx = currentUserIndexRef.current;
+    const usersLength = allUserStoriesRef.current?.length || 0;
+
+    if (usersLength > 0 && currentIdx < usersLength - 1) {
+      setCurrentUserIndex(prev => prev + 1);
+      setCurrentStoryIndex(0);
+      setProgress(0);
+    } else {
+      onClose();
+    }
+  }, [stopProgress, onClose]);
+
+  // Navigate to previous user's stories
+  const prevUser = useCallback(() => {
+    stopProgress();
+    const currentIdx = currentUserIndexRef.current;
+
+    if (currentIdx > 0) {
+      setCurrentUserIndex(prev => prev - 1);
+      setCurrentStoryIndex(0);
+      setProgress(0);
     }
   }, [stopProgress]);
 
@@ -315,10 +361,13 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
     }
   }, [showReactionPopup]);
 
-  // Reset when modal opens/closes
+  // Reset when modal opens/closes or user changes
   useEffect(() => {
-    if (isOpen && stories && stories.length > 0) {
-      setCurrentStoryIndex(0);
+    if (isOpen && currentUserStories && currentUserStories.length > 0) {
+      // Only reset story index if user changed, not on every render
+      if (currentUserIndex !== currentUserIndexRef.current) {
+        setCurrentStoryIndex(0);
+      }
       setProgress(0);
       setIsPaused(false);
       setShowReactionPopup(false);
@@ -327,7 +376,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
       
       // Initialize reactions from story data if available
       const initialReactions = {};
-      stories.forEach(story => {
+      currentUserStories.forEach(story => {
         if (story.user_reaction) {
           initialReactions[story.id] = story.user_reaction;
         }
@@ -336,7 +385,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
       
       // Try to play video after a short delay if it's a video story
       setTimeout(() => {
-        if (videoRef.current && stories[0]?.type === 'video') {
+        if (videoRef.current && currentUserStories[currentStoryIndex]?.type === 'video') {
           videoRef.current.play().catch(err => {
             console.log('Auto-play prevented, will play on user interaction:', err);
           });
@@ -352,12 +401,12 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
     return () => {
       stopProgress();
     };
-  }, [isOpen, stories, stopProgress]);
+  }, [isOpen, currentUserStories, currentUserIndex, stopProgress]);
 
   // Restart progress when story index changes and mark story as seen
   useEffect(() => {
 
-    if (isOpen && stories && stories.length > 0 && !isPaused && !deleteModalOpen) {
+    if (isOpen && currentUserStories && currentUserStories.length > 0 && !isPaused && !deleteModalOpen) {
       setProgress(0);
       setShowReactionPopup(false); // Close reaction popup when story changes
       setIsDescriptionExpanded(false); // Reset description expansion when story changes
@@ -370,7 +419,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
       let progressTimer = null;
 
       // Mark current story as seen (only for other users' stories)
-      const currentStory = stories[currentStoryIndex];
+      const currentStory = currentUserStories[currentStoryIndex];
       if (currentStory?.id) {
         // Mark as seen after a short delay to ensure story is actually displayed
         markSeenTimer = setTimeout(() => {
@@ -406,7 +455,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
         videoRef.current.currentTime = 0;
       }
     };
-  }, [currentStoryIndex, isOpen, isPaused, deleteModalOpen, startProgress, stopProgress, stories, markStoryAsSeen]);
+  }, [currentStoryIndex, currentUserIndex, isOpen, isPaused, deleteModalOpen, startProgress, stopProgress, currentUserStories, markStoryAsSeen]);
 
   const handleMouseDown = () => {
     // Don't pause on mouse down for video stories - use play/pause button instead
@@ -604,7 +653,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, currentStoryIndex, stories]);
+  }, [isOpen, nextStory, prevStory, onClose]);
 
   // Prevent body scroll
   useEffect(() => {
@@ -618,7 +667,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
     };
   }, [isOpen]);
 
-  if (!isOpen || !stories || stories.length === 0) return null;
+  if (!isOpen || !currentUserStories || currentUserStories.length === 0) return null;
 
   return (
     <div
@@ -674,11 +723,22 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
 
       {/* Story Content */}
       <div className="relative w-full h-full flex items-center justify-center">
-        {/* Previous Button */}
+        {/* Previous User Button - Navigate to previous user's stories - Only show for other users' stories */}
+        {!isCurrentUserStories && allUserStories.length > 0 && currentUserIndex > 0 && (
+          <button
+            onClick={prevUser}
+            className="absolute left-2 z-10 text-white hover:text-gray-300 transition-colors bg-black/50 hover:bg-black/70 rounded-full p-3 shadow-lg"
+            aria-label="Previous user stories"
+          >
+            <FaChevronLeft className="w-8 h-8" />
+          </button>
+        )}
+
+        {/* Previous Story Button */}
         {currentStoryIndex > 0 && (
           <button
             onClick={prevStory}
-            className="absolute left-4 z-10 text-white hover:text-gray-300 transition-colors bg-black/30 hover:bg-black/50 rounded-full p-2"
+            className="absolute left-16 z-10 text-white hover:text-gray-300 transition-colors bg-black/30 hover:bg-black/50 rounded-full p-2"
             aria-label="Previous story"
           >
             <FaChevronLeft className="w-6 h-6" />
@@ -697,7 +757,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
             <div className="absolute top-0 left-0 right-0 z-50 p-3">
               {/* Story Progress Bars */}
               <div className="flex gap-2 mb-2">
-                {stories.map((story, index) => (
+                {currentUserStories.map((story, index) => (
                   <div
                     key={story.id}
                     className="flex-1 h-1 bg-gray-800/60 rounded-sm overflow-hidden border border-white/20"
@@ -729,7 +789,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
             <div 
               className="absolute top-20 left-3 flex items-center gap-3 z-50 cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => {
-                const userId = currentUser?.user_id || currentUser?.id;
+                const userId = currentUserInfo?.user_id || currentUserInfo?.id;
                 if (userId) {
                   onClose();
                   navigate(`/profile/${userId}`);
@@ -737,8 +797,8 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
               }}
             >
               <img
-                src={currentUser?.avatar_url || currentUser?.avatar || '/user.png'}
-                alt={currentUser?.name || currentUser?.username || 'User'}
+                src={currentUserInfo?.avatar_url || currentUserInfo?.avatar || '/user.png'}
+                alt={currentUserInfo?.name || currentUserInfo?.username || 'User'}
                 className="w-10 h-10 rounded-full border-2 border-white object-cover"
                 onError={(e) => {
                   e.target.onerror = null;
@@ -747,7 +807,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
               />
               <div>
                 <h3 className="text-white font-semibold drop-shadow-lg text-sm">
-                  {currentUser?.name || currentUser?.username || 'Unknown User'}
+                  {currentUserInfo?.name || currentUserInfo?.username || 'Unknown User'}
                 </h3>
                 <p className="text-white/80 text-xs drop-shadow-md">
                   {currentStory?.time_text || 'Just now'}
@@ -836,7 +896,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
               <img
                 src={currentStory?.thumbnail || currentStory?.media_url}
                 alt={currentStory?.title || 'Story'}
-                className="w-full max-h-[calc(100vh-280px)] object-contain"
+                className="w-full max-h-[calc(100vh-350px)] object-contain"
               />
             )}
 
@@ -846,7 +906,24 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
                 <h4 className="text-white font-medium mb-2 drop-shadow-lg">{currentStory.title}</h4>
               )}
               {currentStory?.description && (
-                <div className="text-white/90 text-sm drop-shadow-md mb-4">
+                <div 
+                  className="text-white/90 text-sm drop-shadow-md mb-4"
+                  onClick={(e) => {
+                    // If description is expanded and user clicks on it, collapse it and resume
+                    if (isDescriptionExpanded) {
+                      e.stopPropagation();
+                      setIsDescriptionExpanded(false);
+                      setIsPaused(false);
+                      if (isOpen && stories && stories.length > 0 && currentStory?.type !== 'video') {
+                        startProgress();
+                      }
+                      // Resume video if it was playing
+                      if (videoRef.current && currentStory?.type === 'video' && isVideoPlaying) {
+                        videoRef.current.play();
+                      }
+                    }
+                  }}
+                >
                   {isDescriptionExpanded ? (
                     <div>
                       <p className="whitespace-pre-wrap break-words">{currentStory.description}</p>
@@ -855,6 +932,14 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
                           onClick={(e) => {
                             e.stopPropagation();
                             setIsDescriptionExpanded(false);
+                            setIsPaused(false);
+                            if (isOpen && stories && stories.length > 0 && currentStory?.type !== 'video') {
+                              startProgress();
+                            }
+                            // Resume video if it was playing
+                            if (videoRef.current && currentStory?.type === 'video' && isVideoPlaying) {
+                              videoRef.current.play();
+                            }
                           }}
                           onMouseDown={(e) => e.stopPropagation()}
                           onMouseUp={(e) => e.stopPropagation()}
@@ -876,6 +961,12 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
                           onClick={(e) => {
                             e.stopPropagation();
                             setIsDescriptionExpanded(true);
+                            setIsPaused(true);
+                            stopProgress();
+                            // Pause video if it's playing
+                            if (videoRef.current && currentStory?.type === 'video') {
+                              videoRef.current.pause();
+                            }
                           }}
                           onMouseDown={(e) => e.stopPropagation()}
                           onMouseUp={(e) => e.stopPropagation()}
@@ -967,14 +1058,25 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
           </div>
         </div>
 
-        {/* Next Button */}
-        {currentStoryIndex < stories.length - 1 && (
+        {/* Next Story Button */}
+        {currentStoryIndex < currentUserStories.length - 1 && (
           <button
             onClick={nextStory}
-            className="absolute right-4 z-10 text-white hover:text-gray-300 transition-colors bg-black/30 hover:bg-black/50 rounded-full p-2"
+            className="absolute right-16 z-10 text-white hover:text-gray-300 transition-colors bg-black/30 hover:bg-black/50 rounded-full p-2"
             aria-label="Next story"
           >
             <FaChevronRight className="w-6 h-6" />
+          </button>
+        )}
+
+        {/* Next User Button - Navigate to next user's stories - Only show for other users' stories */}
+        {!isCurrentUserStories && allUserStories.length > 0 && currentUserIndex < allUserStories.length - 1 && (
+          <button
+            onClick={nextUser}
+            className="absolute right-2 z-10 text-white hover:text-gray-300 transition-colors bg-black/50 hover:bg-black/70 rounded-full p-3 shadow-lg"
+            aria-label="Next user stories"
+          >
+            <FaChevronRight className="w-8 h-8" />
           </button>
         )}
       </div>

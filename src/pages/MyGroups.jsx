@@ -648,7 +648,10 @@ const MyGroups = () => {
             onClose={() => setCreateGroupModal(false)}
             onSuccess={(groupData) => {
               console.log("Group created:", groupData);
-              // You can add logic here to refresh the groups list or show a notification
+              // Refresh the groups list
+              setActiveTab('myGroups'); // Switch to My Groups tab
+              fetchMyGroups(); // Refresh the list
+              setCreateGroupModal(false); // Close the modal
             }}
           />
         )}

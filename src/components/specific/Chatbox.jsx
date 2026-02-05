@@ -32,6 +32,7 @@ const Chatbox = ({ onClose, isMobile = false }) => {
   const [storyModalOpen, setStoryModalOpen] = useState(false);
   const [storyViewerOpen, setStoryViewerOpen] = useState(false);
   const [userStories, setUserStories] = useState([]);
+  const [allUserStories, setAllUserStories] = useState([]); // Store all users' stories
   const [storiesLoading, setStoriesLoading] = useState(false);
   const [storyBorderAnimating, setStoryBorderAnimating] = useState(false);
   const containerRef = useRef(null);
@@ -216,6 +217,9 @@ const Chatbox = ({ onClose, isMobile = false }) => {
 
       const data = await response.json();
       if (data?.api_status === 200 && data?.stories && data.stories.length > 0) {
+        // Store all users' stories for multi-user navigation
+        setAllUserStories(data.stories);
+        
         // Find current user's stories
         const userId = localStorage.getItem('user_id');
         const currentUserStories = data.stories.find(
@@ -227,10 +231,12 @@ const Chatbox = ({ onClose, isMobile = false }) => {
           setUserStories([]);
         }
       } else {
+        setAllUserStories([]);
         setUserStories([]);
       }
     } catch (error) {
       console.error('Error fetching stories:', error);
+      setAllUserStories([]);
       setUserStories([]);
     } finally {
       setStoriesLoading(false);
@@ -751,6 +757,8 @@ const Chatbox = ({ onClose, isMobile = false }) => {
           currentUser={userData}
           isCurrentUserStories={true}
           onStoryDeleted={fetchUserStories}
+          allUserStories={[]}
+          initialUserIndex={0}
         />
       )}
 
