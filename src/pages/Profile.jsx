@@ -44,6 +44,7 @@ const Profile = () => {
     const [showReportModal, setShowReportModal] = useState(false);
     const [reportingPostId, setReportingPostId] = useState(null);
     const [activeTab, setActiveTab] = useState('posts'); // 'posts' or 'about'
+    const [activeFilter, setActiveFilter] = useState(null); // Track active filter for UI
     const navigate = useNavigate();
     const { userId: urlUserId } = useParams();
 
@@ -244,7 +245,7 @@ const Profile = () => {
 
     // Fetch user posts using timeline API for all profiles
     useEffect(() => {
-        const fetchUserPosts = async (page = 1) => {
+        const fetchUserPosts = async (page = 1, filter = null) => {
             try {
                 // Use different loading state for pagination vs initial load
                 if (page === 1) {
@@ -264,16 +265,19 @@ const Profile = () => {
                     return;
                 }
 
+                // Build URL with filter parameter if provided
+                let url = `${import.meta.env.VITE_API_URL}/api/v1/timeline?u=${username}&limit=20&page=${page}`;
+                if (filter) {
+                    url += `&filter=${filter}`;
+                }
+
                 // Use timeline API for all profiles (own and others)
-                const response = await axios.get(
-                    `${import.meta.env.VITE_API_URL}/api/v1/timeline?u=${username}&limit=20&page=${page}`,
-                    {
-                        headers: {
-                            "Authorization": "Bearer " + localStorage.getItem('access_token'),
-                            "Content-Type": "application/json",
-                        }
+                const response = await axios.get(url, {
+                    headers: {
+                        "Authorization": "Bearer " + localStorage.getItem('access_token'),
+                        "Content-Type": "application/json",
                     }
-                );
+                });
                 
                 const data = response.data;
                 
@@ -369,9 +373,9 @@ const Profile = () => {
         };
 
         if (userData?.user_data?.username) {
-            fetchUserPosts(currentPage);
+            fetchUserPosts(currentPage, activeFilter);
         }
-    }, [userData, currentPage]);
+    }, [userData, currentPage, activeFilter]);
 
     const handleEditProfile = () => {
         navigate('/profile-settings');
@@ -2302,7 +2306,15 @@ const Profile = () => {
         {activeTab === 'posts' && (
             <>
                 <div className="w-full mt-4 px-5">
-                    <QuickActionSection />
+                    <QuickActionSection 
+                        fetchNewFeeds={(filterType) => {
+                            // Reset to page 1 and apply filter
+                            setActiveFilter(filterType);
+                            setCurrentPage(1);
+                            setPosts([]); // Clear existing posts
+                        }}
+                        activeFilter={activeFilter}
+                    />
                 </div>
                 
                 <div className="w-full mt-4 px-5" data-posts-section>
@@ -2347,15 +2359,18 @@ const Profile = () => {
                                             const username = userData?.user_data?.username;
                                             
                                             if (username) {
-                                                const response = await axios.get(
-                                                    `${import.meta.env.VITE_API_URL}/api/v1/timeline?u=${username}&limit=20&page=1`,
-                                                    {
-                                                        headers: {
-                                                            "Authorization": "Bearer " + localStorage.getItem('access_token'),
-                                                            "Content-Type": "application/json",
-                                                        }
+                                                // Build URL with filter if active
+                                                let url = `${import.meta.env.VITE_API_URL}/api/v1/timeline?u=${username}&limit=20&page=1`;
+                                                if (activeFilter) {
+                                                    url += `&filter=${activeFilter}`;
+                                                }
+                                                
+                                                const response = await axios.get(url, {
+                                                    headers: {
+                                                        "Authorization": "Bearer " + localStorage.getItem('access_token'),
+                                                        "Content-Type": "application/json",
                                                     }
-                                                );
+                                                });
                                                 const data = response.data;
                                                 if (data.api_status === '200' && Array.isArray(data.posts)) {
                                                     const formattedPosts = data.posts.map(post => {
