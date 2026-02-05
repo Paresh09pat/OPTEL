@@ -87,7 +87,15 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
       );
 
       if (response.data && response.data.ok && response.data.data) {
-        setSubCategories(response.data.data.sub_categories || []);
+        const subCats = response.data.data.sub_categories || [];
+        setSubCategories(subCats);
+        // Auto-select first subcategory if available
+        if (subCats.length > 0) {
+          setFormData(prev => ({
+            ...prev,
+            groupSubCategory: subCats[0].id.toString()
+          }));
+        }
       } else {
         setSubCategories([]);
       }
@@ -96,6 +104,15 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
       setSubCategories([]);
     }
   };
+
+  // Fetch subcategories when category changes
+  useEffect(() => {
+    if (formData.groupCategory) {
+      fetchSubCategories(formData.groupCategory);
+    } else {
+      setSubCategories([]);
+    }
+  }, [formData.groupCategory]);
 
   // Load meta data when component mounts
   useEffect(() => {
@@ -116,7 +133,8 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
       return;
     }
 
-    if (!formData.groupSubCategory) {
+    // Only require subcategory if subcategories are available
+    if (subCategories.length > 0 && !formData.groupSubCategory) {
       toast.error('Please select a sub category');
       return;
     }
@@ -130,10 +148,14 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
         group_name: formData.groupName.trim(),
         group_title: formData.groupName.trim(), // Using same as group_name for now
         category: parseInt(formData.groupCategory),
-        sub_category: parseInt(formData.groupSubCategory),
         privacy: formData.groupType,
         join_privacy: formData.joinPrivacy
       };
+
+      // Add subcategory only if it's selected
+      if (formData.groupSubCategory) {
+        requestData.sub_category = parseInt(formData.groupSubCategory);
+      }
 
       // Add description if provided
       if (formData.groupDescription.trim()) {
@@ -162,23 +184,16 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
         }
         
         // Reset form after successful creation
-        setTimeout(() => {
-          setFormData({
-            groupName: '',
-            groupDescription: '',
-            groupType: 'public',
-            joinPrivacy: 'public',
-            groupCategory: categories.length > 0 ? categories[0].id.toString() : '',
-            groupSubCategory: ''
-          });
-          setSubCategories([]);
-          setSubmitSuccess(false);
-          
-          // Close modal after success
-          if (onClose) {
-            onClose();
-          }
-        }, 2000);
+        setFormData({
+          groupName: '',
+          groupDescription: '',
+          groupType: 'public',
+          joinPrivacy: 'public',
+          groupCategory: categories.length > 0 ? categories[0].id.toString() : '',
+          groupSubCategory: ''
+        });
+        setSubCategories([]);
+        setSubmitSuccess(false);
       } else {
         throw new Error(response.data?.message || 'Failed to create group');
       }
@@ -366,12 +381,6 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
                     groupCategory: selectedId,
                     groupSubCategory: '' // Reset subcategory when category changes
                   }));
-                  // Fetch subcategories
-                  if (selectedId) {
-                    fetchSubCategories(selectedId);
-                  } else {
-                    setSubCategories([]);
-                  }
                 }}
                 className="w-full p-3 px-4 border border-gray-300 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-transparent"
               >
@@ -401,42 +410,43 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
           </div>
 
           {/* Group Sub Category */}
-          <div className="flex flex-col gap-2">
-            <label className="text-base text-gray-600 font-medium">
-              Sub Category <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <select
-                name="groupSubCategory"
-                value={formData.groupSubCategory}
-                onChange={handleChange}
-                disabled={!formData.groupCategory || subCategories.length === 0}
-                className="w-full p-3 px-4 border border-gray-300 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <option value="">Select sub category</option>
-                {subCategories.map((subCategory) => (
-                  <option key={subCategory.id} value={subCategory.id}>
-                    {subCategory.name}
-                  </option>
-                ))}
-              </select>
-              <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                <svg
-                  className="w-5 h-5 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+          {subCategories.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <label className="text-base text-gray-600 font-medium">
+                Sub Category <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  name="groupSubCategory"
+                  value={formData.groupSubCategory}
+                  onChange={handleChange}
+                  className="w-full p-3 px-4 border border-gray-300 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-transparent"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
+                  <option value="">Select sub category</option>
+                  {subCategories.map((subCategory) => (
+                    <option key={subCategory.id} value={subCategory.id}>
+                      {subCategory.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                  <svg
+                    className="w-5 h-5 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Success Message */}
           {submitSuccess && (

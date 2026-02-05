@@ -233,12 +233,7 @@ const Forum = () => {
             ))}
           </div>
 
-          {/* Search Icon - positioned to the right */}
-          <div className="float-right -mt-12 mr-4">
-            <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center shadow-md cursor-pointer hover:bg-blue-700 transition-colors">
-              <FaSearch className="w-6 h-6 text-white" />
-            </div>
-          </div>
+         
           <div className="clear-both"></div>
         </div>
 

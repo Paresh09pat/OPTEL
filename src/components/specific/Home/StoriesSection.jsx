@@ -14,6 +14,7 @@ const StoriesSection = ({
 }) => {
   const { userData, storyUpdateTrigger } = useUser();
   const [currentUserStories, setCurrentUserStories] = useState([]);
+  const [allUserStories, setAllUserStories] = useState([]); // Store all users' stories
   const [storyModalOpen, setStoryModalOpen] = useState(false);
   const [storyViewerOpen, setStoryViewerOpen] = useState(false);
   const [storyBorderAnimating, setStoryBorderAnimating] = useState(false);
@@ -38,6 +39,9 @@ const StoriesSection = ({
 
       const data = await response.json();
       if (data?.api_status === 200 && data?.stories && data.stories.length > 0) {
+        // Store all users' stories for multi-user navigation
+        setAllUserStories(data.stories);
+        
         // Find current user's stories
         const userId = localStorage.getItem('user_id');
         const currentUserStoriesData = data.stories.find(
@@ -49,10 +53,12 @@ const StoriesSection = ({
           setCurrentUserStories([]);
         }
       } else {
+        setAllUserStories([]);
         setCurrentUserStories([]);
       }
     } catch (error) {
       console.error('Error fetching stories:', error);
+      setAllUserStories([]);
       setCurrentUserStories([]);
     } finally {
       setStoriesLoading(false);
@@ -206,6 +212,8 @@ const StoriesSection = ({
           currentUser={userData}
           isCurrentUserStories={true}
           onStoryDeleted={handleStoryDeleted}
+          allUserStories={[]}
+          initialUserIndex={0}
         />
       )}
 
