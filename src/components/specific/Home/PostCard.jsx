@@ -1521,26 +1521,8 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
                   textShadow: '0 2px 4px rgba(0,0,0,0.2)'
                 }}
               >
-                {/* Show feeling in colored post */}
-                {isFeelingPost && feeling && (
-                  <div className="mb-4 flex items-center justify-center space-x-2">
-                    <span className="text-3xl">{getFeelingEmoji(feeling.key)}</span>
-                    <span className="text-lg font-medium opacity-90">Feeling {feeling.label}</span>
-                  </div>
-                )}
-                {/* Show activity in colored post */}
-                {(() => {
-                  const activityInfo = getActivityInfo(postType, content);
-                  if (activityInfo && !isFeelingPost) {
-                    return (
-                      <div className="mb-4 flex items-center justify-center space-x-2">
-                        <span className="text-3xl">{activityInfo.emoji}</span>
-                        <span className="text-lg font-medium opacity-90">{activityInfo.label} {activityInfo.target}</span>
-                      </div>
-                    );
-                  }
-                  return null;
-                })()}
+                {/* Show feeling in colored post - REMOVED, only show in header */}
+                {/* Show activity in colored post - REMOVED, only show in header */}
                 <div
                   className="text-xl md:text-2xl font-medium leading-relaxed"
                   style={{
@@ -1557,26 +1539,8 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
           ) : (
             /* Regular text post */
             <>
-              {/* Show feeling in regular post */}
-              {isFeelingPost && feeling && (
-                <div className="mb-3 flex items-center space-x-2 text-gray-600">
-                  <span className="text-2xl">{getFeelingEmoji(feeling.key)}</span>
-                  <span className="text-base font-medium">Feeling {feeling.label}</span>
-                </div>
-              )}
-              {/* Show activity in regular post */}
-              {(() => {
-                const activityInfo = getActivityInfo(postType, content);
-                if (activityInfo && !isFeelingPost) {
-                  return (
-                    <div className="mb-3 flex items-center space-x-2 text-gray-600">
-                      <span className="text-2xl">{activityInfo.emoji}</span>
-                      <span className="text-base font-medium">{activityInfo.label} {activityInfo.target}</span>
-                    </div>
-                  );
-                }
-                return null;
-              })()}
+              {/* Show feeling in regular post - REMOVED, only show in header */}
+              {/* Show activity in regular post - REMOVED, only show in header */}
               <div
                 className="text-gray-800 prose prose-sm max-w-none"
                 style={{
@@ -2606,21 +2570,6 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
                                         </div>
                                       )}
                                     </div>
-
-
-
-                                    {/* Reply to Reply Button */}
-                                    <button
-                                      className="flex items-center space-x-1 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        // TODO: Implement reply to reply functionality
-                                        console.log('Reply to reply:', reply.id);
-                                      }}
-                                    >
-                                      <MessageCircle className="w-3 h-3" />
-                                      <span className="text-xs">Reply</span>
-                                    </button>
 
                                     {/* Edit Reply Button - Only show for current user's replies */}
                                     {isCommentAuthor(reply) && (

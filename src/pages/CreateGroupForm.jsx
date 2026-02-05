@@ -7,7 +7,6 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
     groupName: '',
     groupDescription: '',
-    groupUrl: 'https://ouptel.com/',
     groupType: 'public',
     joinPrivacy: 'public',
     groupCategory: '',
@@ -167,7 +166,6 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
           setFormData({
             groupName: '',
             groupDescription: '',
-            groupUrl: 'https://ouptel.com/',
             groupType: 'public',
             joinPrivacy: 'public',
             groupCategory: categories.length > 0 ? categories[0].id.toString() : '',
@@ -277,21 +275,6 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
               placeholder="Group Description"
               rows={5}
               className="w-full p-3 px-4 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-transparent"
-            />
-          </div>
-
-          {/* Group URL */}
-          <div className="flex flex-col gap-2">
-            <label className="text-base text-gray-600 font-medium">
-              Group URL <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="url"
-              name="groupUrl"
-              value={formData.groupUrl}
-              onChange={handleChange}
-              placeholder="https://ouptel.com/"
-              className="w-full p-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-transparent"
             />
           </div>
 

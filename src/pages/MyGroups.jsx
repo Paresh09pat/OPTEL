@@ -268,7 +268,7 @@ const MyGroups = () => {
                 onClick={() => setActiveTab("suggested")}
                 className={`px-6 py-3 rounded-full cursor-pointer font-medium transition-all duration-300 ${
                   activeTab === "suggested"
-                    ? "bg-[#1356e9] text-white shadow-lg shadow-[#1356e9]"
+                    ? "bg-blue-600 text-white shadow-lg shadow-blue-300"
                     : "bg-white text-gray-700 hover:bg-gray-50 shadow-sm"
                 }`}
               >

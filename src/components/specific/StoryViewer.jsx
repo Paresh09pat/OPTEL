@@ -836,7 +836,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
               <img
                 src={currentStory?.thumbnail || currentStory?.media_url}
                 alt={currentStory?.title || 'Story'}
-                className="w-full h-full object-contain"
+                className="w-full max-h-[calc(100vh-280px)] object-contain"
               />
             )}
 

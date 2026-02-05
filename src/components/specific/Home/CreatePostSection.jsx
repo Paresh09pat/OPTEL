@@ -310,23 +310,9 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
                 return;
             }
 
-            // Prepare post text - include activity label if not already in text
-            let finalPostText = postText.trim() || '';
-            const activityLabel = activityType === 'feeling' ? `Feeling ${activityValue}` :
-                activityType === 'traveling' ? `Traveling to ${activityValue}` :
-                    activityType === 'listening' ? `Listening to ${activityValue}` :
-                        activityType === 'watching' ? `Watching ${activityValue}` :
-                            activityType === 'playing' ? `Playing ${activityValue}` :
-                                activityType === 'reaction' ? activityValue : '';
-
-            // If post text is empty or doesn't include the activity, prepend it
-            if (!finalPostText || !finalPostText.toLowerCase().includes(activityValue.toLowerCase())) {
-                if (finalPostText) {
-                    finalPostText = `${activityLabel}\n\n${finalPostText}`;
-                } else {
-                    finalPostText = activityLabel;
-                }
-            }
+            // Use the post text as-is, without prepending activity label
+            // The activity will be shown in the header by the PostCard component
+            const finalPostText = postText.trim() || '';
 
             // Prepare request data based on activity type
             const requestData = {
@@ -1392,11 +1378,9 @@ const CreatePostPopup = ({
         <div
             className="fixed inset-0 bg-black/30 backdrop-blur-md flex items-center justify-center z-50 px-2 md:px-6"
             style={{ backdropFilter: 'blur(10px)' }}
-            onClick={onClose}
         >
             <div
                 className="bg-white rounded-2xl w-full max-w-2xl md:max-w-3xl max-h-[90vh] overflow-y-auto relative shadow-2xl"
-                onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 md:p-6 border-b border-gray-200 gap-3">
@@ -1851,7 +1835,14 @@ const CreatePostPopup = ({
                             <button
                                 className={`flex items-center space-x-3 p-3 cursor-pointer transition-all duration-200 ${selectedFeeling || selectedActivity ? 'bg-teal-100 rounded-lg border-2 border-teal-300' : 'hover:bg-teal-50'
                                     }`}
-                                onClick={() => setShowActivityModal(true)}
+                                onClick={() => {
+                                    // Clear other selections when opening reactions modal
+                                    setSelectedGif(null);
+                                    setSelectedColorBg(null);
+                                    setShowColorSection(false);
+                                    setShowGifSearch(false);
+                                    setShowActivityModal(true);
+                                }}
                                 title={selectedFeeling || selectedActivity ? `${selectedFeeling?.label || selectedActivity?.label} selected - click to change` : "Select reaction or activity"}
                             >
                                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${selectedFeeling || selectedActivity ? 'bg-teal-200' : 'bg-yellow-100'
@@ -1994,6 +1985,13 @@ const CreatePostPopup = ({
                     isOpen={showFeelingModal}
                     onClose={() => setShowFeelingModal(false)}
                     onSelectFeeling={(feeling) => {
+                        // Clear other selections when selecting a feeling
+                        setSelectedActivity(null);
+                        setSelectedGif(null);
+                        setSelectedColorBg(null);
+                        setShowColorSection(false);
+                        
+                        // Set the selected feeling
                         setSelectedFeeling(feeling);
                         setFeeling(feeling.value);
                         setShowFeelingModal(false);
@@ -2012,6 +2010,14 @@ const CreatePostPopup = ({
                     }}
                     activityType={currentActivityType}
                     onSelectActivity={(activity) => {
+                        // Clear other selections when selecting an activity
+                        setSelectedFeeling(null);
+                        setFeeling("");
+                        setSelectedGif(null);
+                        setSelectedColorBg(null);
+                        setShowColorSection(false);
+                        
+                        // Set the selected activity
                         setSelectedActivity(activity);
                         setShowActivityModal(false);
                         setCurrentActivityType(null);
@@ -2029,6 +2035,11 @@ const CreatePostPopup = ({
                         setCurrentActivityType(null);
                     }}
                     onSelectActivityType={(type) => {
+                        // Clear other selections when opening activity type selection
+                        setSelectedGif(null);
+                        setSelectedColorBg(null);
+                        setShowColorSection(false);
+                        
                         if (type === 'feeling') {
                             setShowActivityModal(false);
                             setShowFeelingModal(true);

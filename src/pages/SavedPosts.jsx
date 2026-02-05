@@ -299,9 +299,10 @@ const SavedPosts = () => {
           return newSavedPosts;
         });
 
-        // Remove from saved posts list if unsaved
+        // Refetch saved posts when unsaved
         if (wasSaved) {
-          setSavedPosts(prev => prev.filter(post => post.id !== post_id));
+          await fetchSavedPosts();
+          toast.success('Post removed from saved posts');
         } else {
           setSavedPosts(prev =>
             prev.map(post =>
@@ -310,10 +311,12 @@ const SavedPosts = () => {
                 : post
             )
           );
+          toast.success('Post saved successfully');
         }
       }
     } catch (error) {
       console.error('Error saving post:', error);
+      toast.error('Error saving post');
     } finally {
       setLoading(false);
     }

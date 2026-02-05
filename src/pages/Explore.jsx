@@ -21,8 +21,6 @@ const Explore = () => {
     age: 'no',
     keyword: '',
     country: 'all',
-    college: '',
-    university: '',
     age_from: 18,
     age_to: 50,
   });
@@ -95,13 +93,7 @@ const Explore = () => {
         page: currentPage.toString(),
       });
 
-      // Add optional parameters if they have values
-      if (filters.college) {
-        params.append('college', filters.college);
-      }
-      if (filters.university) {
-        params.append('university', filters.university);
-      }
+
 
       const accessToken = localStorage.getItem('access_token');
       const apiUrl = `${import.meta.env.VITE_API_URL}/api/v1/search/explore?${params.toString()}`;
@@ -254,9 +246,9 @@ const Explore = () => {
               }}
             >
               <option value="all">Gender : All</option>
-              <option value="male">Gender : Male</option>
-              <option value="female">Gender : Female</option>
-              <option value="other">Gender : Other</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
             </select>
 
             <select
@@ -329,25 +321,6 @@ const Explore = () => {
                 ) : null;
               })}
             </select>
-          </div>
-
-          {/* Bottom Row - Inputs */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mb-4">
-            <input
-              type="text"
-              placeholder="College"
-              value={filters.college}
-              onChange={(e) => handleFilterChange('college', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-4xl text-xs sm:text-sm  hover:border-gray-400 transition-colors cursor-pointer appearance-none"
-            />
-
-            <input
-              type="text"
-              placeholder="University"
-              value={filters.university}
-              onChange={(e) => handleFilterChange('university', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-4xl text-xs sm:text-sm  hover:border-gray-400 transition-colors cursor-pointer appearance-none"
-            />
           </div>
 
           {/* Age Range Row */}
