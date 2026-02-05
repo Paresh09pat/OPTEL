@@ -801,7 +801,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
             });
             selectedFiles.forEach((fileObj) => {
                 if (fileObj.file && fileObj.file.type.startsWith("audio/")) {
-                    formData.append("postMusic", fileObj.file);
+                    formData.append("postRecord", fileObj.file);
                 }
             });
             selectedFiles.forEach((fileObj) => {
