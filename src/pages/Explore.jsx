@@ -323,29 +323,6 @@ const Explore = () => {
             </select>
           </div>
 
-          {/* Age Range Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mb-4">
-            <input
-              type="number"
-              placeholder="Age From"
-              value={filters.age_from}
-              onChange={(e) => handleFilterChange('age_from', parseInt(e.target.value) || 18)}
-              min="18"
-              max="100"
-                className="w-full px-3 py-2 border border-gray-300 rounded-4xl text-xs sm:text-sm  hover:border-gray-400 transition-colors cursor-pointer appearance-none"
-            />
-
-            <input
-              type="number"
-              placeholder="Age To"
-              value={filters.age_to}
-              onChange={(e) => handleFilterChange('age_to', parseInt(e.target.value) || 50)}
-              min="18"
-              max="100"
-                className="w-full px-3 py-2 border border-gray-300 rounded-4xl text-xs sm:text-sm  hover:border-gray-400 transition-colors cursor-pointer appearance-none"
-            />
-          </div>
-
           {/* Search Button */}
           <div className="flex justify-center">
             <button
