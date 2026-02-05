@@ -174,11 +174,9 @@ const StoryCreateModal = ({ isOpen, onClose, onStoryCreated }) => {
   return (
     <div
       className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
-      onClick={onClose}
     >
       <div
         className="w-full max-w-md max-h-[90vh] bg-white rounded-2xl shadow-2xl border border-[#d3d1d1] overflow-hidden flex flex-col"
-        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-[#d3d1d1]">
