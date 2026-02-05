@@ -288,6 +288,7 @@ const SavedPosts = () => {
 
       const data = await response.data;
       if (data?.ok === true) {
+        // Update savedPostsSet
         setSavedPostsSet(prev => {
           const newSavedPosts = new Set(prev);
           if (wasSaved) {
@@ -299,11 +300,12 @@ const SavedPosts = () => {
           return newSavedPosts;
         });
 
-        // Refetch saved posts when unsaved
+        // Handle unsaving - remove from UI immediately
         if (wasSaved) {
-          await fetchSavedPosts();
-          toast.success('Post removed from saved posts');
+          setSavedPosts(prev => prev.filter(post => post.id !== post_id));
+          toast.success(data?.message || 'Post removed from saved posts');
         } else {
+          // Handle saving - update the post
           setSavedPosts(prev =>
             prev.map(post =>
               post.id === post_id
@@ -311,7 +313,7 @@ const SavedPosts = () => {
                 : post
             )
           );
-          toast.success('Post saved successfully');
+          toast.success(data?.message || 'Post saved successfully');
         }
       }
     } catch (error) {
