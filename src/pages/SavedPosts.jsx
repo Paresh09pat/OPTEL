@@ -13,10 +13,6 @@ const SavedPosts = () => {
     const saved = localStorage.getItem("liked_posts");
     return saved ? new Set(JSON.parse(saved)) : new Set();
   });
-  const [savedPostsSet, setSavedPostsSet] = useState(() => {
-    const saved = localStorage.getItem("saved_posts");
-    return saved ? new Set(JSON.parse(saved)) : new Set();
-  });
   const [postComments, setPostComments] = useState({});
   const [postReactions, setPostReactions] = useState({});
   const [imagePopup, setImagePopup] = useState({ show: false, images: [], currentIndex: 0 });
@@ -265,10 +261,12 @@ const SavedPosts = () => {
   };
 
   const savePost = async (post_id) => {
-    setLoading(true);
     try {
       const accessToken = localStorage.getItem("access_token");
-      const wasSaved = savedPostsSet.has(post_id);
+      
+      // Find the current saved state from the post
+      const post = savedPosts.find(p => p.id === post_id || p.post_id === post_id);
+      const wasSaved = post?.is_saved || false;
 
       const response = wasSaved
         ? await axios.delete(`${baseUrl}/api/v1/posts/${post_id}/save`, {
@@ -288,39 +286,31 @@ const SavedPosts = () => {
 
       const data = await response.data;
       if (data?.ok === true) {
-        // Update savedPostsSet
-        setSavedPostsSet(prev => {
-          const newSavedPosts = new Set(prev);
-          if (wasSaved) {
-            newSavedPosts.delete(post_id);
-          } else {
-            newSavedPosts.add(post_id);
-          }
-          localStorage.setItem("saved_posts", JSON.stringify([...newSavedPosts]));
-          return newSavedPosts;
-        });
-
-        // Handle unsaving - remove from UI immediately
-        if (wasSaved) {
-          setSavedPosts(prev => prev.filter(post => post.id !== post_id));
+        // Get the new saved state from API response
+        const newSavedState = data?.data?.is_saved !== undefined ? data.data.is_saved : !wasSaved;
+        
+        // If post was unsaved, refetch the saved posts list to update UI
+        if (!newSavedState) {
           toast.success(data?.message || 'Post removed from saved posts');
+          // Refetch saved posts to update the list
+          await fetchSavedPosts();
         } else {
-          // Handle saving - update the post
+          // If post was saved, just update the state
           setSavedPosts(prev =>
-            prev.map(post =>
-              post.id === post_id
-                ? { ...post, is_saved: true }
-                : post
+            prev.map(p =>
+              (p.id === post_id || p.post_id === post_id)
+                ? { ...p, is_saved: newSavedState }
+                : p
             )
           );
           toast.success(data?.message || 'Post saved successfully');
         }
+      } else {
+        toast.error(data?.message || 'Failed to save post');
       }
     } catch (error) {
       console.error('Error saving post:', error);
-      toast.error('Error saving post');
-    } finally {
-      setLoading(false);
+      toast.error(error?.response?.data?.message || 'Error saving post');
     }
   };
 
@@ -573,7 +563,7 @@ const SavedPosts = () => {
                   handleLike={handleLike}
                   handleDislike={handleDislike}
                   isLiked={likedPosts.has(postId) || post?.is_liked}
-                  isSaved={savedPostsSet.has(postId) || post?.is_saved}
+                  isSaved={post?.is_saved || false}
                   commentsData={commentsForPost}
                   savePost={savePost}
                   reportPost={reportPost}
