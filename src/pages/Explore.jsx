@@ -81,7 +81,9 @@ const Explore = () => {
 
       // Build query parameters
       const params = new URLSearchParams({
-        verified: filters.verified,
+        
+        
+        fied: filters.verified,
         status: filters.status,
         image: filters.profile === 'all' ? 'all' : filters.profile,
         filterbyage: filters.age,

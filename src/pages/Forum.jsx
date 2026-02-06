@@ -208,12 +208,12 @@ const Forum = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-lg sm:text-xl lg:text-2xl font-medium text-gray-900">Forum</h1>
-          <button
+          {/* <button
             onClick={() => navigate('/forum/create')}
             className="border border-[#808080] py-1.5 px-4 rounded-2xl flex items-center gap-2 text-[#808080] text-base font-medium cursor-pointer hover:bg-gray-100 transition"
           >
             Create Forum
-          </button>
+          </button> */}
         </div>
 
         {/* Navigation Tabs */}
