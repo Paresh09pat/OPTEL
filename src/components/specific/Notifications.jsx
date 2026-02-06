@@ -4,8 +4,10 @@ import { FaUserPlus, FaBell, FaComment, FaHeart, FaUserFriends, FaExclamationCir
 import { BiMessageDetail } from 'react-icons/bi';
 import { HiOutlineTrash } from 'react-icons/hi';
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 
 const Notifications = ({ isOpen, onClose, containerRect, refreshCount }) => {
+    const navigate = useNavigate();
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -25,7 +27,7 @@ const Notifications = ({ isOpen, onClose, containerRect, refreshCount }) => {
                     "Accept": "application/json"
                 },
                 body: JSON.stringify({
-                    seen: 1
+                    seen: 0 // Fetch all notifications (both seen and unseen)
                 }),
             });
 
@@ -112,6 +114,40 @@ const Notifications = ({ isOpen, onClose, containerRect, refreshCount }) => {
         }
     };
 
+    // Handle notification click - navigate to profile or post
+    const handleNotificationClick = async (notification) => {
+        try {
+            // Update local state to mark as seen immediately (use current timestamp)
+            const currentTimestamp = Math.floor(Date.now() / 1000);
+            setNotifications(prev => prev.map(notif => 
+                notif.id === notification.id ? { ...notif, seen: currentTimestamp } : notif
+            ));
+
+            // Refresh count
+            if (refreshCount) refreshCount();
+
+            // Navigate based on notification type
+            if (notification.type === 'following' || notification.type === 'follow_request' || notification.type === 'follow') {
+                // For follow-related notifications, navigate to the notifier's profile
+                if (notification.notifier_id) {
+                    navigate(`/profile/${notification.notifier_id}`);
+                    onClose();
+                }
+            } else if (notification.post_id) {
+                // For post-related notifications, navigate to post detail
+                navigate(`/post/${notification.post_id}`);
+                onClose();
+            } else if (notification.url) {
+                // Use the URL provided by the API for other types
+                const path = notification.url.replace('index.php?link1=', '/').replace('&u=', '/');
+                navigate(path);
+                onClose();
+            }
+        } catch (error) {
+            console.error('Error handling notification click:', error);
+        }
+    };
+
     // Delete notification
     const deleteNotification = async (notificationId, e) => {
         e.stopPropagation(); // Prevent triggering any parent click handlers
@@ -194,10 +230,12 @@ const Notifications = ({ isOpen, onClose, containerRect, refreshCount }) => {
                 ) : notifications && notifications.length > 0 ? (
                     notifications.map((notification) => {
                         const { icon, color } = getNotificationUI(notification.type);
+                        const isUnread = notification.seen === 0; // seen is 0 for unread, timestamp for read
                         return (
                             <div
                                 key={notification.id}
-                                className={`group flex items-start gap-3 p-4 rounded-2xl border transition-all duration-300 hover:shadow-md ${notification.seen === 0
+                                onClick={() => handleNotificationClick(notification)}
+                                className={`group flex items-start gap-3 p-4 rounded-2xl border transition-all duration-300 hover:shadow-md cursor-pointer ${isUnread
                                     ? 'border-blue-100 bg-blue-50/30 hover:bg-blue-50/50'
                                     : 'border-gray-100 bg-white hover:border-gray-200'
                                     }`}
@@ -226,7 +264,7 @@ const Notifications = ({ isOpen, onClose, containerRect, refreshCount }) => {
                                 {/* Notification content */}
                                 <div className="flex-1 min-w-0 pt-0.5">
                                     <div className="flex justify-between items-start">
-                                        <p className={`text-sm ${notification.seen === 0 ? 'font-bold' : 'font-medium'} text-gray-900 leading-tight`}>
+                                        <p className={`text-sm ${isUnread ? 'font-bold' : 'font-medium'} text-gray-900 leading-tight`}>
                                             <span className="hover:text-blue-600 transition-colors cursor-pointer">
                                                 {notification.notifier?.name || notification.notifier?.username || 'Someone'}
                                             </span>
@@ -242,7 +280,7 @@ const Notifications = ({ isOpen, onClose, containerRect, refreshCount }) => {
                                         </p>
                                     </div>
                                     <p className="text-[11px] text-gray-400 mt-2 flex items-center gap-1">
-                                        <span className={`w-1.5 h-1.5 rounded-full ${notification.seen === 0 ? 'bg-blue-500 animate-pulse' : 'bg-transparent'}`}></span>
+                                        <span className={`w-1.5 h-1.5 rounded-full ${isUnread ? 'bg-blue-500 animate-pulse' : 'bg-transparent'}`}></span>
                                         {notification.time_text_string || notification.time_text || 'Just now'}
                                     </p>
                                 </div>

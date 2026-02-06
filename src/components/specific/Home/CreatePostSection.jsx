@@ -2240,28 +2240,11 @@ const GifSearchModal = ({ isOpen, onClose, searchQuery, setSearchQuery, gifResul
 
 // Feeling Selection Modal Component
 const FeelingSelectionModal = ({ isOpen, onClose, onSelectFeeling, selectedFeeling }) => {
-    // List of feelings with emojis
+    // List of feelings with emojis (only working ones)
     const feelings = [
         { emoji: '😊', label: 'Happy', value: 'happy', color: 'bg-yellow-100', textColor: 'text-yellow-700', borderColor: 'border-yellow-300' },
         { emoji: '😢', label: 'Sad', value: 'sad', color: 'bg-blue-100', textColor: 'text-blue-700', borderColor: 'border-blue-300' },
         { emoji: '😍', label: 'Loved', value: 'loved', color: 'bg-pink-100', textColor: 'text-pink-700', borderColor: 'border-pink-300' },
-        { emoji: '😮', label: 'Surprised', value: 'surprised', color: 'bg-purple-100', textColor: 'text-purple-700', borderColor: 'border-purple-300' },
-        { emoji: '😡', label: 'Angry', value: 'angry', color: 'bg-red-100', textColor: 'text-red-700', borderColor: 'border-red-300' },
-        { emoji: '😴', label: 'Sleepy', value: 'sleepy', color: 'bg-indigo-100', textColor: 'text-indigo-700', borderColor: 'border-indigo-300' },
-        { emoji: '🤔', label: 'Thoughtful', value: 'thoughtful', color: 'bg-gray-100', textColor: 'text-gray-700', borderColor: 'border-gray-300' },
-        { emoji: '😎', label: 'Cool', value: 'cool', color: 'bg-cyan-100', textColor: 'text-cyan-700', borderColor: 'border-cyan-300' },
-        { emoji: '🤗', label: 'Grateful', value: 'grateful', color: 'bg-green-100', textColor: 'text-green-700', borderColor: 'border-green-300' },
-        { emoji: '😰', label: 'Anxious', value: 'anxious', color: 'bg-orange-100', textColor: 'text-orange-700', borderColor: 'border-orange-300' },
-        { emoji: '😤', label: 'Determined', value: 'determined', color: 'bg-amber-100', textColor: 'text-amber-700', borderColor: 'border-amber-300' },
-        { emoji: '🥳', label: 'Celebrating', value: 'celebrating', color: 'bg-yellow-100', textColor: 'text-yellow-700', borderColor: 'border-yellow-300' },
-        { emoji: '😌', label: 'Relieved', value: 'relieved', color: 'bg-teal-100', textColor: 'text-teal-700', borderColor: 'border-teal-300' },
-        { emoji: '😋', label: 'Playful', value: 'playful', color: 'bg-pink-100', textColor: 'text-pink-700', borderColor: 'border-pink-300' },
-        { emoji: '🤩', label: 'Excited', value: 'excited', color: 'bg-yellow-100', textColor: 'text-yellow-700', borderColor: 'border-yellow-300' },
-        { emoji: '😇', label: 'Blessed', value: 'blessed', color: 'bg-blue-100', textColor: 'text-blue-700', borderColor: 'border-blue-300' },
-        { emoji: '😏', label: 'Sneaky', value: 'sneaky', color: 'bg-gray-100', textColor: 'text-gray-700', borderColor: 'border-gray-300' },
-        { emoji: '🥰', label: 'Loved', value: 'loved', color: 'bg-pink-100', textColor: 'text-pink-700', borderColor: 'border-pink-300' },
-        { emoji: '😭', label: 'Crying', value: 'crying', color: 'bg-blue-100', textColor: 'text-blue-700', borderColor: 'border-blue-300' },
-        { emoji: '🤪', label: 'Crazy', value: 'crazy', color: 'bg-purple-100', textColor: 'text-purple-700', borderColor: 'border-purple-300' },
     ];
 
     useEffect(() => {
@@ -2480,7 +2463,7 @@ const ActivitySelectionModal = ({ isOpen, onClose, activityType, onSelectActivit
         { emoji: '😂', label: 'Haha', value: 'haha' },
         { emoji: '😮', label: 'Wow', value: 'wow' },
         { emoji: '😢', label: 'Sad', value: 'sad' },
-        { emoji: '😡', label: 'Angry', value: 'angry' },
+        { emoji: '', label: 'Happy', value: 'happy', color: 'bg-yellow-100', textColor: 'text-yellow-700', borderColor: 'border-yellow-300' },
     ];
 
     // Activity type configurations

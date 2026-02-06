@@ -165,13 +165,15 @@ const Chatbox = ({ onClose, isMobile = false }) => {
           "Accept": "application/json"
         },
         body: JSON.stringify({
-          seen: 1 // This matches the body in Notifications.jsx
+          seen: 0 // Fetch all notifications
         }),
       });
 
       const data = await response.json();
       if (data?.api_status === 200) {
-        setUnreadNotificationsCount(data.count_notifications || 0);
+        // Use count_notifications from API response, or count unseen notifications
+        const unseenCount = data.count_notifications || data.notifications?.filter(n => n.seen === 0).length || 0;
+        setUnreadNotificationsCount(unseenCount);
       }
     } catch (error) {
       console.error('Error fetching notification count:', error);
