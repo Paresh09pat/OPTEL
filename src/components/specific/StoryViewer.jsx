@@ -40,6 +40,8 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
   const [storyViews, setStoryViews] = useState([]);
   const [loadingViews, setLoadingViews] = useState(false);
   const [viewsCount, setViewsCount] = useState(0);
+  const [storyViewsCounts, setStoryViewsCounts] = useState({}); // Store view counts for each story
+  const [loadingViewsCounts, setLoadingViewsCounts] = useState({}); // Track loading state for each story
   // Description expansion state
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   // Video ref and state
@@ -178,10 +180,46 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
       return;
     }
 
+    // Mark this story as viewed immediately to avoid duplicate API calls
+    setViewedStories(prev => new Set([...prev, storyId]));
+
     try {
-      const response = await axios.post(
+      await axios.post(
         `${baseUrl}/api/v1/stories/mark-seen`,
         { story_id: storyId },
+        {
+          headers: buildAuthHeaders()
+        }
+      );
+    } catch (error) {
+      // Silently handle errors - don't show toast for mark-seen failures
+      console.error('Error marking story as seen:', error);
+    }
+  }, [isCurrentUserStories, viewedStories, buildAuthHeaders]);
+
+  // Fetch story views count (lightweight - just get the count)
+  const fetchStoryViewsCount = useCallback(async (storyId) => {
+    if (!storyId || !isCurrentUserStories) return;
+
+    // Check if we already have the count for this story
+    if (storyViewsCounts[storyId] !== undefined) {
+      return;
+    }
+
+    // Set loading state for this story
+    setLoadingViewsCounts(prev => ({
+      ...prev,
+      [storyId]: true
+    }));
+
+    try {
+      const response = await axios.post(
+        `${baseUrl}/api/v1/stories/views`,
+        {
+          story_id: storyId,
+          limit: 1, // Only fetch 1 to get the count
+          offset: 0
+        },
         {
           headers: buildAuthHeaders()
         }
@@ -189,16 +227,30 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
 
       const data = response.data;
       if (data?.ok === true || data?.api_status === 200) {
-        // Mark this story as viewed to avoid duplicate API calls
-        setViewedStories(prev => new Set([...prev, storyId]));
+        const count = data?.total || data?.users?.length || 0;
+        setStoryViewsCounts(prev => ({
+          ...prev,
+          [storyId]: count
+        }));
       }
     } catch (error) {
-      // Silently handle errors - don't show toast for mark-seen failures
-      console.error('Error marking story as seen:', error);
+      console.error('Error fetching story views count:', error);
+      // Set count to 0 on error
+      setStoryViewsCounts(prev => ({
+        ...prev,
+        [storyId]: 0
+      }));
+    } finally {
+      // Remove loading state for this story
+      setLoadingViewsCounts(prev => {
+        const newState = { ...prev };
+        delete newState[storyId];
+        return newState;
+      });
     }
-  }, [isCurrentUserStories, viewedStories, buildAuthHeaders]);
+  }, [isCurrentUserStories, storyViewsCounts, buildAuthHeaders]);
 
-  // Fetch story views
+  // Fetch story views (full list for modal)
   const fetchStoryViews = useCallback(async (storyId) => {
     if (!storyId) return;
 
@@ -221,7 +273,13 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
         // Handle both response formats: data.users or data.data.views
         const views = data?.users || data?.data?.views || [];
         setStoryViews(views);
-        setViewsCount(data?.total || views.length || 0);
+        const count = data?.total || views.length || 0;
+        setViewsCount(count);
+        // Also update the counts cache
+        setStoryViewsCounts(prev => ({
+          ...prev,
+          [storyId]: count
+        }));
       } else {
         toast.error(data?.message || 'Failed to fetch story views');
       }
@@ -405,8 +463,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
 
   // Restart progress when story index changes and mark story as seen
   useEffect(() => {
-
-    if (isOpen && currentUserStories && currentUserStories.length > 0 && !isPaused && !deleteModalOpen) {
+    if (isOpen && currentUserStories && currentUserStories.length > 0) {
       setProgress(0);
       setShowReactionPopup(false); // Close reaction popup when story changes
       setIsDescriptionExpanded(false); // Reset description expansion when story changes
@@ -417,6 +474,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
 
       let markSeenTimer = null;
       let progressTimer = null;
+      let viewsCountTimer = null;
 
       // Mark current story as seen (only for other users' stories)
       const currentStory = currentUserStories[currentStoryIndex];
@@ -425,20 +483,28 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
         markSeenTimer = setTimeout(() => {
           markStoryAsSeen(currentStory.id);
         }, 500); // 500ms delay to ensure story is displayed
+
+        // Fetch views count for current user's stories
+        if (isCurrentUserStories) {
+          viewsCountTimer = setTimeout(() => {
+            fetchStoryViewsCount(currentStory.id);
+          }, 300); // Fetch count after 300ms
+        }
       }
 
-      // For image stories, start progress immediately
+      // For image stories, start progress only if not paused
       // For video stories, progress is handled by video timeupdate event
-      if (currentStory?.type !== 'video') {
+      if (currentStory?.type !== 'video' && !isPaused && !deleteModalOpen) {
         progressTimer = setTimeout(() => {
           startProgress();
         }, 50);
       }
 
-      // Return cleanup function that clears both timers
+      // Return cleanup function that clears all timers
       return () => {
         if (markSeenTimer) clearTimeout(markSeenTimer);
         if (progressTimer) clearTimeout(progressTimer);
+        if (viewsCountTimer) clearTimeout(viewsCountTimer);
         stopProgress();
         // Pause video if it's playing
         if (videoRef.current) {
@@ -455,7 +521,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
         videoRef.current.currentTime = 0;
       }
     };
-  }, [currentStoryIndex, currentUserIndex, isOpen, isPaused, deleteModalOpen, startProgress, stopProgress, currentUserStories, markStoryAsSeen]);
+  }, [currentStoryIndex, currentUserIndex, isOpen, currentUserStories, isCurrentUserStories]);
 
   const handleMouseDown = () => {
     // Don't pause on mouse down for video stories - use play/pause button instead
@@ -818,16 +884,27 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
             {/* Views Button - Only for current user's stories */}
             {isCurrentUserStories && currentStory?.id && (
               <button
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   setIsPaused(true);
                   stopProgress();
+                  // Pause video if it's playing
+                  if (videoRef.current && currentStory?.type === 'video') {
+                    videoRef.current.pause();
+                  }
                   fetchStoryViews(currentStory.id);
                   setShowViewsModal(true);
                 }}
-                className="absolute top-20 right-3 flex items-center gap-1.5 text-white text-xs font-semibold z-50 bg-black/40 hover:bg-black/60 px-2.5 py-1.5 rounded-full transition-colors backdrop-blur-sm"
+                onMouseDown={(e) => e.stopPropagation()}
+                onMouseUp={(e) => e.stopPropagation()}
+                className="absolute top-20 right-3 flex items-center gap-1.5 text-white text-xs font-semibold z-50 bg-black/40 hover:bg-black/60 px-2.5 py-1.5 rounded-full transition-colors backdrop-blur-sm min-w-[60px] justify-center"
               >
                 <Eye className="w-3.5 h-3.5" />
-                <span>{currentStory?.views || viewsCount || 0}</span>
+                {loadingViewsCounts[currentStory.id] ? (
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <span>{storyViewsCounts[currentStory.id] ?? currentStory?.views ?? 0}</span>
+                )}
               </button>
             )}
 
@@ -1101,17 +1178,26 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
       {showViewsModal && (
         <div
           className="fixed inset-0 z-[70] bg-black/50 flex items-center justify-center p-4"
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             setShowViewsModal(false);
             setIsPaused(false);
-            if (isOpen && stories && stories.length > 0) {
+            if (isOpen && currentUserStories && currentUserStories.length > 0 && currentStory?.type !== 'video') {
               startProgress();
             }
+            // Resume video if it was playing
+            if (videoRef.current && currentStory?.type === 'video' && isVideoPlaying) {
+              videoRef.current.play();
+            }
           }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onMouseUp={(e) => e.stopPropagation()}
         >
           <div
             className="bg-white rounded-2xl w-full max-w-md max-h-[80vh] overflow-hidden shadow-2xl"
             onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onMouseUp={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
@@ -1119,11 +1205,16 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
                 Story Views ({viewsCount})
               </h3>
               <button
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   setShowViewsModal(false);
                   setIsPaused(false);
-                  if (isOpen && stories && stories.length > 0) {
+                  if (isOpen && currentUserStories && currentUserStories.length > 0 && currentStory?.type !== 'video') {
                     startProgress();
+                  }
+                  // Resume video if it was playing
+                  if (videoRef.current && currentStory?.type === 'video' && isVideoPlaying) {
+                    videoRef.current.play();
                   }
                 }}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -1149,7 +1240,8 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
                     <div 
                       key={view.user_id || view.id || index} 
                       className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors cursor-pointer"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         const userId = view.user_id || view.id;
                         if (userId) {
                           setShowViewsModal(false);

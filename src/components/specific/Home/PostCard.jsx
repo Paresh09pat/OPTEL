@@ -21,7 +21,7 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
   const postIdentifier = id || post_id;
   const postIdForPostOperations = post_id || id;
   
-  console.log('PostCard IDs:', { id, post_id, postIdentifier, postIdForPostOperations });
+ 
   const navigate = useNavigate();
   const { userData } = useUser();
   const [clickedComments, setClickedComments] = useState(false);
@@ -1773,7 +1773,7 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
         </div>
       )}
 
-      {postfile && postfile !== "" && (
+      {postfile && postfile !== "" && postType === 'file' && (
         <>
           {/* If file is PDF */}
           {postfile.endsWith(".pdf") && (

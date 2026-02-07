@@ -128,10 +128,9 @@ const MyGroups = () => {
     setExpandedGroup(expandedGroup === groupId ? null : groupId);
   };
 
-  // Handle joining a group
+  // Handle joining/leaving a group
   const handleJoinGroup = async (groupId) => {
     try {
-      setLoading(true);
       const accessToken = localStorage.getItem("access_token");
 
       const response = await axios.post(
@@ -147,27 +146,25 @@ const MyGroups = () => {
         }
       );
 
-      if (response.data && response.data.api_status === "200") {
-        // Update the group's is_joined status
-        setSuggestedGroups((prev) =>
-          prev.map((group) =>
-            group.id === groupId
-              ? {
-                  ...group,
-                  is_joined: true,
-                  members_count: group.members_count + 1,
-                }
-              : group
-          )
-        );
-        // You can add a toast notification here
-        console.log("Successfully joined the group");
+      if (response.data && (response.data.ok === true || response.data.api_status === "200" || response.data.api_status === 200)) {
+        // Show success message
+        const { toast } = await import('react-toastify');
+        toast.success(response.data.message || 'Action completed successfully!');
+        
+        // Refetch suggested groups to get updated status
+        await fetchSuggestedGroups();
+        
+        console.log("Group action completed successfully");
+      } else {
+        throw new Error(response.data?.message || 'Failed to complete action');
       }
     } catch (err) {
-      console.error("Error joining group:", err);
-      // You can add error toast notification here
-    } finally {
-      setLoading(false);
+      console.error("Error with group action:", err);
+      
+      // Show error message
+      const { toast } = await import('react-toastify');
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to complete action. Please try again.';
+      toast.error(errorMessage);
     }
   };
 
@@ -532,17 +529,31 @@ const MyGroups = () => {
                           e.stopPropagation();
                           handleJoinGroup(group.id);
                         }}
-                        disabled={group.is_joined || loading}
+                        disabled={loading}
                         className={`flex items-center cursor-pointer gap-2 px-3 py-2 rounded-full border-2 transition-all duration-200 font-semibold ${
                           group.is_joined
-                            ? "bg-green-50 text-green-600 border-green-600 cursor-not-allowed"
+                            ? "bg-red-500 text-white border-red-500 hover:bg-red-600 hover:border-red-600"
                             : "bg-white text-blue-600 border-blue-600 hover:bg-blue-50"
                         }`}
                       >
                         {group.is_joined ? (
                           <>
-                            <FiCheck className="w-4 h-4" />
-                            <span className="text-xs">Joined</span>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width={16}
+                              height={16}
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                              <circle cx="9" cy="7" r="4" />
+                              <line x1="17" y1="11" x2="23" y2="11" />
+                            </svg>
+                            <span className="text-xs">Leave</span>
                           </>
                         ) : (
                           <>

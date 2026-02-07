@@ -10,6 +10,13 @@ const CreateAlbum = () => {
   const [albumName, setAlbumName] = useState("");
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  // Calculate total size of selected files
+  const getTotalSize = () => {
+    const totalBytes = selectedFiles.reduce((acc, file) => acc + file.size, 0);
+    return (totalBytes / (1024 * 1024)).toFixed(2); // Convert to MB
+  };
+
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
     setSelectedFiles((prev) => [...prev, ...files]);
@@ -31,6 +38,16 @@ const CreateAlbum = () => {
 
     if (selectedFiles.length === 0) {
       toast.error("Please select at least one photo or video");
+      return;
+    }
+
+    // Calculate total size of all selected files
+    const totalSize = selectedFiles.reduce((acc, file) => acc + file.size, 0);
+    const totalSizeInMB = totalSize / (1024 * 1024); // Convert bytes to MB
+
+    // Check if total size exceeds 2MB
+    if (totalSizeInMB > 2) {
+      toast.error(`Total image size should be less than 2MB. Current size: ${totalSizeInMB.toFixed(2)}MB`);
       return;
     }
 
@@ -201,6 +218,18 @@ const CreateAlbum = () => {
                   </div>
                 )}
               </label>
+
+              {/* Show total size indicator */}
+              {selectedFiles.length > 0 && (
+                <div className="flex items-center justify-between px-2 py-1">
+                  <span className="text-sm text-gray-600">
+                    {selectedFiles.length} file{selectedFiles.length > 1 ? 's' : ''} selected
+                  </span>
+                  <span className={`text-sm font-medium ${parseFloat(getTotalSize()) > 2 ? 'text-red-600' : 'text-green-600'}`}>
+                    Total size: {getTotalSize()} MB / 2 MB
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Submit */}

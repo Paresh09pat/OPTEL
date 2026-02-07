@@ -375,65 +375,65 @@ const Home = () => {
 
   // Infinite scroll handler using Intersection Observer
   useEffect(() => {
-    // Cleanup function to disconnect observer
-    let observer = null;
+    // Don't setup observer if there's no trigger element
+    if (!loadMoreTriggerRef.current) {
+      return;
+    }
 
-    const setupObserver = () => {
-      // Create new observer
-      observer = new IntersectionObserver(
-        (entries) => {
-          const target = entries[0];
+    // Create new observer
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const target = entries[0];
+        
+        // When the trigger element is visible
+        if (target.isIntersecting) {
+          console.log('Load more trigger visible', {
+            pagination,
+            loadingMore,
+            isFetching: isFetchingRef.current,
+            currentFilter: currentFilterRef.current,
+            feedType
+          });
           
-          // When the trigger element is visible
-          if (target.isIntersecting) {
-            console.log('Load more trigger visible', {
-              pagination,
-              loadingMore,
-              isFetching: isFetchingRef.current
+          // Check if there are more pages to load
+          if (
+            pagination &&
+            pagination.has_more &&
+            pagination.current_page < pagination.last_page &&
+            !loadingMore &&
+            !isFetchingRef.current
+          ) {
+            const nextPage = pagination.current_page + 1;
+            console.log('Loading next page:', nextPage, {
+              currentPage: pagination.current_page,
+              lastPage: pagination.last_page,
+              hasMore: pagination.has_more,
+              filter: currentFilterRef.current
             });
-            
-            // Check if there are more pages to load
-            if (
-              pagination &&
-              pagination.has_more &&
-              pagination.current_page < pagination.last_page &&
-              !loadingMore &&
-              !isFetchingRef.current
-            ) {
-              const nextPage = pagination.current_page + 1;
-              console.log('Loading next page:', nextPage, {
-                currentPage: pagination.current_page,
-                lastPage: pagination.last_page,
-                hasMore: pagination.has_more
-              });
-              getNewFeeds(currentFilterRef.current, nextPage, feedType);
-            }
+            getNewFeeds(currentFilterRef.current, nextPage, feedType);
           }
-        },
-        {
-          root: null, // viewport
-          rootMargin: '400px', // Start loading 400px before reaching the element
-          threshold: 0.1
         }
-      );
-
-      // Observe the trigger element
-      const currentTrigger = loadMoreTriggerRef.current;
-      if (currentTrigger) {
-        console.log('Observing load more trigger');
-        observer.observe(currentTrigger);
+      },
+      {
+        root: null, // viewport
+        rootMargin: '200px', // Start loading 200px before reaching the element
+        threshold: 0.1
       }
-    };
+    );
 
-    // Setup observer after a small delay to ensure DOM is ready
-    const timeoutId = setTimeout(setupObserver, 100);
+    // Observe the trigger element
+    const currentTrigger = loadMoreTriggerRef.current;
+    if (currentTrigger) {
+      console.log('Observing load more trigger');
+      observer.observe(currentTrigger);
+    }
 
     // Cleanup function
     return () => {
-      clearTimeout(timeoutId);
-      if (observer) {
-        observer.disconnect();
+      if (observer && currentTrigger) {
+        observer.unobserve(currentTrigger);
       }
+      observer?.disconnect();
     };
   }, [pagination, loadingMore, getNewFeeds, feedType, newFeeds.length]); // Added newFeeds.length to re-trigger when posts are loaded
 
@@ -915,12 +915,12 @@ const Home = () => {
 
     // Handle video posts with post_file_url (NEW API - HIGHEST PRIORITY for video)
     if (post?.post_type === 'video' && post?.post_file_url) {
-      return { video: ensureFullUrl(post.post_file_url) };
+      return { video: ensureFullUrl(post.post_file_url), postType: 'video' };
     }
 
     // Handle video posts with post_video_url
     if (post?.post_video_url) {
-      return { video: ensureFullUrl(post.post_video_url) };
+      return { video: ensureFullUrl(post.post_video_url), postType: 'video' };
     }
 
     // Handle audio posts with post_record_url (HIGHEST PRIORITY for audio)
@@ -932,7 +932,7 @@ const Home = () => {
         /\.(mp3|wav|ogg|aac|flac|wma|m4a)/i.test(post.post_record_url);
 
       if (isAudio) {
-        return { audio: ensureFullUrl(post.post_record_url) };
+        return { audio: ensureFullUrl(post.post_record_url), postType: 'audio' };
       }
     }
 
@@ -945,7 +945,7 @@ const Home = () => {
         /\.(mp3|wav|ogg|aac|flac|wma|m4a)/i.test(post.post_record);
 
       if (isAudio) {
-        return { audio: ensureFullUrl(post.post_record) };
+        return { audio: ensureFullUrl(post.post_record), postType: 'audio' };
       }
     }
 
@@ -960,13 +960,14 @@ const Home = () => {
       return {
         image: processedImages[0]?.image || processedImages[0]?.image_org,
         multipleImages: processedImages,
-        hasMultipleImages: processedImages.length > 1
+        hasMultipleImages: processedImages.length > 1,
+        postType: 'image'
       };
     }
 
     // Handle new API single post_photo_url
     if (post?.post_photo_url) {
-      return { image: ensureFullUrl(post.post_photo_url) };
+      return { image: ensureFullUrl(post.post_photo_url), postType: 'image' };
     }
 
     // Handle multiple images from photo_multi array (LEGACY)
@@ -981,13 +982,14 @@ const Home = () => {
       return {
         image: processedImages[0]?.image || processedImages[0]?.image_org,
         multipleImages: processedImages,
-        hasMultipleImages: processedImages.length > 1
+        hasMultipleImages: processedImages.length > 1,
+        postType: 'image'
       };
     }
 
     // Handle single image from postPhoto (LEGACY)
     if (post?.postPhoto) {
-      return { image: ensureFullUrl(post.postPhoto) };
+      return { image: ensureFullUrl(post.postPhoto), postType: 'image' };
     }
 
     // Handle file attachments using post_file_url (NEW API)
@@ -1016,18 +1018,19 @@ const Home = () => {
         url.includes('posts/audio');
 
       if (imageExtensions.includes(ext) || urlLooksLikeImage) {
-        return { image: url };
+        return { image: url, postType: 'image' };
       } else if (videoExtensions.includes(ext) || urlLooksLikeVideo) {
-        return { video: url };
+        return { video: url, postType: 'video' };
       } else if (audioExtensions.includes(ext) || urlLooksLikeAudio) {
-        return { audio: url };
+        return { audio: url, postType: 'audio' };
       }
       // Only show file download for non-media files
       else if (!imageExtensions.includes(ext) && !videoExtensions.includes(ext) && !audioExtensions.includes(ext)) {
         return { 
           file: url,
           postfile: url,
-          postFileName: fileName
+          postFileName: fileName,
+          postType: 'file'
         };
       }
     }
@@ -1055,15 +1058,15 @@ const Home = () => {
         url.includes('posts/audio');
 
       if (imageExtensions.includes(ext) || urlLooksLikeImage) {
-        return { image: url };
+        return { image: url, postType: 'image' };
       } else if (videoExtensions.includes(ext)) {
-        return { video: url };
+        return { video: url, postType: 'video' };
       } else if (audioExtensions.includes(ext) || urlLooksLikeAudio) {
-        return { audio: url };
+        return { audio: url, postType: 'audio' };
       }
       // Only show file download for non-media files
       else if (!imageExtensions.includes(ext) && !videoExtensions.includes(ext) && !audioExtensions.includes(ext)) {
-        return { file: url };
+        return { file: url, postType: 'file' };
       }
     }
 
@@ -1369,6 +1372,7 @@ const Home = () => {
               {newFeeds?.map((post) => {
                 const postId = post?.id || post?.post_id;
                 const commentsForPost = postComments[postId] || [];
+                const fileProps = getFileTypeProps(post);
                 return (
                   <PostCard
                     key={post?.id || postId}
@@ -1381,7 +1385,7 @@ const Home = () => {
                     iframelink={post?.post_youtube || post?.postYoutube}
                     postfile={post?.post_file || post?.postFile}
                     postFileName={post?.postFileName}
-                    {...getFileTypeProps(post)}
+                    {...fileProps}
                     likes={post?.reactions_count || post?.post_likes}
                     comments={post?.comments_count || post?.post_comments}
                     shares={post?.shares_count || post?.post_shares}
@@ -1404,7 +1408,7 @@ const Home = () => {
                     postReactionCounts={post?.reaction_counts}
                     currentReaction={post?.current_reaction || post?.user_reaction}
                     userReaction={post?.user_reaction}
-                    postType={post?.post_type}
+                    postType={fileProps?.postType || post?.post_type}
                     pollOptions={post?.poll_options}
                     handlePollVote={(optionId) => handlePollVote(postId, optionId)}
                     isPollLoading={loading}
@@ -1433,7 +1437,9 @@ const Home = () => {
                   ref={loadMoreTriggerRef} 
                   className="h-20 flex items-center justify-center"
                 >
-                  <div className="text-gray-400 text-sm">Scroll for more...</div>
+                  <div className="text-gray-400 text-sm">
+                    Scroll for more... (Page {pagination.current_page} of {pagination.last_page})
+                  </div>
                 </div>
               )}
 

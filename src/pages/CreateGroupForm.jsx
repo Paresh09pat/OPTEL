@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 const CreateGroupForm = ({ onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
     groupName: '',
+    groupUrl: '',
     groupDescription: '',
     groupType: 'public',
     joinPrivacy: 'public',
@@ -128,6 +129,11 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
       return;
     }
     
+    if (!formData.groupUrl.trim()) {
+      toast.error('Group URL is required');
+      return;
+    }
+    
     if (!formData.groupCategory) {
       toast.error('Please select a category');
       return;
@@ -147,6 +153,7 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
       const requestData = {
         group_name: formData.groupName.trim(),
         group_title: formData.groupName.trim(), // Using same as group_name for now
+        username: formData.groupUrl.trim(), // Add group URL
         category: parseInt(formData.groupCategory),
         privacy: formData.groupType,
         join_privacy: formData.joinPrivacy
@@ -186,6 +193,7 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
         // Reset form after successful creation
         setFormData({
           groupName: '',
+          groupUrl: '',
           groupDescription: '',
           groupType: 'public',
           joinPrivacy: 'public',
@@ -276,6 +284,33 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
               placeholder="Group Name"
               className="w-full p-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-transparent"
             />
+          </div>
+
+          {/* Group URL */}
+          <div className="flex flex-col gap-2">
+            <label className="text-base text-gray-600 font-medium">
+              Group URL <span className="text-red-500">*</span>
+            </label>
+            <div className="w-full p-3 px-4 border border-gray-300 rounded-lg flex items-center">
+              <span className="text-gray-500">
+                {window.location.origin}/
+              </span>
+              <input
+                type="text"
+                name="groupUrl"
+                value={formData.groupUrl}
+                onChange={(e) => {
+                  // Remove leading slash if user adds it
+                  const value = e.target.value.replace(/^\//, '');
+                  setFormData(prev => ({
+                    ...prev,
+                    groupUrl: value
+                  }));
+                }}
+                placeholder=""
+                className="flex-1 bg-transparent border-0 focus:outline-none ml-1"
+              />
+            </div>
           </div>
 
           {/* Group Description */}

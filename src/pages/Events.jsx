@@ -337,7 +337,7 @@ const Events = () => {
                       <input
                         type="date"
                         id="start-date"
-                        className="w-full p-2 px-4 border border-[#d3d1d1] rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full p-2 px-4 border border-[#d3d1d1] rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-4 [&::-webkit-calendar-picker-indicator]:w-5 [&::-webkit-calendar-picker-indicator]:h-5 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
                         required
@@ -368,7 +368,7 @@ const Events = () => {
                       <input
                         type="date"
                         id="end-date"
-                        className="w-full p-2 px-4 border border-[#d3d1d1] rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full p-2 px-4 border border-[#d3d1d1] rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-4 [&::-webkit-calendar-picker-indicator]:w-5 [&::-webkit-calendar-picker-indicator]:h-5 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
                         required
@@ -458,7 +458,7 @@ const Events = () => {
                   <button
                     type="submit"
                     disabled={formLoading}
-                    className="w-[20rem] cursor-pointer h-[50px] border border-[#4A90E2] text-[#4A90E2] font-semibold text-[20px] py-2 px-8 rounded-lg hover:bg-[#4A90E2] transition hover:text-[#fff] disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-[20rem] cursor-pointer h-[50px] bg-blue-500 text-white font-semibold text-[20px] py-2 px-8 rounded-lg hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {formLoading ? "Creating Event..." : "Publish Event"}
                   </button>

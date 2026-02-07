@@ -100,8 +100,7 @@ const Explore = () => {
       const accessToken = localStorage.getItem('access_token');
       const apiUrl = `${import.meta.env.VITE_API_URL}/api/v1/search/explore?${params.toString()}`;
 
-      console.log('API URL:', apiUrl);
-      console.log('Search filters:', filters);
+  
 
       const response = await axios.get(apiUrl, {
         headers: {

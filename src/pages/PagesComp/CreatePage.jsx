@@ -62,7 +62,7 @@ const CreatePage = () => {
             page_title: pageTitle || pageName, // Use page name as title if not provided
             page_category: parseInt(selectedCategoryId),
             sub_category: parseInt(selectedSubCategoryId),
-            website: pageUrl, // Send just the page URL slug without domain
+            website: pageUrl, 
             page_description: pageDescription,
         };
 

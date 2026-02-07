@@ -4,7 +4,6 @@ import { CiCircleMore } from 'react-icons/ci'
 import { BiBell } from 'react-icons/bi'
 import { FaTimes } from 'react-icons/fa'
 import { HiUsers } from "react-icons/hi";
-import { FaArrowTrendUp } from "react-icons/fa6";
 import { useNavigate, Link } from 'react-router-dom';
 import { useChatContext } from '../../context/ChatContext';
 import { useUser } from '../../context/UserContext';
@@ -13,6 +12,7 @@ import StoryViewer from './StoryViewer';
 import Notifications from './Notifications';
 import GlobalSearch from './GlobalSearch';
 import FriendRequests from './FriendRequests';
+import TrendingTopics from './TrendingTopics';
 
 
 
@@ -538,7 +538,6 @@ const Chatbox = ({ onClose, isMobile = false }) => {
                 : 'border-[#d3d1d1] bg-white'
                 }`}
             >
-              <div className="grid absolute bg-[#B3261E] place-items-center w-6 h-6 rounded-full -right-2 -top-2 text-[10px] text-white font-medium">2</div>
               <FaUser className={`size-[20px] xl:size-[24px] lg:size-[20px] ${activeSection === 'individual' ? 'text-[#212121]' : 'text-[#808080]'
                 }`} />
               {activeSection === 'individual' && (
@@ -553,7 +552,6 @@ const Chatbox = ({ onClose, isMobile = false }) => {
                 : 'border-[#d3d1d1] bg-white'
                 }`}
             >
-              <div className="grid absolute bg-[#B3261E] place-items-center w-5 h-5 rounded-full -right-2 -top-2 text-[10px] text-white font-medium">2</div>
               <FaUsers className={`size-[20px] xl:size-[24px] lg:size-[20px] ${activeSection === 'groups' ? 'text-[#212121]' : 'text-[#808080]'
                 }`} />
               {activeSection === 'groups' && (
@@ -687,41 +685,7 @@ const Chatbox = ({ onClose, isMobile = false }) => {
       </div>
 
       {/* Trending Topics */}
-      <div className="px-6 py-2 bg-white mt-2 rounded-lg border border-[#d3d1d1]">
-        <div className="flex items-center justify-between">
-          <h5 className="text-lg font-semibold text-[#212121]">Trending Topics</h5>
-          <svg xmlns="http://www.w3.org/2000/svg" className='text-gray-500 size-[25px] cursor-pointer' width={24} height={24} viewBox="0 0 24 24">
-            <g fill="none" stroke="currentColor" strokeWidth={2}>
-              <circle cx={11} cy={11} r={7}></circle>
-              <path strokeLinecap="round" d="M11 8a3 3 0 0 0-3 3m12 9l-3-3"></path>
-            </g>
-          </svg>
-        </div>
-
-        <div className="space-y-1 mt-5">
-          <div className="flex items-center justify-between p-0 cursor-pointer transition-colors will-change-transform text-[#212121]">
-            <FaArrowTrendUp />
-            <a href="#" className="font-medium ">#Technology</a>
-            <p className="text-sm ">12.5k posts</p>
-          </div>
-          <div className="flex items-center justify-between p-0 cursor-pointer transition-colors will-change-transform text-[#212121]">
-            <FaArrowTrendUp />
-            <a href="#" className="font-medium ">#Technology</a>
-            <p className="text-sm ">12.5k posts</p>
-          </div>
-          <div className="flex items-center justify-between p-0 cursor-pointer transition-colors will-change-transform text-[#212121]">
-            <FaArrowTrendUp />
-            <a href="#" className="font-medium ">#Technology</a>
-            <p className="text-sm ">12.5k posts</p>
-          </div>
-          <div className="flex items-center justify-between p-0 cursor-pointer transition-colors will-change-transform text-[#212121]">
-            <FaArrowTrendUp />
-            <a href="#" className="font-medium ">#Technology</a>
-            <p className="text-sm ">12.5k posts</p>
-          </div>
-
-        </div>
-      </div>
+      <TrendingTopics />
 
       {/* Who to Follow */}
       <div className="py-4 px-6 mt-2.5 bg-[#a2a2a2] rounded-lg border border-[#d3d1d1]">
