@@ -196,7 +196,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
         return () => clearTimeout(timeoutId);
     }, [gifSearchQuery, showGifSearch]);
 
-    // 👉 File selector logic
+    // ?? File selector logic
     const handleFileSelect = (type) => {
         const input = document.createElement('input');
         input.type = 'file';
@@ -237,7 +237,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
         input.click();
     };
 
-    // ❌ Remove file handler
+    // ? Remove file handler
     const handleRemoveFile = (indexToRemove) => {
         setSelectedFiles((prev) => {
             const fileToRemove = prev[indexToRemove];
@@ -641,9 +641,37 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
 
 
 
-    const createNewPost = async (postText, selectedFiles, pollData = null) => {
-        // Validation: Check if post has any content
+    const createNewPost = async (postText, selectedFiles, pollData = null, fromOutsideModal = false) => {
+        // Validation: Post text is now MANDATORY
         const hasText = postText && postText.trim().length > 0;
+
+        // Check if text is provided - this is now required
+        if (!hasText) {
+            const errorMessage = "Please add some text to your post. Text is required.";
+            if (showNotification) {
+                showNotification(errorMessage, 'error');
+            } else {
+                toast.error(errorMessage);
+            }
+            
+            // If called from outside modal (send button outside), do NOT open modal
+            // If called from inside modal, modal is already open, so no action needed
+            // Only open modal if called from somewhere else (not outside, not already open)
+            if (!fromOutsideModal && !showPopup) {
+                setShowPopup(true);
+                // Focus the text input after opening modal
+                setTimeout(() => {
+                    const textInput = document.querySelector('textarea[placeholder*="What\'s on your mind"]') ||
+                        document.querySelector('textarea[placeholder*="Share your thoughts"]');
+                    if (textInput) {
+                        textInput.focus();
+                    }
+                }, 100);
+            }
+            
+            return;
+        }
+
         const hasFiles = selectedFiles && selectedFiles.length > 0;
         const hasLink = postLink && postLink.trim().length > 0;
         const hasYoutubeLink = youtubeLink && youtubeLink.trim().length > 0;
@@ -658,17 +686,6 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
             const hasPollQuestion = pollData.pollQuestion && pollData.pollQuestion.trim().length > 0;
             const hasPollOptions = pollData.pollOptions && pollData.pollOptions.some(opt => opt && opt.trim().length > 0);
             hasValidPoll = hasPollQuestion && hasPollOptions;
-        }
-
-        // If nothing is provided, show error and return
-        if (!hasText && !hasFiles && !hasLink && !hasYoutubeLink && !hasAlbumName && !hasValidPoll && !hasGif && !hasFeeling && !hasActivity) {
-            const errorMessage = "Please add some content to your post.";
-            if (showNotification) {
-                showNotification(errorMessage, 'error');
-            } else {
-                toast.error(errorMessage);
-            }
-            return;
         }
 
         // If there's a valid poll and no files/media, use the dedicated poll API
@@ -769,11 +786,6 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
                 formData.append('has_poll', 'true');
             }
 
-            // Append files correctly
-            console.log("Selected files count:", selectedFiles.length);
-            console.log("Selected files:", selectedFiles);
-            console.log("Detected post type:", detectedPostType);
-            console.log("Album name:", albumName);
 
             let imageCount = 0;
             selectedFiles.forEach((fileObj, index) => {
@@ -921,14 +933,19 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
                         onChange={(e) => setPostText(e.target.value)}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter') {
-                                createNewPost(postText, selectedFiles, { showPoll, pollQuestion, pollOptions, pollDuration });
+                                createNewPost(postText, selectedFiles, { showPoll, pollQuestion, pollOptions, pollDuration }, true);
                             }
                         }}
                         className="w-full pl-16 pr-12 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
 
                     <button
-                        onClick={() => createNewPost(postText, selectedFiles, { showPoll, pollQuestion, pollOptions, pollDuration })}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            // Don't open modal, just try to create post
+                            createNewPost(postText, selectedFiles, { showPoll, pollQuestion, pollOptions, pollDuration }, true);
+                        }}
                         className="absolute right-3 top-1/2 -translate-y-1/2 bg-white cursor-pointer"
                     >
                         <Icon
@@ -1009,7 +1026,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
                     </button>
                 </div>
 
-                {/* File Preview Section with ❌ Remove */}
+                {/* File Preview Section with ? Remove */}
                 {selectedFiles.length > 0 && (
                     <div className="mt-4 space-y-3 text-sm text-gray-700">
                         <strong>Selected Files:</strong>
@@ -1344,7 +1361,7 @@ const CreatePostPopup = ({
     if (!isOpen) return null;
 
     const handlePost = async () => {
-        console.log('Posting:', { postText, commentsEnabled, showSharing, showPoll, pollQuestion, pollOptions, pollDuration });
+
 
         // Validate poll if it's enabled
         if (showPoll) {
@@ -1358,26 +1375,20 @@ const CreatePostPopup = ({
             }
         }
 
-        console.log("Popup selectedFiles before createNewPost:", selectedFiles);
-        console.log("Popup postText:", postText);
-        console.log("Popup albumName:", albumName);
 
-        setPostText('');
-        setCommentsEnabled(false);
-        setSelectedFiles([]);
-        await createNewPost(postText, selectedFiles, { showPoll, pollQuestion, pollOptions, pollDuration });
-        setShowPopup(false);
+        // Call createNewPost and wait for it to complete
+        // Only clear form and close modal if post creation is successful
+        // Pass false for fromOutsideModal so modal stays open on validation errors
+        await createNewPost(postText, selectedFiles, { showPoll, pollQuestion, pollOptions, pollDuration }, false);
 
-        // Reset poll if it was created
-        if (showPoll) {
-            resetPoll();
-        }
+        // Note: Form clearing and modal closing is now handled inside createNewPost on success
+        // This prevents the modal from closing when validation fails
     };
 
     return (
         <div
-            className="fixed inset-0 bg-black/30 backdrop-blur-md flex items-center justify-center z-50 px-2 md:px-6"
-            style={{ backdropFilter: 'blur(10px)' }}
+            className="fixed inset-0 bg-black/30 backdrop-blur-md flex items-center justify-center z-40 px-2 md:px-6 "
+            style={{ backdropFilter: 'blur(8px)' }}
         >
             <div
                 className="bg-white rounded-2xl w-full max-w-2xl md:max-w-3xl max-h-[90vh] overflow-y-auto relative shadow-2xl"
@@ -1604,17 +1615,17 @@ const CreatePostPopup = ({
                     {/* Selected Activity Preview */}
                     {selectedActivity && (
                         <div className={`mt-4 mb-4 p-3 rounded-lg border relative ${selectedActivity.type === 'traveling' ? 'bg-blue-50 border-blue-200' :
-                                selectedActivity.type === 'listening' ? 'bg-cyan-50 border-cyan-200' :
-                                    selectedActivity.type === 'watching' ? 'bg-pink-50 border-pink-200' :
-                                        selectedActivity.type === 'playing' ? 'bg-orange-50 border-orange-200' :
-                                            'bg-red-50 border-red-200'
+                            selectedActivity.type === 'listening' ? 'bg-cyan-50 border-cyan-200' :
+                                selectedActivity.type === 'watching' ? 'bg-pink-50 border-pink-200' :
+                                    selectedActivity.type === 'playing' ? 'bg-orange-50 border-orange-200' :
+                                        'bg-red-50 border-red-200'
                             }`}>
                             <div className="flex items-center justify-between mb-2">
                                 <span className={`text-sm font-medium ${selectedActivity.type === 'traveling' ? 'text-blue-800' :
-                                        selectedActivity.type === 'listening' ? 'text-cyan-800' :
-                                            selectedActivity.type === 'watching' ? 'text-pink-800' :
-                                                selectedActivity.type === 'playing' ? 'text-orange-800' :
-                                                    'text-red-800'
+                                    selectedActivity.type === 'listening' ? 'text-cyan-800' :
+                                        selectedActivity.type === 'watching' ? 'text-pink-800' :
+                                            selectedActivity.type === 'playing' ? 'text-orange-800' :
+                                                'text-red-800'
                                     }`}>
                                     {selectedActivity.type.charAt(0).toUpperCase() + selectedActivity.type.slice(1)}
                                 </span>
@@ -1623,10 +1634,10 @@ const CreatePostPopup = ({
                                         setSelectedActivity(null);
                                     }}
                                     className={`p-1 rounded-full transition-colors ${selectedActivity.type === 'traveling' ? 'text-blue-600 hover:text-blue-800 hover:bg-blue-100' :
-                                            selectedActivity.type === 'listening' ? 'text-cyan-600 hover:text-cyan-800 hover:bg-cyan-100' :
-                                                selectedActivity.type === 'watching' ? 'text-pink-600 hover:text-pink-800 hover:bg-pink-100' :
-                                                    selectedActivity.type === 'playing' ? 'text-orange-600 hover:text-orange-800 hover:bg-orange-100' :
-                                                        'text-red-600 hover:text-red-800 hover:bg-red-100'
+                                        selectedActivity.type === 'listening' ? 'text-cyan-600 hover:text-cyan-800 hover:bg-cyan-100' :
+                                            selectedActivity.type === 'watching' ? 'text-pink-600 hover:text-pink-800 hover:bg-pink-100' :
+                                                selectedActivity.type === 'playing' ? 'text-orange-600 hover:text-orange-800 hover:bg-orange-100' :
+                                                    'text-red-600 hover:text-red-800 hover:bg-red-100'
                                         }`}
                                     title={`Remove ${selectedActivity.type}`}
                                 >
@@ -1634,7 +1645,7 @@ const CreatePostPopup = ({
                                 </button>
                             </div>
                             <div className="flex items-center gap-3">
-                                <span className="text-2xl">{selectedActivity.emoji || '📍'}</span>
+                                <span className="text-2xl">{selectedActivity.emoji || '\u{1F4AD}'}</span>
                                 <span className="text-gray-800 font-medium">{selectedActivity.label}</span>
                             </div>
                         </div>
@@ -1669,8 +1680,8 @@ const CreatePostPopup = ({
                                                     setShowColorSection(false);
                                                 }}
                                                 className={`flex-shrink-0 w-14 h-14 rounded-full border-3 transition-all hover:scale-110 ${selectedColorBg?.id === colorBg.id
-                                                        ? 'border-indigo-600 ring-4 ring-indigo-200'
-                                                        : 'border-gray-300 hover:border-indigo-400'
+                                                    ? 'border-indigo-600 ring-4 ring-indigo-200'
+                                                    : 'border-gray-300 hover:border-indigo-400'
                                                     }`}
                                                 style={{
                                                     background: colorBg.color_1 && colorBg.color_2
@@ -1990,7 +2001,7 @@ const CreatePostPopup = ({
                         setSelectedGif(null);
                         setSelectedColorBg(null);
                         setShowColorSection(false);
-                        
+
                         // Set the selected feeling
                         setSelectedFeeling(feeling);
                         setFeeling(feeling.value);
@@ -2016,7 +2027,7 @@ const CreatePostPopup = ({
                         setSelectedGif(null);
                         setSelectedColorBg(null);
                         setShowColorSection(false);
-                        
+
                         // Set the selected activity
                         setSelectedActivity(activity);
                         setShowActivityModal(false);
@@ -2039,7 +2050,7 @@ const CreatePostPopup = ({
                         setSelectedGif(null);
                         setSelectedColorBg(null);
                         setShowColorSection(false);
-                        
+
                         if (type === 'feeling') {
                             setShowActivityModal(false);
                             setShowFeelingModal(true);
@@ -2242,9 +2253,9 @@ const GifSearchModal = ({ isOpen, onClose, searchQuery, setSearchQuery, gifResul
 const FeelingSelectionModal = ({ isOpen, onClose, onSelectFeeling, selectedFeeling }) => {
     // List of feelings with emojis (only working ones)
     const feelings = [
-        { emoji: '😊', label: 'Happy', value: 'happy', color: 'bg-yellow-100', textColor: 'text-yellow-700', borderColor: 'border-yellow-300' },
-        { emoji: '😢', label: 'Sad', value: 'sad', color: 'bg-blue-100', textColor: 'text-blue-700', borderColor: 'border-blue-300' },
-        { emoji: '😍', label: 'Loved', value: 'loved', color: 'bg-pink-100', textColor: 'text-pink-700', borderColor: 'border-pink-300' },
+        { emoji: '\u{1F604}', label: 'Happy', value: 'happy', color: 'bg-yellow-100', textColor: 'text-yellow-700', borderColor: 'border-yellow-300' },
+        { emoji: '\u{1F622}', label: 'Sad', value: 'sad', color: 'bg-blue-100', textColor: 'text-blue-700', borderColor: 'border-blue-300' },
+        { emoji: '\u{1F970}', label: 'Loved', value: 'loved', color: 'bg-pink-100', textColor: 'text-pink-700', borderColor: 'border-pink-300' },
     ];
 
     useEffect(() => {
@@ -2286,8 +2297,8 @@ const FeelingSelectionModal = ({ isOpen, onClose, onSelectFeeling, selectedFeeli
                                 key={feeling.value}
                                 onClick={() => onSelectFeeling(feeling)}
                                 className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all cursor-pointer hover:scale-105 ${selectedFeeling?.value === feeling.value
-                                        ? `${feeling.color} ${feeling.borderColor} border-2`
-                                        : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+                                    ? `${feeling.color} ${feeling.borderColor} border-2`
+                                    : 'bg-gray-50 border-gray-200 hover:border-gray-300'
                                     }`}
                             >
                                 <span className="text-4xl mb-2">{feeling.emoji}</span>
@@ -2309,7 +2320,7 @@ const ReactionsMainModal = ({ isOpen, onClose, onSelectActivityType, selectedFee
         {
             type: 'feeling',
             label: 'Feeling',
-            emoji: '😊',
+            emoji: '\u{1F604}',
             color: 'bg-yellow-100',
             textColor: 'text-yellow-700',
             borderColor: 'border-yellow-300',
@@ -2318,7 +2329,7 @@ const ReactionsMainModal = ({ isOpen, onClose, onSelectActivityType, selectedFee
         {
             type: 'traveling',
             label: 'Traveling to',
-            emoji: '✈️',
+            emoji: '\u{2708}\u{FE0F}',
             color: 'bg-blue-100',
             textColor: 'text-blue-700',
             borderColor: 'border-blue-300',
@@ -2327,7 +2338,7 @@ const ReactionsMainModal = ({ isOpen, onClose, onSelectActivityType, selectedFee
         {
             type: 'listening',
             label: 'Listening to',
-            emoji: '🎵',
+            emoji: '\u{1F3A7}',
             color: 'bg-cyan-100',
             textColor: 'text-cyan-700',
             borderColor: 'border-cyan-300',
@@ -2336,7 +2347,7 @@ const ReactionsMainModal = ({ isOpen, onClose, onSelectActivityType, selectedFee
         {
             type: 'watching',
             label: 'Watching',
-            emoji: '📺',
+            emoji: '\u{1F4FA}',
             color: 'bg-pink-100',
             textColor: 'text-pink-700',
             borderColor: 'border-pink-300',
@@ -2345,7 +2356,7 @@ const ReactionsMainModal = ({ isOpen, onClose, onSelectActivityType, selectedFee
         {
             type: 'playing',
             label: 'Playing',
-            emoji: '🎮',
+            emoji: '\u{1F3AE}',
             color: 'bg-orange-100',
             textColor: 'text-orange-700',
             borderColor: 'border-orange-300',
@@ -2429,8 +2440,8 @@ const ReactionsMainModal = ({ isOpen, onClose, onSelectActivityType, selectedFee
                                     key={activity.type}
                                     onClick={() => onSelectActivityType(activity.type)}
                                     className={`flex flex-col items-center justify-center p-6 rounded-lg border-2 transition-all cursor-pointer hover:scale-105 ${isSelected
-                                            ? `${activity.color} ${activity.borderColor} border-2`
-                                            : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+                                        ? `${activity.color} ${activity.borderColor} border-2`
+                                        : 'bg-gray-50 border-gray-200 hover:border-gray-300'
                                         }`}
                                 >
                                     <span className="text-5xl mb-3">{activity.emoji}</span>
@@ -2458,12 +2469,12 @@ const ActivitySelectionModal = ({ isOpen, onClose, activityType, onSelectActivit
 
     // Reactions for reaction type
     const reactions = [
-        { emoji: '👍', label: 'Like', value: 'like' },
-        { emoji: '❤️', label: 'Love', value: 'love' },
-        { emoji: '😂', label: 'Haha', value: 'haha' },
-        { emoji: '😮', label: 'Wow', value: 'wow' },
-        { emoji: '😢', label: 'Sad', value: 'sad' },
-        { emoji: '', label: 'Happy', value: 'happy', color: 'bg-yellow-100', textColor: 'text-yellow-700', borderColor: 'border-yellow-300' },
+        { emoji: '\u{1F44D}', label: 'Like', value: 'like' },
+        { emoji: '\u{2764}\u{FE0F}', label: 'Love', value: 'love' },
+        { emoji: '\u{1F602}', label: 'Haha', value: 'haha' },
+        { emoji: '\u{1F62E}', label: 'Wow', value: 'wow' },
+        { emoji: '\u{1F622}', label: 'Sad', value: 'sad' },
+        { emoji: '\u{1F604}', label: 'Happy', value: 'happy', color: 'bg-yellow-100', textColor: 'text-yellow-700', borderColor: 'border-yellow-300' },
     ];
 
     // Activity type configurations
@@ -2471,25 +2482,25 @@ const ActivitySelectionModal = ({ isOpen, onClose, activityType, onSelectActivit
         traveling: {
             title: 'Traveling to',
             placeholder: 'Where are you traveling? (e.g., Paris, New York)',
-            emoji: '✈️',
+            emoji: '\u{2708}\u{FE0F}',
             prefix: 'Traveling to'
         },
         listening: {
             title: 'Listening to',
             placeholder: 'What are you listening to? (e.g., Song Name, Artist)',
-            emoji: '🎵',
+            emoji: '\u{1F3A7}',
             prefix: 'Listening to'
         },
         watching: {
             title: 'Watching',
             placeholder: 'What are you watching? (e.g., Movie Name, TV Show)',
-            emoji: '📺',
+            emoji: '\u{1F4FA}',
             prefix: 'Watching'
         },
         playing: {
             title: 'Playing',
             placeholder: 'What are you playing? (e.g., Game Name, Sport)',
-            emoji: '🎮',
+            emoji: '\u{1F3AE}',
             prefix: 'Playing'
         },
 
@@ -2581,8 +2592,8 @@ const ActivitySelectionModal = ({ isOpen, onClose, activityType, onSelectActivit
                                         key={reaction.value}
                                         onClick={() => setSelectedReaction(reaction.value)}
                                         className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all cursor-pointer hover:scale-105 ${selectedReaction === reaction.value
-                                                ? 'bg-blue-100 border-blue-500'
-                                                : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+                                            ? 'bg-blue-100 border-blue-500'
+                                            : 'bg-gray-50 border-gray-200 hover:border-gray-300'
                                             }`}
                                     >
                                         <span className="text-4xl mb-2">{reaction.emoji}</span>

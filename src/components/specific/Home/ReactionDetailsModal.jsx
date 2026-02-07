@@ -36,12 +36,12 @@ const ReactionDetailsModal = ({ isOpen, onClose, data, isLoading }) => {
     if (!isOpen) return null;
 
     const reactionsMapping = {
-        1: { emoji: '👍', name: 'Like', color: 'bg-blue-500', bgColor: 'bg-blue-50', textColor: 'text-blue-600' },
-        2: { emoji: '❤️', name: 'Love', color: 'bg-red-500', bgColor: 'bg-red-50', textColor: 'text-red-600' },
-        3: { emoji: '😂', name: 'Haha', color: 'bg-yellow-400', bgColor: 'bg-yellow-50', textColor: 'text-yellow-600' },
-        4: { emoji: '😮', name: 'Wow', color: 'bg-yellow-500', bgColor: 'bg-yellow-50', textColor: 'text-yellow-700' },
-        5: { emoji: '😢', name: 'Sad', color: 'bg-blue-400', bgColor: 'bg-blue-50', textColor: 'text-blue-500' },
-        6: { emoji: '😡', name: 'Angry', color: 'bg-orange-600', bgColor: 'bg-orange-50', textColor: 'text-orange-700' }
+        1: { emoji: '\u{1F44D}', name: 'Like', color: 'bg-blue-500', bgColor: 'bg-blue-50', textColor: 'text-blue-600' },
+        2: { emoji: '\u{2764}\u{FE0F}', name: 'Love', color: 'bg-red-500', bgColor: 'bg-red-50', textColor: 'text-red-600' },
+        3: { emoji: '\u{1F602}', name: 'Haha', color: 'bg-yellow-400', bgColor: 'bg-yellow-50', textColor: 'text-yellow-600' },
+        4: { emoji: '\u{1F62E}', name: 'Wow', color: 'bg-yellow-500', bgColor: 'bg-yellow-50', textColor: 'text-yellow-700' },
+        5: { emoji: '\u{1F622}', name: 'Sad', color: 'bg-blue-400', bgColor: 'bg-blue-50', textColor: 'text-blue-500' },
+        6: { emoji: '\u{1F621}', name: 'Angry', color: 'bg-orange-600', bgColor: 'bg-orange-50', textColor: 'text-orange-700' }
     };
 
     const reactionCounts = data?.reaction_counts || {};
@@ -204,7 +204,7 @@ const ReactionDetailsModal = ({ isOpen, onClose, data, isLoading }) => {
                     ) : totalReactions > 0 ? (
                         <div className="text-center py-12 px-6">
                             <div className="w-20 h-20 bg-yellow-50 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                                <span className="text-4xl">👥</span>
+                                <span className="text-4xl">{'\u{1F465}'}</span>
                             </div>
                             <h3 className="text-lg font-bold text-gray-900 mb-2">{totalReactions} Reactions</h3>
                             <p className="text-gray-500 text-sm leading-relaxed mb-4">
@@ -229,7 +229,7 @@ const ReactionDetailsModal = ({ isOpen, onClose, data, isLoading }) => {
                     ) : (
                         <div className="text-center py-12 px-6">
                             <div className="w-20 h-20 bg-blue-50 rounded-3xl flex items-center justify-center mx-auto mb-6 transform -rotate-12">
-                                <span className="text-4xl">✨</span>
+                                <span className="text-4xl">{'\u{2728}'}</span>
                             </div>
                             <h3 className="text-lg font-bold text-gray-900 mb-2">No reactions yet</h3>
                             <p className="text-gray-500 text-sm leading-relaxed">

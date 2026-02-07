@@ -15,13 +15,21 @@ import Poll from './Poll';
 import ReactionDetailsModal from './ReactionDetailsModal';
 import ReportPostModal from '../../ReportPostModal';
 import DeletePostModal from './DeletePostModal';
-const PostCard = ({ id, user, content, image, video, audio, file, likes, comments, shares, saves, timeAgo, post_id, handleLike, handleDislike, isLiked, commentsData, savePost, isSaved, blog, multipleImages, hasMultipleImages, reportPost, hidePost, iframelink, postfile, postFileName, getNewsFeed, openImagePopup, handleReaction, postReaction, postReactionCounts, currentReaction, userReaction, postType, pollOptions, handlePollVote, isPollLoading, colorId, colorData, feeling, isFeelingPost, likedUsers }) => {
+const PostCard = ({ id, user, content, image, video, audio, file, likes, comments, shares, saves, timeAgo, post_id, handleLike, handleDislike, isLiked, commentsData, savePost, isSaved, blog, multipleImages, hasMultipleImages, reportPost, hidePost, iframelink, postfile, postFileName, getNewsFeed, openImagePopup, handleReaction, postReaction, postReactionCounts, currentReaction, userReaction, postType, pollOptions, handlePollVote, isPollLoading, colorId, colorData, feeling, isFeelingPost, likedUsers, activity }) => {
   // Use id as the primary identifier for most operations (comments, reactions, etc.)
   // Use post_id for post-specific operations (delete post, hide post, etc.)
   const postIdentifier = id || post_id;
   const postIdForPostOperations = post_id || id;
-  
- 
+
+  // Store activity data globally for access in getActivityInfo
+  useEffect(() => {
+    if (activity && postIdentifier) {
+      if (!window.postActivity) window.postActivity = {};
+      window.postActivity[postIdentifier] = activity;
+    }
+  }, [activity, postIdentifier]);
+
+
   const navigate = useNavigate();
   const { userData } = useUser();
   const [clickedComments, setClickedComments] = useState(false);
@@ -84,7 +92,7 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
   const [replyToDelete, setReplyToDelete] = useState(null);
   // Add local state for saved status to provide instant visual feedback
   const [localIsSaved, setLocalIsSaved] = useState(isSaved);
-  
+
   const buildAuthHeaders = useCallback(() => {
     const accessToken = localStorage.getItem("access_token");
     const headers = {
@@ -137,7 +145,7 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
   useEffect(() => {
     if (!isRefetchingRef.current && commentsData && Array.isArray(commentsData)) {
       setLocalCommentsData(commentsData);
-      
+
       // If comments have replies in them, populate commentReplies state
       const repliesMap = {};
       commentsData.forEach(comment => {
@@ -285,9 +293,9 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
       }
     };
 
-    if (showEmojiPicker || Object.keys(showReplyEmojiPicker).length > 0 || 
-        Object.keys(showEditCommentEmojiPicker).length > 0 || 
-        Object.keys(showEditReplyEmojiPicker).length > 0) {
+    if (showEmojiPicker || Object.keys(showReplyEmojiPicker).length > 0 ||
+      Object.keys(showEditCommentEmojiPicker).length > 0 ||
+      Object.keys(showEditReplyEmojiPicker).length > 0) {
       document.addEventListener('mousedown', handleClickOutside);
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
@@ -318,7 +326,7 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
           [];
         if (Array.isArray(fetched)) {
           setLocalCommentsData(fetched);
-          
+
           // If comments have replies in them, populate commentReplies state
           const repliesMap = {};
           fetched.forEach(comment => {
@@ -329,7 +337,7 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
           if (Object.keys(repliesMap).length > 0) {
             setCommentReplies(prev => ({ ...prev, ...repliesMap }));
           }
-          
+
           return fetched;
         } else {
           console.warn('Fetched comments is not an array:', fetched);
@@ -355,21 +363,21 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
   const fetchReactionDetails = useCallback(async () => {
     setIsLoadingReactionDetails(true);
     setShowReactionDetailsModal(true);
-    
+
     console.log('PostCard - fetchReactionDetails called');
     console.log('PostCard - likedUsers prop:', likedUsers);
     console.log('PostCard - postReactionCounts:', postReactionCounts);
     console.log('PostCard - Total reaction count:', getTotalReactionCount());
-    
+
     // Use the liked_users data that's already available from the post
     const reactionData = {
       reaction_counts: postReactionCounts || {},
       total_reactions: getTotalReactionCount(),
       liked_users: likedUsers || [] // Use the prop passed from parent
     };
-    
+
     console.log('PostCard - Reaction data being set:', reactionData);
-    
+
     // Set the data immediately - no need to fetch again
     setReactionDetails(reactionData);
     setIsLoadingReactionDetails(false);
@@ -452,31 +460,43 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
     return feelings[feelingKey] || '😊';
   };
 
-  // Get activity emoji and label based on post type
-  const getActivityInfo = (postType, postText) => {
-    const activities = {
-      'traveling': { emoji: '✈️', label: 'Traveling to', prefix: 'traveling to' },
-      'watching': { emoji: '📺', label: 'Watching', prefix: 'watching' },
-      'listening': { emoji: '🎵', label: 'Listening to', prefix: 'listening to' },
-      'playing': { emoji: '🎮', label: 'Playing', prefix: 'playing' },
-      'reading': { emoji: '📖', label: 'Reading', prefix: 'reading' },
-      'reaction': { emoji: '💭', label: 'Reacted', prefix: '' }
+  // Get activity info from the activity object in API response
+  const getActivityInfo = () => {
+    // Map activity types to emojis
+    const activityEmojis = {
+      'traveling': '\u{2708}\u{FE0F}',
+      'travelling': '\u{2708}\u{FE0F}', // Support both spellings
+      'watching': '📺',
+      'listening': '🎵',
+      'playing': '🎮',
+      'reading': '📖',
+      'reaction': '💭'
     };
-    
-    const activity = activities[postType];
-    if (!activity) return null;
-    
-    // Extract the activity target from post text (e.g., "Traveling to India" -> "India")
-    let target = postText || '';
-    if (activity.prefix && postText) {
-      const regex = new RegExp(`^${activity.prefix}\\s+(.+)`, 'i');
-      const match = postText.match(regex);
-      if (match && match[1]) {
-        target = match[1].split('\n')[0].trim(); // Get first line after prefix
-      }
+
+    // If we have an activity prop passed directly, use it
+    if (activity && activity.type && activity.value) {
+      return {
+        emoji: activityEmojis[activity.type] || '📌',
+        type: activity.type,
+        label: activity.label || activity.type,
+        value: activity.value,
+        text: activity.text || `is ${activity.type} ${activity.value}`
+      };
     }
-    
-    return { ...activity, target };
+
+    // Fallback: check if activity data is stored globally
+    if (window.postActivity && window.postActivity[postIdentifier]) {
+      const storedActivity = window.postActivity[postIdentifier];
+      return {
+        emoji: activityEmojis[storedActivity.type] || '📌',
+        type: storedActivity.type,
+        label: storedActivity.label || storedActivity.type,
+        value: storedActivity.value || '',
+        text: storedActivity.text || ''
+      };
+    }
+
+    return null;
   };
 
   // Get total reaction count - use likes prop which contains reactions_count from API
@@ -635,7 +655,7 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
           headers: buildAuthHeaders()
         }
       );
-      
+
       const data = response.data;
       if (data?.ok === true || data?.api_status === 200) {
         toast.success(data?.message || 'Post reported successfully');
@@ -688,7 +708,7 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
   const handleDeletePost = useCallback(async () => {
     setShowOptionsMenu(false);
     setShowDeletePostModal(false);
-    
+
     setLoading(true);
     try {
       const response = await axios.delete(
@@ -1067,7 +1087,7 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
     const wasCommentsOpen = clickedComments;
     // Set ref to preserve state across re-renders
     keepCommentsOpenRef.current = wasCommentsOpen;
-    
+
     setCommentActionLoading(prev => ({ ...prev, [`delete_${comment_id}`]: true }));
     try {
       const response = await axios.delete(
@@ -1077,7 +1097,7 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
       const data = response.data;
       if (data?.ok === true) {
         toast.success(data?.message || 'Comment deleted successfully');
-        
+
         // Remove replies for this comment if they exist
         if (commentReplies[comment_id]) {
           setCommentReplies(prev => {
@@ -1086,17 +1106,17 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
             return newReplies;
           });
         }
-        
+
         // Ensure comments section stays open if it was open before deletion
         if (wasCommentsOpen) {
           setClickedComments(true);
           keepCommentsOpenRef.current = true;
         }
-        
+
         // Immediately remove the comment from local state (optimistic update)
         // This provides instant feedback like Instagram/Facebook
         setLocalCommentsData(prev => prev.filter(comment => comment.id !== comment_id));
-        
+
         // Refetch ONLY comments in the background to sync with server (without showing loader)
         // This ensures we have the latest data from the server without refetching entire feed
         isRefetchingRef.current = true;
@@ -1124,7 +1144,7 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
           // Reset refetch flag after refetch completes
           isRefetchingRef.current = false;
         });
-        
+
         // NO LONGER REFETCHING ENTIRE FEED - just update comment count locally
         // This is much more efficient and provides better UX
       } else {
@@ -1153,12 +1173,12 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
       if (data?.ok === true) {
         toast.success(data?.message || 'Reply deleted successfully');
         const parentCommentId = findParentCommentId(reply_id);
-        
+
         // Refetch the parent comment's replies to update the UI
         if (parentCommentId) {
           await fetchReply(parentCommentId);
         }
-        
+
         // Refetch all comments to update the comment count
         if (clickedComments) {
           await fetchPostComments(false);
@@ -1304,12 +1324,12 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
         const progress = (videoElement.currentTime / videoElement.duration) * 100;
         setVideoProgress(progress);
       };
-      
+
       videoElement.addEventListener('play', handlePlay);
       videoElement.addEventListener('pause', handlePause);
       videoElement.addEventListener('ended', handleEnded);
       videoElement.addEventListener('timeupdate', handleTimeUpdate);
-      
+
       return () => {
         videoElement.removeEventListener('play', handlePlay);
         videoElement.removeEventListener('pause', handlePause);
@@ -1372,33 +1392,33 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
   // Helper function to convert plain text URLs to clickable links
   const linkifyText = useCallback((text) => {
     if (!text) return '';
-    
+
     // URL regex pattern - matches http://, https://, www., and common TLDs
     const urlPattern = /(https?:\/\/[^\s]+)|(www\.[^\s]+)|([a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[a-zA-Z]{2,}[^\s]*)/gi;
-    
+
     // Replace URLs with anchor tags
     let linkedText = text.replace(urlPattern, (match) => {
       let url = match;
-      
+
       // Add protocol if missing
       if (!url.match(/^https?:\/\//i)) {
         url = 'http://' + url;
       }
-      
+
       // If the text already contains an <a> tag with this URL, don't wrap it again
       if (text.includes(`href="${url}"`) || text.includes(`href='${url}'`)) {
         return match;
       }
-      
+
       return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline break-all" style="word-break: break-all; overflow-wrap: break-word;">${match}</a>`;
     });
-    
+
     // Also handle existing <a> tags to ensure they open in new tab
     linkedText = linkedText.replace(
       /<a\s+href="([^"]+)"(?![^>]*target=)[^>]*>([^<]+)<\/a>/gi,
       '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline break-all" style="word-break: break-all; overflow-wrap: break-word;">$2</a>'
     );
-    
+
     return linkedText;
   }, []);
 
@@ -1438,7 +1458,7 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
                 </>
               )}
               {(() => {
-                const activityInfo = getActivityInfo(postType, content);
+                const activityInfo = getActivityInfo();
                 if (activityInfo && !isFeelingPost) {
                   return (
                     <>
@@ -1446,8 +1466,8 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
                       <div className="flex items-center space-x-1">
                         <span className="text-base leading-none">{activityInfo.emoji}</span>
                         <span className="text-sm text-gray-500">{activityInfo.label}</span>
-                        {activityInfo.target && (
-                          <span className="text-sm font-medium text-gray-700">{activityInfo.target}</span>
+                        {activityInfo.value && (
+                          <span className="text-sm font-medium text-gray-700">{activityInfo.value}</span>
                         )}
                       </div>
                     </>
@@ -1578,7 +1598,7 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
               src={multipleImages[currentImageIndex]?.image || multipleImages[currentImageIndex]?.image_org}
               alt={`Post image ${currentImageIndex + 1}`}
               className="w-full h-full cursor-pointer transition-opacity duration-300"
-              style={{ 
+              style={{
                 objectFit: 'contain',
                 maxHeight: '600px',
                 width: '100%',
@@ -1633,11 +1653,10 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
                     <button
                       key={index}
                       onClick={(e) => handleDotClick(index, e)}
-                      className={`w-2 h-2 rounded-full transition-all duration-200 ${
-                        index === currentImageIndex 
-                          ? 'bg-white w-6' 
+                      className={`w-2 h-2 rounded-full transition-all duration-200 ${index === currentImageIndex
+                          ? 'bg-white w-6'
                           : 'bg-white/50 hover:bg-white/75'
-                      }`}
+                        }`}
                       aria-label={`Go to image ${index + 1}`}
                     />
                   ))}
@@ -1655,7 +1674,7 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
             src={image}
             alt="Post content"
             className="w-full h-auto cursor-pointer hover:opacity-90 transition-opacity duration-200"
-            style={{ 
+            style={{
               objectFit: 'contain',
               maxHeight: '600px',
               width: '100%',
@@ -1683,7 +1702,7 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
       {/* Handle video */}
       {video && (
         <div className="relative w-full bg-gray-900 overflow-hidden" style={{ height: '500px', maxHeight: '500px' }}>
-          <video 
+          <video
             ref={videoRef}
             className="w-full h-full object-contain cursor-pointer"
             src={video}
@@ -1691,23 +1710,23 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
             playsInline
             loop
             preload="metadata"
-            style={{ 
+            style={{
               maxHeight: '500px',
               backgroundColor: '#000'
             }}
           />
-          
+
           {/* Play button overlay - only show when paused */}
           {!isVideoPlaying && (
-            <div 
+            <div
               className="absolute inset-0 flex items-center justify-center cursor-pointer"
               onClick={handleVideoClick}
               style={{ backgroundColor: 'rgba(0, 0, 0, 0.3)' }}
             >
               <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white bg-opacity-90 flex items-center justify-center shadow-2xl hover:bg-opacity-100 transition-all duration-200 hover:scale-110">
-                <svg 
-                  className="w-8 h-8 md:w-10 md:h-10 text-gray-800 ml-1" 
-                  fill="currentColor" 
+                <svg
+                  className="w-8 h-8 md:w-10 md:h-10 text-gray-800 ml-1"
+                  fill="currentColor"
                   viewBox="0 0 24 24"
                 >
                   <path d="M8 5v14l11-7z" />
@@ -1715,10 +1734,10 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
               </div>
             </div>
           )}
-          
+
           {/* Pause overlay - shows briefly when clicking to pause */}
           {isVideoPlaying && (
-            <div 
+            <div
               className="absolute inset-0 cursor-pointer"
               onClick={handleVideoClick}
             />
@@ -1726,7 +1745,7 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
 
           {/* Progress bar at bottom */}
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-700 bg-opacity-50">
-            <div 
+            <div
               className="h-full bg-white transition-all duration-100"
               style={{ width: `${videoProgress}%` }}
             />
@@ -1739,11 +1758,11 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
           >
             {isVideoMuted ? (
               <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+                <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z" />
               </svg>
             ) : (
               <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
               </svg>
             )}
           </button>
@@ -1789,10 +1808,7 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
                     <FaFilePdf className="w-6 h-6 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">
-                      {postFileName || 'Document.pdf'}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-0.5">PDF Document</p>
+                    <p className="text-sm font-semibold text-gray-900">PDF Document</p>
                   </div>
                 </div>
                 <div className="flex-shrink-0 ml-3">
@@ -1815,10 +1831,7 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">
-                      {postFileName || 'Audio.mp3'}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-0.5">Audio File</p>
+                    <p className="text-sm font-semibold text-gray-900">Audio File</p>
                   </div>
                 </div>
                 <audio
@@ -1857,10 +1870,7 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">
-                      {postFileName || 'Attachment'}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-0.5">File Attachment</p>
+                    <p className="text-sm font-semibold text-gray-900">File Attachment</p>
                   </div>
                 </div>
                 <div className="flex-shrink-0 ml-3">
@@ -1986,8 +1996,8 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
           </button>
 
           {/* Bookmark button - changes color when saved */}
-          <button 
-            className="flex items-center space-x-2 transition-all duration-200 cursor-pointer" 
+          <button
+            className="flex items-center space-x-2 transition-all duration-200 cursor-pointer"
             onClick={() => {
               // Toggle local state immediately for instant visual feedback
               setLocalIsSaved(prev => !prev);
@@ -2054,7 +2064,7 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
                               {comment.created_at_human || (comment.time ? new Date(comment.time * 1000).toLocaleDateString() : 'Unknown time')}
                             </span>
                           </div>
-                        
+
                         </div>
 
                         {/* Comment Text - Show edit input when editing */}
@@ -2094,7 +2104,7 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
                                   <Smile className="w-4 h-4" />
                                 </button>
                                 {showEditCommentEmojiPicker[comment.id] && (
-                                  <div 
+                                  <div
                                     data-emoji-picker
                                     className="absolute bottom-full right-0 mb-2 z-50"
                                   >
@@ -2313,8 +2323,8 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
                           </div>
                         )}
 
-                      
-                       
+
+
                       </div>
                     </div>
 
@@ -2369,7 +2379,7 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
                               <Smile className="w-4 h-4" />
                             </button>
                             {showReplyEmojiPicker[replyingTo.id] && (
-                              <div 
+                              <div
                                 data-emoji-picker
                                 className="absolute bottom-full right-0 mb-2 z-50"
                               >
@@ -2490,7 +2500,7 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
                                           <Smile className="w-3 h-3" />
                                         </button>
                                         {showEditReplyEmojiPicker[reply.id] && (
-                                          <div 
+                                          <div
                                             data-emoji-picker
                                             className="absolute bottom-full right-0 mb-2 z-50"
                                           >
@@ -2734,7 +2744,7 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
               }}
             />
             <div className="flex items-center space-x-6 ml-2 flex-shrink-0 relative">
-              <button 
+              <button
                 data-emoji-button
                 className="text-gray-400 hover:text-gray-600 cursor-pointer"
                 onClick={toggleEmojiPicker}
@@ -2742,7 +2752,7 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
                 <Smile className="w-6 h-6" />
               </button>
               {showEmojiPicker && (
-                <div 
+                <div
                   data-emoji-picker
                   className="absolute bottom-full right-0 mb-2 z-50"
                   ref={emojiPickerRef}

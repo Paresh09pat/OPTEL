@@ -54,12 +54,12 @@ const SocialLinks = ({ formData, handleChange }) => {
             <label className="block text-sm font-medium text-gray-700 mb-2">Instagram :</label>
             <input
               type="url"
-              name="instagram"
-              value={formData.instagram}
+              name="instgram"
+              value={formData.instgram}
               onChange={handleChange}
               placeholder="URL"
               className={`w-full px-3 py-2 border border-[#212121] rounded-3xl focus:outline-none focus:ring-2 focus:ring-[#1153e7] ${
-                formData.instagram && !validateUrl(formData.instagram) 
+                formData.instgram && !validateUrl(formData.instgram) 
                   ? 'border-red-300' 
                   : 'border-[#212121]'
               }`}

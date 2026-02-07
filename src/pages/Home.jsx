@@ -1417,6 +1417,7 @@ const Home = () => {
                     feeling={post?.feeling}
                     isFeelingPost={post?.is_feeling_post}
                     likedUsers={post?.liked_users || []}
+                    activity={post?.activity}
                   />
                 );
               })}

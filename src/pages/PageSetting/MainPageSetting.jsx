@@ -52,7 +52,7 @@ const MainPageSetting = () => {
     // Social Links
     facebook: '',
     twitter: '',
-    instagram: '',
+    instgram: '',
     vkontakte: '',
     linkedin: '',
     youtube: ''
@@ -153,10 +153,7 @@ const MainPageSetting = () => {
   const handleSaveAll = async () => {
     try {
       // Validate required fields
-      if (!formData.phone || formData.phone.trim() === '') {
-        toast.error('Phone number is required');
-        return;
-      }
+    
 
       if (formData.phone.length !== 10) {
         toast.error('Phone number must be exactly 10 digits');
@@ -205,7 +202,7 @@ const MainPageSetting = () => {
         // Add social links if they exist
         if (formData.facebook) formDataToSend.append('facebook', formData.facebook);
         if (formData.twitter) formDataToSend.append('twitter', formData.twitter);
-        if (formData.instagram) formDataToSend.append('instagram', formData.instagram);
+        if (formData.instagram) formDataToSend.append('instgram', formData.instagram); // API expects 'instgram'
         if (formData.vkontakte) formDataToSend.append('vkontakte', formData.vkontakte);
         if (formData.linkedin) formDataToSend.append('linkedin', formData.linkedin);
         if (formData.youtube) formDataToSend.append('youtube', formData.youtube);
@@ -272,7 +269,7 @@ const MainPageSetting = () => {
         // Add social links if they exist
         if (formData.facebook) updateData.facebook = formData.facebook;
         if (formData.twitter) updateData.twitter = formData.twitter;
-        if (formData.instagram) updateData.instagram = formData.instagram;
+        if (formData.instagram) updateData.instgram = formData.instagram; // API expects 'instgram'
         if (formData.vkontakte) updateData.vkontakte = formData.vkontakte;
         if (formData.linkedin) updateData.linkedin = formData.linkedin;
         if (formData.youtube) updateData.youtube = formData.youtube;
