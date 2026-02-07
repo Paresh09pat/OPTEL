@@ -362,12 +362,23 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
         }
         setShowReactionPopup(false);
         
+        // Resume timer after reacting
+        setIsPaused(false);
+        if (currentStory?.type !== 'video') {
+          startProgress();
+        }
+        
         // Resume video if it was playing before
         if (videoRef.current && currentStory?.type === 'video' && wasVideoPlaying) {
           videoRef.current.play();
         }
       } else {
         toast.error(data?.message || 'Failed to react to story');
+        // Resume timer even on error
+        setIsPaused(false);
+        if (currentStory?.type !== 'video') {
+          startProgress();
+        }
         // Resume video if it was playing before
         if (videoRef.current && currentStory?.type === 'video' && wasVideoPlaying) {
           videoRef.current.play();
@@ -376,6 +387,11 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
     } catch (error) {
       console.error('Error reacting to story:', error);
       toast.error(error?.response?.data?.message || error?.message || 'Something went wrong while reacting to the story.');
+      // Resume timer even on error
+      setIsPaused(false);
+      if (currentStory?.type !== 'video') {
+        startProgress();
+      }
       // Resume video if it was playing before
       if (videoRef.current && currentStory?.type === 'video' && wasVideoPlaying) {
         videoRef.current.play();
@@ -383,7 +399,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
     } finally {
       setReacting(false);
     }
-  }, [buildAuthHeaders, reacting, currentStory, isVideoPlaying]);
+  }, [buildAuthHeaders, reacting, currentStory, isVideoPlaying, startProgress]);
 
   // Handle popup close
   const handlePopupMouseLeave = () => {
@@ -411,13 +427,64 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
     };
   }, [hoverTimeout]);
 
-  // Add click outside handler for reaction popup
+  // Add click outside handler for reaction popup and expanded description
   useEffect(() => {
-    if (showReactionPopup) {
-      document.addEventListener('click', handleClickOutside);
-      return () => document.removeEventListener('click', handleClickOutside);
-    }
-  }, [showReactionPopup]);
+    if (!isOpen) return;
+
+    const handleClickOutsideElements = (e) => {
+      let shouldResume = false;
+
+      // Check if clicking outside reaction popup
+      if (showReactionPopup && !e.target.closest('[data-story-reaction-popup]') && !e.target.closest('[data-story-reaction-button]')) {
+        setShowReactionPopup(false);
+        shouldResume = true;
+      }
+
+      // Check if clicking outside expanded description
+      if (isDescriptionExpanded && !e.target.closest('.description-expanded-area')) {
+        setIsDescriptionExpanded(false);
+        shouldResume = true;
+      }
+
+      // Resume timer if any popup/expansion was closed
+      if (shouldResume) {
+        setIsPaused(false);
+        
+        // For image stories, restart progress
+        if (currentStory?.type !== 'video') {
+          // Use setTimeout to ensure state updates have completed
+          setTimeout(() => {
+            if (progressIntervalRef.current) {
+              clearInterval(progressIntervalRef.current);
+            }
+            
+            const duration = 5000;
+            const interval = 50;
+            const increment = (100 / duration) * interval;
+
+            progressIntervalRef.current = setInterval(() => {
+              setProgress((prev) => {
+                const newProgress = prev + increment;
+                if (newProgress >= 100) {
+                  nextStory();
+                  return 0;
+                }
+                return newProgress;
+              });
+            }, interval);
+          }, 0);
+        }
+        
+        // Resume video if it was playing
+        if (videoRef.current && currentStory?.type === 'video' && isVideoPlaying) {
+          videoRef.current.play();
+        }
+      }
+    };
+
+    document.addEventListener('click', handleClickOutsideElements);
+    return () => document.removeEventListener('click', handleClickOutsideElements);
+  }, [isOpen, showReactionPopup, isDescriptionExpanded, currentStory, isVideoPlaying, nextStory]);
 
   // Reset when modal opens/closes or user changes
   useEffect(() => {
@@ -744,28 +811,6 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
           onClose();
         }
       }}
-      onMouseDown={(e) => {
-        // Don't pause if clicking on delete modal or backdrop
-        if (!deleteModalOpen && e.target !== e.currentTarget) {
-          handleMouseDown();
-        }
-      }}
-      onMouseUp={(e) => {
-        // Don't resume if delete modal is open or clicking on backdrop
-        if (!deleteModalOpen && e.target !== e.currentTarget) {
-          handleMouseUp();
-        }
-      }}
-      onTouchStart={(e) => {
-        if (!deleteModalOpen && e.target !== e.currentTarget) {
-          handleMouseDown();
-        }
-      }}
-      onTouchEnd={(e) => {
-        if (!deleteModalOpen && e.target !== e.currentTarget) {
-          handleMouseUp();
-        }
-      }}
     >
       {/* Close Button */}
       <button
@@ -815,7 +860,6 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
         {/* Story Container */}
         <div 
           className="relative w-full max-w-md h-full flex flex-col items-center justify-center"
-          onClick={(e) => e.stopPropagation()}
         >
           {/* Story Image Container - Centered */}
           <div className="relative w-full h-full flex items-center justify-center">
@@ -973,7 +1017,39 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
               <img
                 src={currentStory?.thumbnail || currentStory?.media_url}
                 alt={currentStory?.title || 'Story'}
-                className="w-full max-h-[calc(100vh-350px)] object-contain"
+                className="w-full max-h-[calc(100vh-350px)] object-contain cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Collapse description if expanded
+                  if (isDescriptionExpanded) {
+                    setIsDescriptionExpanded(false);
+                    setIsPaused(false);
+                    
+                    // Resume timer for image stories
+                    if (currentStory?.type !== 'video') {
+                      setTimeout(() => {
+                        if (progressIntervalRef.current) {
+                          clearInterval(progressIntervalRef.current);
+                        }
+                        
+                        const duration = 5000;
+                        const interval = 50;
+                        const increment = (100 / duration) * interval;
+
+                        progressIntervalRef.current = setInterval(() => {
+                          setProgress((prev) => {
+                            const newProgress = prev + increment;
+                            if (newProgress >= 100) {
+                              nextStory();
+                              return 0;
+                            }
+                            return newProgress;
+                          });
+                        }, interval);
+                      }, 0);
+                    }
+                  }
+                }}
               />
             )}
 
@@ -984,22 +1060,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
               )}
               {currentStory?.description && (
                 <div 
-                  className="text-white/90 text-sm drop-shadow-md mb-4"
-                  onClick={(e) => {
-                    // If description is expanded and user clicks on it, collapse it and resume
-                    if (isDescriptionExpanded) {
-                      e.stopPropagation();
-                      setIsDescriptionExpanded(false);
-                      setIsPaused(false);
-                      if (isOpen && stories && stories.length > 0 && currentStory?.type !== 'video') {
-                        startProgress();
-                      }
-                      // Resume video if it was playing
-                      if (videoRef.current && currentStory?.type === 'video' && isVideoPlaying) {
-                        videoRef.current.play();
-                      }
-                    }
-                  }}
+                  className={`text-white/90 text-sm drop-shadow-md mb-4 ${isDescriptionExpanded ? 'description-expanded-area' : ''}`}
                 >
                   {isDescriptionExpanded ? (
                     <div>
@@ -1018,8 +1079,6 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
                               videoRef.current.play();
                             }
                           }}
-                          onMouseDown={(e) => e.stopPropagation()}
-                          onMouseUp={(e) => e.stopPropagation()}
                           className="text-white/70 hover:text-white font-medium mt-1 inline-block"
                         >
                           Show less
@@ -1045,8 +1104,6 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
                               videoRef.current.pause();
                             }
                           }}
-                          onMouseDown={(e) => e.stopPropagation()}
-                          onMouseUp={(e) => e.stopPropagation()}
                           className="text-white/70 hover:text-white font-medium mt-1 inline-block"
                         >
                           Read more
