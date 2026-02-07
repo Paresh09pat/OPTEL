@@ -1,7 +1,7 @@
 import React from 'react';
 import { FaTimes, FaTrash, FaExclamationTriangle } from 'react-icons/fa';
 
-const DeletePostModal = ({ isOpen, onClose, onConfirm, isLoading }) => {
+const DeletePostModal = ({ isOpen, onClose, onConfirm, isLoading, title = "Delete Post", message = "Are you sure you want to delete this post?", description = "This action cannot be undone. The post will be permanently deleted from your timeline." }) => {
   if (!isOpen) return null;
 
   return (
@@ -27,7 +27,7 @@ const DeletePostModal = ({ isOpen, onClose, onConfirm, isLoading }) => {
             <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
               <FaExclamationTriangle className="w-6 h-6 text-red-600" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900">Delete Post</h2>
+            <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
           </div>
           <button
             onClick={onClose}
@@ -42,10 +42,10 @@ const DeletePostModal = ({ isOpen, onClose, onConfirm, isLoading }) => {
         {/* Content */}
         <div className="p-6">
           <p className="text-gray-700 mb-4">
-            Are you sure you want to delete this post?
+            {message}
           </p>
           <p className="text-sm text-gray-600">
-            This action cannot be undone. The post will be permanently deleted from your timeline.
+            {description}
           </p>
         </div>
 
@@ -71,7 +71,7 @@ const DeletePostModal = ({ isOpen, onClose, onConfirm, isLoading }) => {
             ) : (
               <>
                 <FaTrash className="w-4 h-4" />
-                Delete Post
+                Delete
               </>
             )}
           </button>

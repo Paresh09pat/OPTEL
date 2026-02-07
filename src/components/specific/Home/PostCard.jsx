@@ -79,6 +79,9 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
   const [showReportModal, setShowReportModal] = useState(false);
   // Add state for delete post modal
   const [showDeletePostModal, setShowDeletePostModal] = useState(false);
+  // Add state for delete reply modal
+  const [showDeleteReplyModal, setShowDeleteReplyModal] = useState(false);
+  const [replyToDelete, setReplyToDelete] = useState(null);
   // Add local state for saved status to provide instant visual feedback
   const [localIsSaved, setLocalIsSaved] = useState(isSaved);
   
@@ -1143,15 +1146,22 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
     setCommentActionLoading(prev => ({ ...prev, [`delete_reply_${reply_id}`]: true }));
     try {
       const response = await axios.delete(
-        `${baseUrl}/api/v1/comments/${reply_id}`,
+        `${baseUrl}/api/v1/comments/replies/${reply_id}`,
         { headers: buildAuthHeaders() }
       );
       const data = response.data;
       if (data?.ok === true) {
         toast.success(data?.message || 'Reply deleted successfully');
         const parentCommentId = findParentCommentId(reply_id);
+        
+        // Refetch the parent comment's replies to update the UI
         if (parentCommentId) {
-          fetchReply(parentCommentId);
+          await fetchReply(parentCommentId);
+        }
+        
+        // Refetch all comments to update the comment count
+        if (clickedComments) {
+          await fetchPostComments(false);
         }
       } else {
         toast.error(data?.message || 'Failed to delete reply');
@@ -1162,8 +1172,10 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
       toast.error(error?.response?.data?.message || 'Error deleting reply. Please try again.');
     } finally {
       setCommentActionLoading(prev => ({ ...prev, [`delete_reply_${reply_id}`]: false }));
+      setShowDeleteReplyModal(false);
+      setReplyToDelete(null);
     }
-  }, [buildAuthHeaders, findParentCommentId, fetchReply]);
+  }, [buildAuthHeaders, findParentCommentId, fetchReply, clickedComments, fetchPostComments]);
 
   // Define addCommentReply function first
   const addCommentReply = useCallback(async (comment_id, reply) => {
@@ -1765,52 +1777,100 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
         <>
           {/* If file is PDF */}
           {postfile.endsWith(".pdf") && (
-            <a
-              href={postfile}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex flex-col py-2 items-center justify-center space-x-2 w-full"
-            >
-              <div className="flex items-center justify-center space-x-2 w-[90%] h-full bg-gray-100 hover:bg-gray-200 transition-colors rounded-lg text-center p-4">
-                {postFileName !== "" && (
-                  <span className="text-gray-700 font-medium text-sm">
-                    {postFileName?.slice(0, 40) + "..."}
-                  </span>
-                )}
-                <FaFilePdf className="w-6 h-6 text-gray-600" />
-                <span className="text-gray-700 font-medium text-sm">Open PDF</span>
-              </div>
-            </a>
+            <div className="mx-4 mb-4">
+              <a
+                href={postfile}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 border border-blue-200 rounded-xl transition-all duration-200 hover:shadow-md group"
+              >
+                <div className="flex items-center space-x-3 flex-1 min-w-0">
+                  <div className="flex-shrink-0 w-12 h-12 bg-[#2563eb] rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                    <FaFilePdf className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">
+                      {postFileName || 'Document.pdf'}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">PDF Document</p>
+                  </div>
+                </div>
+                <div className="flex-shrink-0 ml-3">
+                  <div className="px-4 py-2 bg-[#2563eb] text-white rounded-lg text-sm font-medium group-hover:bg-[#1d4ed8] transition-colors">
+                    Open
+                  </div>
+                </div>
+              </a>
+            </div>
           )}
 
           {/* If file is MP3 */}
           {postfile.endsWith(".mp3") && (
-            <div className="flex flex-col py-2 items-center justify-center w-full">
-              <audio
-                controls
-                className="w-[90%]"
-                onPlay={(e) => {
-                  // Pause all other audio elements when this one plays
-                  const audios = document.querySelectorAll("audio");
-                  audios.forEach((audio) => {
-                    if (audio !== e.target) {
-                      audio.pause();
-                    }
-                  });
-                }}
-              >
-                <source src={postfile} type="audio/mpeg" />
-                Your browser does not support the audio tag.
-              </audio>
-
-              {postFileName !== "" && (
-                <span className="text-gray-700 font-medium text-sm mt-2">
-                  {postFileName?.slice(0, 40) + "..."}
-                </span>
-              )}
+            <div className="mx-4 mb-4">
+              <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl">
+                <div className="flex items-center space-x-3 mb-3">
+                  <div className="flex-shrink-0 w-12 h-12 bg-[#2563eb] rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">
+                      {postFileName || 'Audio.mp3'}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">Audio File</p>
+                  </div>
+                </div>
+                <audio
+                  controls
+                  className="w-full"
+                  onPlay={(e) => {
+                    // Pause all other audio elements when this one plays
+                    const audios = document.querySelectorAll("audio");
+                    audios.forEach((audio) => {
+                      if (audio !== e.target) {
+                        audio.pause();
+                      }
+                    });
+                  }}
+                >
+                  <source src={postfile} type="audio/mpeg" />
+                  Your browser does not support the audio tag.
+                </audio>
+              </div>
             </div>
           )}
 
+          {/* If file is other type (generic file) */}
+          {!postfile.endsWith(".pdf") && !postfile.endsWith(".mp3") && (
+            <div className="mx-4 mb-4">
+              <a
+                href={postfile}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-sky-50 hover:from-blue-100 hover:to-sky-100 border border-blue-200 rounded-xl transition-all duration-200 hover:shadow-md group"
+              >
+                <div className="flex items-center space-x-3 flex-1 min-w-0">
+                  <div className="flex-shrink-0 w-12 h-12 bg-[#2563eb] rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">
+                      {postFileName || 'Attachment'}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">File Attachment</p>
+                  </div>
+                </div>
+                <div className="flex-shrink-0 ml-3">
+                  <div className="px-4 py-2 bg-[#2563eb] text-white rounded-lg text-sm font-medium group-hover:bg-[#1d4ed8] transition-colors">
+                    Download
+                  </div>
+                </div>
+              </a>
+            </div>
+          )}
         </>
       )}
 
@@ -2593,7 +2653,8 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
                                         className="flex items-center space-x-1 text-gray-400 hover:text-red-600 cursor-pointer transition-colors"
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          deleteCommentReply(reply.id);
+                                          setReplyToDelete(reply.id);
+                                          setShowDeleteReplyModal(true);
                                         }}
                                         disabled={commentActionLoading[`delete_reply_${reply.id}`]}
                                       >
@@ -2740,6 +2801,24 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
         onClose={() => setShowDeletePostModal(false)}
         onConfirm={handleDeletePost}
         isLoading={loading}
+      />
+
+      {/* Delete Reply Modal */}
+      <DeletePostModal
+        isOpen={showDeleteReplyModal}
+        onClose={() => {
+          setShowDeleteReplyModal(false);
+          setReplyToDelete(null);
+        }}
+        onConfirm={() => {
+          if (replyToDelete) {
+            deleteCommentReply(replyToDelete);
+          }
+        }}
+        isLoading={commentActionLoading[`delete_reply_${replyToDelete}`]}
+        title="Delete Reply"
+        message="Are you sure you want to delete this reply?"
+        description="This action cannot be undone. The reply will be permanently deleted."
       />
 
     </div>

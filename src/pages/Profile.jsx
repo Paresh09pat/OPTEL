@@ -2308,10 +2308,9 @@ const Profile = () => {
                 <div className="w-full mt-4 px-5">
                     <QuickActionSection 
                         fetchNewFeeds={(filterType) => {
-                            // Reset to page 1 and apply filter
                             setActiveFilter(filterType);
                             setCurrentPage(1);
-                            setPosts([]); // Clear existing posts
+                            setPosts([]); 
                         }}
                         activeFilter={activeFilter}
                     />
