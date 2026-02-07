@@ -11,8 +11,10 @@ import CreatePostSection from '../components/specific/Home/CreatePostSection'
 import PostCard from '../components/specific/Home/PostCard'
 import QuickActionSection from '../components/specific/Home/QuickActionSection'
 import FollowersFollowingModal from '../components/specific/Profile/FollowersFollowingModal'
+import { useUser } from '../context/UserContext'
 
 const Profile = () => {
+    const { refreshUserData } = useUser();
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -45,6 +47,8 @@ const Profile = () => {
     const [reportingPostId, setReportingPostId] = useState(null);
     const [activeTab, setActiveTab] = useState('posts'); // 'posts' or 'about'
     const [activeFilter, setActiveFilter] = useState(null); // Track active filter for UI
+    const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+    const fileInputRef = useRef(null);
     const navigate = useNavigate();
     const { userId: urlUserId } = useParams();
 
@@ -851,6 +855,87 @@ const Profile = () => {
         }
     };
 
+    const handleAvatarUpload = async (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            toast.error('Please select an image file');
+            return;
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('Image size should be less than 5MB');
+            return;
+        }
+
+        setIsUploadingAvatar(true);
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_URL}/api/v1/design/avatar`,
+                formData,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`,
+                        'Content-Type': 'multipart/form-data',
+                    }
+                }
+            );
+
+            const data = response.data;
+
+            if (data?.api_status === 200 || data?.api_status === "200" || data?.ok === true) {
+                toast.success(data?.message || 'Profile picture updated successfully!');
+                
+                // Refetch user data to get the new avatar URL
+                const refreshResponse = await axios.get(
+                    `${import.meta.env.VITE_API_URL}/api/v1/profile/user-data?user_profile_id=${userId}&fetch=user_data,followers,following,album`,
+                    {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('access_token') || ''}`,
+                        }
+                    }
+                );
+
+                if (refreshResponse.data.api_status === '200') {
+                    setUserData(refreshResponse.data);
+                    
+                    // Update localStorage with new avatar
+                    if (refreshResponse.data.user_data?.avatar_url) {
+                        localStorage.setItem('user_avatar_url', refreshResponse.data.user_data.avatar_url);
+                    }
+                }
+                
+                // Refresh UserContext to update avatar in Chatbox and other components
+                refreshUserData();
+            } else {
+                toast.error(data?.message || 'Failed to update profile picture');
+            }
+        } catch (error) {
+            console.error('Error uploading avatar:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to upload profile picture';
+            toast.error(errorMessage);
+        } finally {
+            setIsUploadingAvatar(false);
+            // Reset file input
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
+    };
+
+    const handleAvatarClick = () => {
+        if (isOwnProfile && fileInputRef.current) {
+            fileInputRef.current.click();
+        }
+    };
+
     // Get counts directly from user_data
     // Add handlers for posts (similar to Home.jsx)
     const [likedPosts, setLikedPosts] = useState(() => {
@@ -1357,14 +1442,45 @@ const Profile = () => {
                 <div className="flex flex-col md:hidden">
                     {/* Avatar and Name */}
                     <div className="flex flex-col items-center text-center mb-6">
-                        <Avatar 
-                            src={userData?.user_data?.avatar_url} 
-                            name={`${userData?.user_data?.first_name || 'Aman'} ${userData?.user_data?.last_name || 'Shaikh'}`}
-                            email={userData?.user_data?.email || "45amanshaikh@gmail.com"}
-                            alt="profile photo" 
-                            size="2xl"
-                            className='mt-[-5rem] z-10 border-4 border-white shadow-xl' 
-                        />
+                        <div className="relative">
+                            <Avatar 
+                                src={userData?.user_data?.avatar_url} 
+                                name={`${userData?.user_data?.first_name || 'Aman'} ${userData?.user_data?.last_name || 'Shaikh'}`}
+                                email={userData?.user_data?.email || "45amanshaikh@gmail.com"}
+                                alt="profile photo" 
+                                size="2xl"
+                                className='mt-[-5rem] z-10 border-4 border-white shadow-xl' 
+                            />
+                            {isOwnProfile && (
+                                <>
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleAvatarUpload}
+                                        className="hidden"
+                                    />
+                                    <button
+                                        onClick={handleAvatarClick}
+                                        disabled={isUploadingAvatar}
+                                        className="absolute bottom-2 right-2 bg-[#2563eb] hover:bg-[#1d4ed8] text-white p-2 rounded-full shadow-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed z-20"
+                                        title="Change profile picture"
+                                    >
+                                        {isUploadingAvatar ? (
+                                            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                        ) : (
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            </svg>
+                                        )}
+                                    </button>
+                                </>
+                            )}
+                        </div>
                         <div className="flex flex-col gap-1 text-[#212121] mt-4">
                             <div className="flex items-center justify-center gap-2 flex-wrap">
                                 <h3 className='text-lg font-semibold'>
@@ -1735,14 +1851,36 @@ const Profile = () => {
                 <div className="hidden md:block">
                     {/* Profile Info Section */}
                     <div className="flex items-center gap-4 lg:gap-6 mb-6">
-                        <Avatar 
-                            src={userData?.user_data?.avatar_url} 
-                            name={`${userData?.user_data?.first_name || 'Aman'} ${userData?.user_data?.last_name || 'Shaikh'}`}
-                            email={userData?.user_data?.email || "45amanshaikh@gmail.com"}
-                            alt="profile photo" 
-                            size="2xl"
-                            className='mt-[-6rem] z-10 border-4 border-white shadow-xl' 
-                        />
+                        <div className="relative">
+                            <Avatar 
+                                src={userData?.user_data?.avatar_url} 
+                                name={`${userData?.user_data?.first_name || 'Aman'} ${userData?.user_data?.last_name || 'Shaikh'}`}
+                                email={userData?.user_data?.email || "45amanshaikh@gmail.com"}
+                                alt="profile photo" 
+                                size="2xl"
+                                className='mt-[-6rem] z-10 border-4 border-white shadow-xl' 
+                            />
+                            {isOwnProfile && (
+                                <button
+                                    onClick={handleAvatarClick}
+                                    disabled={isUploadingAvatar}
+                                    className="absolute bottom-2 right-2 bg-[#2563eb] hover:bg-[#1d4ed8] text-white p-2.5 rounded-full shadow-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed z-20"
+                                    title="Change profile picture"
+                                >
+                                    {isUploadingAvatar ? (
+                                        <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                    ) : (
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                    )}
+                                </button>
+                            )}
+                        </div>
                         <div className="flex flex-col gap-2 text-[#212121]"> 
                             <div className="flex items-center gap-2 flex-wrap">
                                 <h3 className='text-xl lg:text-2xl font-semibold'>

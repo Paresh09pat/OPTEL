@@ -108,24 +108,22 @@ const Forum = () => {
 
   // Load forums when Browse Forum tab is active or forum type changes
   useEffect(() => {
+    // Only fetch if we're on Browse Forum tab and there's no active search
     if (activeTab === 'Browse Forum' && !forumSearchQuery.trim()) {
       fetchForums(1, forumType, '')
     }
-  }, [activeTab, forumType, fetchForums])
+  }, [activeTab, forumType, fetchForums, forumSearchQuery])
 
-  // Debounced search effect
+  // Debounced search effect - only for search queries
   useEffect(() => {
+    // Only handle search queries, not empty strings
+    if (!forumSearchQuery.trim()) {
+      return
+    }
+
     // Clear previous timeout
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current)
-    }
-
-    // If search query is empty, fetch regular forums
-    if (!forumSearchQuery.trim()) {
-      if (activeTab === 'Browse Forum') {
-        fetchForums(1, forumType, '')
-      }
-      return
     }
 
     // Set loading state immediately

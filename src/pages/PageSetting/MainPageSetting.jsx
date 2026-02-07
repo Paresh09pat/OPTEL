@@ -32,7 +32,7 @@ const MainPageSetting = () => {
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
   const [selectedImages, setSelectedImages] = useState({ avatar: null, cover: null });
-  
+
   // Unified form data for all settings
   const [formData, setFormData] = useState({
     // General Settings
@@ -82,7 +82,7 @@ const MainPageSetting = () => {
     try {
       setLoading(true);
       const accessToken = localStorage.getItem('access_token');
-      
+
       const response = await axios.get(`${baseUrl}/api/v1/pages/${pageId}`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -95,7 +95,7 @@ const MainPageSetting = () => {
       if (response.data.api_status === 200 && response.data.data) {
         const data = response.data.data;
         setPageData(data);
-        
+
         // Initialize unified form data with proper mapping
         setFormData({
           // General Settings
@@ -170,14 +170,14 @@ const MainPageSetting = () => {
 
       setSaving(true);
       const accessToken = localStorage.getItem('access_token');
-      
+
       // Check if we have images to upload
       const hasImages = selectedImages.avatar || selectedImages.cover;
-      
+
       if (hasImages) {
         // If images are selected, use FormData for multipart upload
         const formDataToSend = new FormData();
-        
+
         // Add all text fields
         formDataToSend.append('page_name', formData.pageName);
         formDataToSend.append('page_title', formData.companyName);
@@ -186,22 +186,22 @@ const MainPageSetting = () => {
         formDataToSend.append('website', formData.websiteUrl);
         formDataToSend.append('phone', formData.phone);
         formDataToSend.append('address', formData.location);
-        
+
         // Add page_category only if it's a valid number
         if (formData.category && !isNaN(parseInt(formData.category))) {
           formDataToSend.append('page_category', parseInt(formData.category));
         }
-        
+
         // Add sub_category as integer if it exists
         if (formData.subCategory && !isNaN(parseInt(formData.subCategory))) {
           formDataToSend.append('sub_category', parseInt(formData.subCategory));
         }
-        
+
         // Add optional fields only if they exist
         if (formData.callToAction) formDataToSend.append('call_to_action', formData.callToAction);
         if (formData.callToTargetUrl) formDataToSend.append('call_to_target_url', formData.callToTargetUrl);
         if (formData.canPost) formDataToSend.append('can_post', formData.canPost);
-        
+
         // Add social links if they exist
         if (formData.facebook) formDataToSend.append('facebook', formData.facebook);
         if (formData.twitter) formDataToSend.append('twitter', formData.twitter);
@@ -209,7 +209,7 @@ const MainPageSetting = () => {
         if (formData.vkontakte) formDataToSend.append('vkontakte', formData.vkontakte);
         if (formData.linkedin) formDataToSend.append('linkedin', formData.linkedin);
         if (formData.youtube) formDataToSend.append('youtube', formData.youtube);
-        
+
         // Add images if selected
         if (selectedImages.avatar) {
           formDataToSend.append('avatar', selectedImages.avatar);
@@ -217,9 +217,9 @@ const MainPageSetting = () => {
         if (selectedImages.cover) {
           formDataToSend.append('cover', selectedImages.cover);
         }
-        
+
         console.log('Saving page data with images');
-        
+
         const response = await axios.put(
           `${baseUrl}/api/v1/pages/${pageId}`,
           formDataToSend,
@@ -230,9 +230,9 @@ const MainPageSetting = () => {
             },
           }
         );
-        
+
         console.log('Update response:', response.data);
-        
+
         if (response.data.api_status === 200 || response.data.ok === true) {
           toast.success('Page updated successfully!');
           // Clear selected images after successful upload
@@ -263,12 +263,12 @@ const MainPageSetting = () => {
         if (formData.subCategory && !isNaN(parseInt(formData.subCategory))) {
           updateData.sub_category = parseInt(formData.subCategory);
         }
-        
+
         // Add optional fields only if they exist
         if (formData.callToAction) updateData.call_to_action = formData.callToAction;
         if (formData.callToTargetUrl) updateData.call_to_target_url = formData.callToTargetUrl;
         if (formData.canPost) updateData.can_post = formData.canPost;
-        
+
         // Add social links if they exist
         if (formData.facebook) updateData.facebook = formData.facebook;
         if (formData.twitter) updateData.twitter = formData.twitter;
@@ -278,7 +278,7 @@ const MainPageSetting = () => {
         if (formData.youtube) updateData.youtube = formData.youtube;
 
         console.log('Saving page data:', updateData);
-        
+
         const response = await axios.put(
           `${baseUrl}/api/v1/pages/${pageId}`,
           updateData,
@@ -320,7 +320,7 @@ const MainPageSetting = () => {
     { id: 'page-information', label: 'Page Information', icon: pageIcon },
     { id: 'social-links', label: 'Social Links', icon: GoLink },
     { id: 'profile-picture-cover', label: 'Profile Picture & Cover', icon: profileIcon },
-    { id: 'design', label: 'Design', icon: designIcon },
+    // { id: 'design', label: 'Design', icon: designIcon },
     { id: 'admin', label: 'Admin', icon: RiShieldUserLine },
     { id: 'page-analytics', label: 'Page Analytics', icon: analyticsIcon },
     { id: 'delete-page', label: 'Delete Page', icon: MdOutlineDelete },
@@ -393,14 +393,14 @@ const MainPageSetting = () => {
 
         {/* Header */}
         <div className="bg-gradient-to-l from-[rgba(96,161,249,1)] to-[rgba(17,83,231,1)] rounded-xl p-4 h-[200px] py-5 px-8 relative">
-        <img src="/profilebg.svg" alt="profile bg" className='absolute bottom-0 right-0  w-1/4' />
+          <img src="/profilebg.svg" alt="profile bg" className='absolute bottom-0 right-0  w-1/4' />
           <div className="flex items-center gap-5">
             <div className="size-[74px] bg-gray-800 rounded-full flex items-center justify-center" style={{ backgroundImage: `url('${pageData?.avatar_url || '/perimg.png'}')`, backgroundSize: "cover", backgroundPosition: "center" }}>
 
             </div>
             <div>
               <h1 className="text-white text-xl font-semibold">
-                {pageData?.page_name || pageData?.page_title || 'Page Name'} 
+                {pageData?.page_name || pageData?.page_title || 'Page Name'}
                 {pageData?.verified && ' ✓'}
               </h1>
               <p className="text-orange-100 text-sm">
@@ -467,7 +467,7 @@ const MainPageSetting = () => {
           {/* Content Area */}
           <div className="flex-1 min-w-0 pl-1 pr-2 relative">
             {renderActiveComponent()}
-            
+
             {/* Single Save Button - Always Visible */}
             <div className="mt-6 flex justify-center sticky bottom-4 z-20">
               <button

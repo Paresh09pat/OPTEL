@@ -9,6 +9,35 @@ const GeneralSettings = ({ formData, handleChange }) => {
   const [subCategories, setSubCategories] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // Helper function to extract path from full URL
+  const extractPathFromUrl = (url) => {
+    if (!url) return '';
+    try {
+      // If it's a full URL, extract the path
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        const urlObj = new URL(url);
+        // Decode URI component to convert %20 to spaces
+        let path = decodeURIComponent(urlObj.pathname);
+        // Remove leading slash to avoid double slashes
+        path = path.startsWith('/') ? path.substring(1) : path;
+        return path;
+      }
+      // If it's already a path, decode and remove leading slash
+      let path = decodeURIComponent(url);
+      path = path.startsWith('/') ? path.substring(1) : path;
+      return path;
+    } catch (error) {
+      // If URL parsing fails, try to decode and remove leading slash
+      try {
+        let path = decodeURIComponent(url);
+        path = path.startsWith('/') ? path.substring(1) : path;
+        return path;
+      } catch {
+        return url;
+      }
+    }
+  };
+
   // Fetch categories from API
   const getCategories = async () => {
     try {
@@ -162,16 +191,17 @@ const GeneralSettings = ({ formData, handleChange }) => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Page URL :</label>
-          <div className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl flex items-center bg-gray-50">
-            <span className="text-gray-500">
-              https://demo.wowonder.com/
+          <div className="w-full px-3 py-2 border border-[#d3d1d1] rounded-3xl flex items-center bg-white">
+            <span className="text-gray-500 select-none pointer-events-none">
+              https://ouptel.in/
             </span>
             <input
               type="text"
               name="pageUrl"
-              value={formData.pageUrl}
+              value={extractPathFromUrl(formData.pageUrl)}
               onChange={handleChange}
-              className="flex-1 bg-transparent border-0 focus:outline-none ml-1"
+              placeholder="page/your-page-name"
+              className="flex-1 bg-transparent border-0 focus:outline-none"
             />
           </div>
         </div>

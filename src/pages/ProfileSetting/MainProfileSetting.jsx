@@ -109,7 +109,7 @@ const MainProfileSetting = () => {
       icon: MdPalette,
       hasSubMenu: true,
       subItems: [
-        { id: 'design', label: 'Design' },
+        // { id: 'design', label: 'Design' },
         { id: 'ppfCover', label: 'Profile Picture & Cover' },
        
       ]

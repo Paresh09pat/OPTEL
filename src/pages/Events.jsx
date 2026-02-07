@@ -3,6 +3,7 @@ import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import { HiUsers } from 'react-icons/hi';
 import { toast } from 'react-toastify';
 import Loader from '../components/loading/Loader';
+import TimePicker from '../components/TimePicker';
 
 const Events = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -332,31 +333,26 @@ const Events = () => {
                     >
                       Start Date : <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="date"
-                      id="start-date"
-                      className="w-full p-2 px-4 border border-[#d3d1d1] rounded-full"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      required
-                    />
+                    <div className="relative">
+                      <input
+                        type="date"
+                        id="start-date"
+                        className="w-full p-2 px-4 border border-[#d3d1d1] rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        required
+                      />
+                      <svg className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
                   </div>
-                  <div className="w-full flex flex-col gap-2">
-                    <label
-                      htmlFor="start-time"
-                      className="text-lg text-black flex items-center gap-2"
-                    >
-                      Start Time : <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="time"
-                      id="start-time"
-                      className="w-full p-2 px-4 border border-[#d3d1d1] rounded-full"
-                      value={startTime}
-                      onChange={(e) => setStartTime(e.target.value)}
-                      required
-                    />
-                  </div>
+                  <TimePicker
+                    value={startTime}
+                    onChange={setStartTime}
+                    label="Start Time :"
+                    required
+                  />
                 </div>
 
                 {/* End Date and Time */}
@@ -368,37 +364,31 @@ const Events = () => {
                     >
                       End Date : <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="date"
-                      id="end-date"
-                      className="w-full p-2 px-4 border border-[#d3d1d1] rounded-full"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      required
-                    />
+                    <div className="relative">
+                      <input
+                        type="date"
+                        id="end-date"
+                        className="w-full p-2 px-4 border border-[#d3d1d1] rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        required
+                      />
+                      <svg className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
                   </div>
-                  <div className="w-full flex flex-col gap-2">
-                    <label
-                      htmlFor="end-time"
-                      className="text-lg text-black flex items-center gap-2"
-                    >
-                      End Time : <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="time"
-                      id="end-time"
-                      className="w-full p-2 px-4 border border-[#d3d1d1] rounded-full"
-                      value={endTime}
-                      onChange={(e) => setEndTime(e.target.value)}
-                      required
-                    />
-                  </div>
+                  <TimePicker
+                    value={endTime}
+                    onChange={setEndTime}
+                    label="End Time :"
+                    required
+                  />
                 </div>
 
                 {/* Media Upload Section */}
                 <div className="w-full flex flex-col gap-2">
                   <label
-                    htmlFor="event-media"
                     className="text-lg text-black flex items-center gap-2"
                   >
                     Event Media : <span className="text-red-500">*</span>
@@ -412,12 +402,9 @@ const Events = () => {
                     onChange={handleFileChange}
                   />
 
-                  <label
-                    htmlFor="event-media"
-                    className="w-full min-h-[200px] border border-[#d3d1d1] rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer text-[#555] p-4"
-                  >
+                  <div className="w-full min-h-[200px] border border-[#d3d1d1] rounded-xl flex flex-col items-center justify-center gap-2 text-[#555] p-4">
                     {!selectedFile ? (
-                      <>
+                      <div className="flex flex-col items-center justify-center gap-2">
                         <img
                           src="/icons/selectAlbum.png"
                           alt="upload"
@@ -426,7 +413,14 @@ const Events = () => {
                         <span className="font-medium text-sm">
                           Select event image
                         </span>
-                      </>
+                        <button
+                          type="button"
+                          onClick={() => document.getElementById('event-media').click()}
+                          className="mt-2 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
+                        >
+                          Choose File
+                        </button>
+                      </div>
                     ) : (
                       <div className="flex justify-center w-full">
                         <div className="relative group w-[200px] h-[200px] rounded overflow-hidden border">
@@ -441,15 +435,22 @@ const Events = () => {
                               e.stopPropagation();
                               removeFile();
                             }}
-                            className="absolute top-1 right-1 bg-black bg-opacity-60 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center cursor-pointer"
+                            className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-8 h-8 text-lg flex items-center justify-center cursor-pointer transition-colors shadow-lg"
                             title="Remove"
                           >
                             ×
                           </button>
+                          <button
+                            type="button"
+                            onClick={() => document.getElementById('event-media').click()}
+                            className="absolute bottom-2 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors shadow-lg"
+                          >
+                            Change Image
+                          </button>
                         </div>
                       </div>
                     )}
-                  </label>
+                  </div>
                 </div>
 
                 {/* Submit */}
