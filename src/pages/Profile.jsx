@@ -1568,40 +1568,35 @@ const Profile = () => {
 
                     {/* About Section - Mobile */}
                     {activeTab === 'about' && userData?.user_data && (
-                        <div className="bg-white rounded-xl shadow-md border border-gray-200 p-4 animate-in fade-in duration-300 mb-4">
-                            <h3 className="text-base font-bold text-gray-900 mb-3 flex items-center gap-2">
-                                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                Profile Information
-                            </h3>
-                            <div className="space-y-2.5">
+                        <div className="bg-white rounded-xl border border-gray-200 p-4 animate-in fade-in duration-300 mb-4">
+                            <h3 className="text-base font-semibold text-gray-900 mb-4">Profile Information</h3>
+                            <div className="space-y-3">
                                 {/* About Text */}
                                 {userData.user_data.about && (
-                                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-200 shadow-sm">
-                                        <p className="text-gray-700 text-xs leading-relaxed">{userData.user_data.about}</p>
+                                    <div className="pb-3 border-b border-gray-100">
+                                        <p className="text-gray-700 text-sm leading-relaxed">{userData.user_data.about}</p>
                                     </div>
                                 )}
 
                                 {/* Work */}
                                 {userData.user_data.working && (
-                                    <div className="flex items-start gap-2 bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
-                                        <svg className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div className="flex items-start gap-2.5 py-2">
+                                        <svg className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                         </svg>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-xs text-gray-500 font-medium">Works at</p>
+                                            <p className="text-xs text-gray-500">Works at</p>
                                             {userData.user_data.working_link ? (
                                                 <a 
                                                     href={userData.user_data.working_link} 
                                                     target="_blank" 
                                                     rel="noopener noreferrer"
-                                                    className="text-xs font-semibold text-blue-600 hover:underline truncate block"
+                                                    className="text-sm text-gray-900 hover:text-blue-600 hover:underline truncate block"
                                                 >
                                                     {userData.user_data.working}
                                                 </a>
                                             ) : (
-                                                <p className="text-xs font-semibold text-gray-900 truncate">{userData.user_data.working}</p>
+                                                <p className="text-sm text-gray-900 truncate">{userData.user_data.working}</p>
                                             )}
                                         </div>
                                     </div>
@@ -1609,43 +1604,42 @@ const Profile = () => {
 
                                 {/* School */}
                                 {userData.user_data.school && (
-                                    <div className="flex items-start gap-2 bg-white rounded-lg p-2.5 border border-gray-200 shadow-sm">
-                                        <svg className="w-4 h-4 text-purple-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div className="flex items-start gap-2.5 py-2">
+                                        <svg className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
                                         </svg>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-xs text-gray-500 font-medium">Studied at</p>
-                                            <p className="text-xs font-semibold text-gray-900 truncate">{userData.user_data.school}</p>
+                                            <p className="text-xs text-gray-500">Studied at</p>
+                                            <p className="text-sm text-gray-900 truncate">{userData.user_data.school}</p>
                                         </div>
                                     </div>
                                 )}
 
                                 {/* Location */}
                                 {userData.user_data.address && (
-                                    <div className="flex items-start gap-2 bg-white rounded-lg p-2.5 border border-gray-200 shadow-sm">
-                                        <svg className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div className="flex items-start gap-2.5 py-2">
+                                        <svg className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                         </svg>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-xs text-gray-500 font-medium">Lives in</p>
-                                            <p className="text-xs font-semibold text-gray-900 line-clamp-2">{userData.user_data.address}</p>
+                                            <p className="text-xs text-gray-500">Lives in</p>
+                                            <p className="text-sm text-gray-900 line-clamp-2">{userData.user_data.address}</p>
                                         </div>
                                     </div>
                                 )}
 
                                 {/* Birthday */}
                                 {userData.user_data.birthday && userData.user_data.birthday !== '0000-00-00' && (
-                                    <div className="flex items-start gap-2 bg-white rounded-lg p-2.5 border border-gray-200 shadow-sm">
-                                        <svg className="w-4 h-4 text-pink-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div className="flex items-start gap-2.5 py-2">
+                                        <svg className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                         </svg>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-xs text-gray-500 font-medium">Birthday</p>
-                                            <p className="text-xs font-semibold text-gray-900">
+                                            <p className="text-xs text-gray-500">Birthday</p>
+                                            <p className="text-sm text-gray-900">
                                                 {(() => {
                                                     try {
                                                         const date = new Date(userData.user_data.birthday);
-                                                        // Check if date is valid
                                                         if (isNaN(date.getTime())) {
                                                             return userData.user_data.birthday;
                                                         }
@@ -1661,31 +1655,26 @@ const Profile = () => {
 
                                 {/* Social Links - Mobile */}
                                 {(userData.user_data.facebook || userData.user_data.twitter || userData.user_data.instagram || userData.user_data.linkedin) && (
-                                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-3 border border-purple-200 shadow-sm">
-                                        <p className="text-xs font-semibold text-gray-900 mb-2 flex items-center gap-1.5">
-                                            <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                                            </svg>
-                                            Social Links
-                                        </p>
+                                    <div className="pt-3 border-t border-gray-100">
+                                        <p className="text-xs text-gray-500 mb-2.5">Social Links</p>
                                         <div className="flex flex-wrap gap-2">
                                             {userData.user_data.facebook && (
-                                                <a href={userData.user_data.facebook} target="_blank" rel="noopener noreferrer" className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                                <a href={userData.user_data.facebook} target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors">
                                                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
                                                 </a>
                                             )}
                                             {userData.user_data.twitter && (
-                                                <a href={userData.user_data.twitter} target="_blank" rel="noopener noreferrer" className="p-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors">
+                                                <a href={userData.user_data.twitter} target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors">
                                                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/></svg>
                                                 </a>
                                             )}
                                             {userData.user_data.instagram && (
-                                                <a href={userData.user_data.instagram} target="_blank" rel="noopener noreferrer" className="p-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-colors">
+                                                <a href={userData.user_data.instagram} target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors">
                                                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
                                                 </a>
                                             )}
                                             {userData.user_data.linkedin && (
-                                                <a href={userData.user_data.linkedin} target="_blank" rel="noopener noreferrer" className="p-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition-colors">
+                                                <a href={userData.user_data.linkedin} target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors">
                                                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
                                                 </a>
                                             )}
@@ -1968,40 +1957,35 @@ const Profile = () => {
 
                     {/* About Section - Desktop */}
                     {activeTab === 'about' && userData?.user_data && (
-                        <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6 animate-in fade-in duration-300">
-                            <h3 className="text-lg font-bold text-gray-900 mb-5 flex items-center gap-2">
-                                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                Profile Information
-                            </h3>
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                        <div className="bg-white rounded-xl border border-gray-200 p-6 animate-in fade-in duration-300">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-5">Profile Information</h3>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                 {/* About Text */}
                                 {userData.user_data.about && (
-                                    <div className="lg:col-span-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200 shadow-sm">
+                                    <div className="lg:col-span-2 pb-4 border-b border-gray-100">
                                         <p className="text-gray-700 text-sm leading-relaxed">{userData.user_data.about}</p>
                                     </div>
                                 )}
 
                                 {/* Work */}
                                 {userData.user_data.working && (
-                                    <div className="flex items-start gap-3 bg-white rounded-lg p-3.5 border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all">
-                                        <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div className="flex items-start gap-3 py-2.5">
+                                        <svg className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                         </svg>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-xs text-gray-500 font-medium mb-1">Works at</p>
+                                            <p className="text-xs text-gray-500 mb-0.5">Works at</p>
                                             {userData.user_data.working_link ? (
                                                 <a 
                                                     href={userData.user_data.working_link} 
                                                     target="_blank" 
                                                     rel="noopener noreferrer"
-                                                    className="text-sm font-semibold text-blue-600 hover:text-blue-700 hover:underline truncate block"
+                                                    className="text-sm text-gray-900 hover:text-blue-600 hover:underline truncate block"
                                                 >
                                                     {userData.user_data.working}
                                                 </a>
                                             ) : (
-                                                <p className="text-sm font-semibold text-gray-900 truncate">{userData.user_data.working}</p>
+                                                <p className="text-sm text-gray-900 truncate">{userData.user_data.working}</p>
                                             )}
                                         </div>
                                     </div>
@@ -2009,58 +1993,57 @@ const Profile = () => {
 
                                 {/* School */}
                                 {userData.user_data.school && (
-                                    <div className="flex items-start gap-3 bg-white rounded-lg p-3.5 border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all">
-                                        <svg className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div className="flex items-start gap-3 py-2.5">
+                                        <svg className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
                                         </svg>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-xs text-gray-500 font-medium mb-1">Studied at</p>
-                                            <p className="text-sm font-semibold text-gray-900 truncate">{userData.user_data.school}</p>
+                                            <p className="text-xs text-gray-500 mb-0.5">Studied at</p>
+                                            <p className="text-sm text-gray-900 truncate">{userData.user_data.school}</p>
                                         </div>
                                     </div>
                                 )}
 
                                 {/* Location */}
                                 {userData.user_data.address && (
-                                    <div className="flex items-start gap-3 bg-white rounded-lg p-3.5 border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all">
-                                        <svg className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div className="flex items-start gap-3 py-2.5">
+                                        <svg className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                         </svg>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-xs text-gray-500 font-medium mb-1">Lives in</p>
-                                            <p className="text-sm font-semibold text-gray-900 line-clamp-2">{userData.user_data.address}</p>
+                                            <p className="text-xs text-gray-500 mb-0.5">Lives in</p>
+                                            <p className="text-sm text-gray-900 line-clamp-2">{userData.user_data.address}</p>
                                         </div>
                                     </div>
                                 )}
 
                                 {/* Gender */}
                                 {userData.user_data.gender_text && (
-                                    <div className="flex items-start gap-3 bg-white rounded-lg p-3.5 border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all">
-                                        <svg className="w-5 h-5 text-indigo-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div className="flex items-start gap-3 py-2.5">
+                                        <svg className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                         </svg>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-xs text-gray-500 font-medium mb-1">Gender</p>
-                                            <p className="text-sm font-semibold text-gray-900">{userData.user_data.gender_text}</p>
+                                            <p className="text-xs text-gray-500 mb-0.5">Gender</p>
+                                            <p className="text-sm text-gray-900">{userData.user_data.gender_text}</p>
                                         </div>
                                     </div>
                                 )}
 
                                 {/* Birthday */}
                                 {userData.user_data.birthday && userData.user_data.birthday !== '0000-00-00' && (
-                                    <div className="flex items-start gap-3 bg-white rounded-lg p-3.5 border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all">
-                                        <svg className="w-5 h-5 text-pink-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div className="flex items-start gap-3 py-2.5">
+                                        <svg className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                         </svg>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-xs text-gray-500 font-medium mb-1">Birthday</p>
-                                            <p className="text-sm font-semibold text-gray-900">
+                                            <p className="text-xs text-gray-500 mb-0.5">Birthday</p>
+                                            <p className="text-sm text-gray-900">
                                                 {(() => {
                                                     try {
                                                         const date = new Date(userData.user_data.birthday);
-                                                        // Check if date is valid
                                                         if (isNaN(date.getTime())) {
                                                             return userData.user_data.birthday;
                                                         }
@@ -2076,17 +2059,17 @@ const Profile = () => {
 
                                 {/* Website */}
                                 {userData.user_data.website && (
-                                    <div className="flex items-start gap-3 bg-white rounded-lg p-3.5 border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all">
-                                        <svg className="w-5 h-5 text-cyan-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div className="flex items-start gap-3 py-2.5">
+                                        <svg className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
                                         </svg>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-xs text-gray-500 font-medium mb-1">Website</p>
+                                            <p className="text-xs text-gray-500 mb-0.5">Website</p>
                                             <a 
                                                 href={userData.user_data.website} 
                                                 target="_blank" 
                                                 rel="noopener noreferrer"
-                                                className="text-sm font-semibold text-blue-600 hover:text-blue-700 hover:underline truncate block"
+                                                className="text-sm text-gray-900 hover:text-blue-600 hover:underline truncate block"
                                             >
                                                 {userData.user_data.website}
                                             </a>
@@ -2096,26 +2079,21 @@ const Profile = () => {
 
                                 {/* Social Links */}
                                 {(userData.user_data.facebook || userData.user_data.twitter || userData.user_data.instagram || userData.user_data.linkedin || userData.user_data.youtube) && (
-                                    <div className="lg:col-span-2 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200 shadow-sm">
-                                        <p className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                                            <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                                            </svg>
-                                            Social Links
-                                        </p>
-                                        <div className="flex flex-wrap gap-3">
+                                    <div className="lg:col-span-2 pt-4 border-t border-gray-100">
+                                        <p className="text-xs text-gray-500 mb-3">Social Links</p>
+                                        <div className="flex flex-wrap gap-2">
                                             {userData.user_data.facebook && (
                                                 <a 
                                                     href={userData.user_data.facebook} 
                                                     target="_blank" 
                                                     rel="noopener noreferrer"
-                                                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg"
+                                                    className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
                                                     title="Facebook"
                                                 >
-                                                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                                                         <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                                                     </svg>
-                                                    <span className="text-sm font-medium">Facebook</span>
+                                                    Facebook
                                                 </a>
                                             )}
                                             {userData.user_data.twitter && (
@@ -2123,13 +2101,13 @@ const Profile = () => {
                                                     href={userData.user_data.twitter} 
                                                     target="_blank" 
                                                     rel="noopener noreferrer"
-                                                    className="flex items-center gap-2 px-4 py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors shadow-md hover:shadow-lg"
+                                                    className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
                                                     title="Twitter"
                                                 >
-                                                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                                                         <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
                                                     </svg>
-                                                    <span className="text-sm font-medium">Twitter</span>
+                                                    Twitter
                                                 </a>
                                             )}
                                             {userData.user_data.instagram && (
@@ -2137,13 +2115,13 @@ const Profile = () => {
                                                     href={userData.user_data.instagram} 
                                                     target="_blank" 
                                                     rel="noopener noreferrer"
-                                                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-colors shadow-md hover:shadow-lg"
+                                                    className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
                                                     title="Instagram"
                                                 >
-                                                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                                                         <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
                                                     </svg>
-                                                    <span className="text-sm font-medium">Instagram</span>
+                                                    Instagram
                                                 </a>
                                             )}
                                             {userData.user_data.linkedin && (
@@ -2151,13 +2129,13 @@ const Profile = () => {
                                                     href={userData.user_data.linkedin} 
                                                     target="_blank" 
                                                     rel="noopener noreferrer"
-                                                    className="flex items-center gap-2 px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition-colors shadow-md hover:shadow-lg"
+                                                    className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
                                                     title="LinkedIn"
                                                 >
-                                                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                                                         <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
                                                     </svg>
-                                                    <span className="text-sm font-medium">LinkedIn</span>
+                                                    LinkedIn
                                                 </a>
                                             )}
                                             {userData.user_data.youtube && (
@@ -2165,13 +2143,13 @@ const Profile = () => {
                                                     href={userData.user_data.youtube} 
                                                     target="_blank" 
                                                     rel="noopener noreferrer"
-                                                    className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-md hover:shadow-lg"
+                                                    className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
                                                     title="YouTube"
                                                 >
-                                                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                                                         <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
                                                     </svg>
-                                                    <span className="text-sm font-medium">YouTube</span>
+                                                    YouTube
                                                 </a>
                                             )}
                                         </div>
