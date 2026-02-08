@@ -59,9 +59,9 @@ const MainProfileSetting = () => {
       setUserError('Failed to load user data. Please try again.');
       // Set fallback data to maintain UI
       setUserData({
-        first_name: 'Aman',
-        last_name: 'Shaikh',
-        username: '_amu_456',
+        first_name: '',
+        last_name: '',
+        username: '',
         avatar_url: '/perimg.png'
       });
     } finally {

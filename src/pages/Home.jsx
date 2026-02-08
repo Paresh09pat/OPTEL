@@ -327,12 +327,34 @@ const Home = () => {
 
       // Handle new API response structure
       if (data?.data) {
+        // Map the data to ensure reactions are properly formatted
+        const formattedPosts = data.data.map(post => {
+          // Handle reactions object from timeline API (like in Profile.jsx)
+          const reactions = post.reactions || {};
+          const reactionCounts = reactions.total > 0 ? {
+            1: reactions.like || 0,
+            2: reactions.love || 0,
+            3: reactions.haha || 0,
+            4: reactions.wow || 0,
+            5: reactions.sad || 0,
+            6: reactions.angry || 0
+          } : (post.reaction_counts || {});
+
+          return {
+            ...post,
+            reactions_count: post.reactions_count || reactions.total || 0,
+            reaction_counts: reactionCounts,
+            user_reaction: reactions.user_reaction || post.user_reaction,
+            current_reaction: reactions.user_reaction || post.current_reaction
+          };
+        });
+
         if (page === 1) {
           // First page - replace all feeds
-        setNewFeeds(data.data);
+          setNewFeeds(formattedPosts);
         } else {
           // Subsequent pages - append to existing feeds
-          setNewFeeds(prev => [...prev, ...data.data]);
+          setNewFeeds(prev => [...prev, ...formattedPosts]);
         }
 
         // Store pagination metadata
@@ -341,14 +363,34 @@ const Home = () => {
         }
       } else if (Array.isArray(data)) {
         // Handle case where response is directly an array
+        const formattedPosts = data.map(post => {
+          const reactions = post.reactions || {};
+          const reactionCounts = reactions.total > 0 ? {
+            1: reactions.like || 0,
+            2: reactions.love || 0,
+            3: reactions.haha || 0,
+            4: reactions.wow || 0,
+            5: reactions.sad || 0,
+            6: reactions.angry || 0
+          } : (post.reaction_counts || {});
+
+          return {
+            ...post,
+            reactions_count: post.reactions_count || reactions.total || 0,
+            reaction_counts: reactionCounts,
+            user_reaction: reactions.user_reaction || post.user_reaction,
+            current_reaction: reactions.user_reaction || post.current_reaction
+          };
+        });
+
         if (page === 1) {
-        setNewFeeds(data);
-      } else {
-          setNewFeeds(prev => [...prev, ...data]);
+          setNewFeeds(formattedPosts);
+        } else {
+          setNewFeeds(prev => [...prev, ...formattedPosts]);
         }
       } else {
         if (page === 1) {
-        setNewFeeds([]);
+          setNewFeeds([]);
         }
       }
     } catch (error) {
@@ -1373,6 +1415,18 @@ const Home = () => {
                 const postId = post?.id || post?.post_id;
                 const commentsForPost = postComments[postId] || [];
                 const fileProps = getFileTypeProps(post);
+                
+                // Handle reactions object from API (like in Profile.jsx)
+                const reactions = post?.reactions || {};
+                const reactionCounts = reactions.total > 0 ? {
+                  1: reactions.like || 0,
+                  2: reactions.love || 0,
+                  3: reactions.haha || 0,
+                  4: reactions.wow || 0,
+                  5: reactions.sad || 0,
+                  6: reactions.angry || 0
+                } : (post?.reaction_counts || {});
+                
                 return (
                   <PostCard
                     key={post?.id || postId}
@@ -1386,7 +1440,7 @@ const Home = () => {
                     postfile={post?.post_file || post?.postFile}
                     postFileName={post?.postFileName}
                     {...fileProps}
-                    likes={post?.reactions_count || post?.post_likes}
+                    likes={post?.reactions_count || reactions.total || post?.post_likes || 0}
                     comments={post?.comments_count || post?.post_comments}
                     shares={post?.shares_count || post?.post_shares}
                     saves={post?.is_post_saved}
@@ -1404,10 +1458,10 @@ const Home = () => {
                     getNewsFeed={getNewFeeds}
                     openImagePopup={openImagePopup}
                     handleReaction={handleReaction}
-                    postReaction={post?.user_reaction || post?.current_reaction}
-                    postReactionCounts={post?.reaction_counts}
-                    currentReaction={post?.current_reaction || post?.user_reaction}
-                    userReaction={post?.user_reaction}
+                    postReaction={reactions.user_reaction || post?.user_reaction || post?.current_reaction}
+                    postReactionCounts={reactionCounts}
+                    currentReaction={reactions.user_reaction || post?.current_reaction || post?.user_reaction}
+                    userReaction={reactions.user_reaction || post?.user_reaction}
                     postType={fileProps?.postType || post?.post_type}
                     pollOptions={post?.poll_options}
                     handlePollVote={(optionId) => handlePollVote(postId, optionId)}

@@ -6,8 +6,13 @@ const TrendingTopics = () => {
   const [trendingHashtags, setTrendingHashtags] = useState([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const hasFetched = React.useRef(false);
 
   useEffect(() => {
+    // Prevent double fetch in React Strict Mode
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+    
     fetchTrendingHashtags();
   }, []);
 

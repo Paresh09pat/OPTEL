@@ -72,15 +72,15 @@ const ProfileSettings = () => {
         
         // Set fallback data to maintain UI
         setFormData({
-          firstName: 'Aman',
-          lastName: 'Shaikh',
+          firstName: '',
+          lastName: '',
           aboutMe: 'About me....',
           location: savedAddress || 'Location',
           school: 'School',
           schoolCompleted: true,
-          workingAt: 'Apple',
-          companyWebsite: 'Apple',
-          website: 'Apple',
+          workingAt: '',
+          companyWebsite: '',
+          website: '',
           relationship: 'Single'
         });
       } finally {

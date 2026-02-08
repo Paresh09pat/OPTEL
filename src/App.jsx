@@ -24,6 +24,7 @@ import ChatDetailed from "./pages/ChatDetailed";
 import MyAlbums from "./pages/MyAlbums";
 import FullAlbumView from "./pages/FullAlbum";
 import CreateAlbum from "./pages/CreateAlbum";
+import CreateEvent from "./pages/CreateEvent";
 import MainPages from "./pages/PagesComp/MainPages";
 import CreatePage from "./pages/PagesComp/CreatePage";
 import PageDetailed from "./pages/PagesComp/PageDetailed";
@@ -90,6 +91,7 @@ function App() {
               <Route path="/albums" element={<Albums />} />
               <Route path="/saved-posts" element={<SavedPosts />} />
               <Route path="/events" element={<Events />} />
+              <Route path="/create-event" element={<CreateEvent />} />
               <Route path="/forum" element={<Forum />} />
               <Route path="/forum/:forumId" element={<ForumDetailed />} />
               <Route path="/forum/create" element={<CreateForum />} />

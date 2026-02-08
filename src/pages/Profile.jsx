@@ -52,8 +52,8 @@ const Profile = () => {
     const navigate = useNavigate();
     const { userId: urlUserId } = useParams();
 
-    // Get user ID from URL params, or fallback to localStorage, or default
-    const userId = urlUserId || localStorage.getItem('user_id') || '222102';
+    // Get user ID from URL params, or fallback to localStorage
+    const userId = urlUserId || localStorage.getItem('user_id');
     const currentUserId = localStorage.getItem('user_id');
     const isOwnProfile = !urlUserId || urlUserId === currentUserId;
 
@@ -164,19 +164,6 @@ const Profile = () => {
             } catch (err) {
                 console.error('Error fetching user data:', err);
                 setError(err.message);
-                // Set fallback data to maintain UI
-                setUserData({
-                    user_data: {
-                        first_name: 'Aman',
-                        last_name: 'Shaikh',
-                        username: 'aman.shaikh',
-                        avatar_url: 'https://img.freepik.com/free-psd/3d-illustration-person-with-sunglasses_23-2149436188.jpg?t=st=1760035094~exp=1760038694~hmac=cb0279b1f187ff0765dcec9bf94f6b16820a37f80310b7c88a47f91409234f8d&w=1480',
-                        cover_url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
-                        post_count: 100,
-                        followers_number: 433,
-                        following_number: 403
-                    }
-                });
             } finally {
                 setLoading(false);
             }
@@ -1445,8 +1432,8 @@ const Profile = () => {
                         <div className="relative">
                             <Avatar 
                                 src={userData?.user_data?.avatar_url} 
-                                name={`${userData?.user_data?.first_name || 'Aman'} ${userData?.user_data?.last_name || 'Shaikh'}`}
-                                email={userData?.user_data?.email || "45amanshaikh@gmail.com"}
+                                name={userData?.user_data?.first_name && userData?.user_data?.last_name ? `${userData.user_data.first_name} ${userData.user_data.last_name}` : 'User'}
+                                email={userData?.user_data?.email || ''}
                                 alt="profile photo" 
                                 size="2xl"
                                 className='mt-[-5rem] z-10 border-4 border-white shadow-xl' 
@@ -1484,7 +1471,7 @@ const Profile = () => {
                         <div className="flex flex-col gap-1 text-[#212121] mt-4">
                             <div className="flex items-center justify-center gap-2 flex-wrap">
                                 <h3 className='text-lg font-semibold'>
-                                    {loading ? 'Loading...' : `${userData?.user_data?.first_name || 'Aman'} ${userData?.user_data?.last_name || 'Shaikh'}`}
+                                    {loading ? 'Loading...' : (userData?.user_data?.first_name && userData?.user_data?.last_name ? `${userData.user_data.first_name} ${userData.user_data.last_name}` : 'User')}
                                 </h3>
                                 {badgeInfo?.is_verified && badgeInfo?.badge_type && (
                                     <img 
@@ -1501,7 +1488,7 @@ const Profile = () => {
                                 )}
                             </div>
                             <p className='text-sm font-medium text-gray-600'>
-                                @{userData?.user_data?.username || 'aman.shaikh'}
+                                {userData?.user_data?.username ? `@${userData.user_data.username}` : ''}
                             </p>
                         </div>
                     </div>
@@ -1854,8 +1841,8 @@ const Profile = () => {
                         <div className="relative">
                             <Avatar 
                                 src={userData?.user_data?.avatar_url} 
-                                name={`${userData?.user_data?.first_name || 'Aman'} ${userData?.user_data?.last_name || 'Shaikh'}`}
-                                email={userData?.user_data?.email || "45amanshaikh@gmail.com"}
+                                name={userData?.user_data?.first_name && userData?.user_data?.last_name ? `${userData.user_data.first_name} ${userData.user_data.last_name}` : 'User'}
+                                email={userData?.user_data?.email || ''}
                                 alt="profile photo" 
                                 size="2xl"
                                 className='mt-[-6rem] z-10 border-4 border-white shadow-xl' 
@@ -1884,7 +1871,7 @@ const Profile = () => {
                         <div className="flex flex-col gap-2 text-[#212121]"> 
                             <div className="flex items-center gap-2 flex-wrap">
                                 <h3 className='text-xl lg:text-2xl font-semibold'>
-                                    {loading ? 'Loading...' : `${userData?.user_data?.first_name || 'Aman'} ${userData?.user_data?.last_name || 'Shaikh'}`}
+                                    {loading ? 'Loading...' : (userData?.user_data?.first_name && userData?.user_data?.last_name ? `${userData.user_data.first_name} ${userData.user_data.last_name}` : 'User')}
                                 </h3>
                                 {badgeInfo?.is_verified && badgeInfo?.badge_type && (
                                     <img 
@@ -1901,7 +1888,7 @@ const Profile = () => {
                                 )}
                             </div>
                             <p className='text-base font-medium text-gray-600'>
-                                @{userData?.user_data?.username || 'aman.shaikh'}
+                                {userData?.user_data?.username ? `@${userData.user_data.username}` : ''}
                             </p>
                         </div>
                     </div>

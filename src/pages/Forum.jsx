@@ -399,44 +399,8 @@ const Forum = () => {
                           </div>
                         </div>
 
-                        {/* Forum Owner - Always show to maintain consistent height */}
-                        <div className="flex items-center gap-2 mb-4 pb-4 border-b border-gray-100 min-h-[60px]">
-                          {forum.owner ? (
-                            <>
-                            <Avatar
-                              src={forum.owner.avatar_url}
-                              name={forum.owner.username || 'Unknown'}
-                              size="sm"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs text-gray-500">Created by</p>
-                              <p className="text-sm font-medium text-gray-700 truncate">
-                                {forum.owner.username || 'Unknown'}
-                              </p>
-                            </div>
-                            </>
-                          ) : (
-                            <>
-                              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                                <span className="text-gray-400 text-xs">👤</span>
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs text-gray-500">Created by</p>
-                                <p className="text-sm font-medium text-gray-700 truncate">Unknown</p>
-                          </div>
-                            </>
-                          )}
-                        </div>
-
-                        {/* Privacy Badge */}
-                        <div className="mt-3 flex items-center justify-between">
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            forum.privacy === 'public'
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-orange-100 text-orange-700'
-                          }`}>
-                            {forum.privacy === 'public' ? 'Public' : 'Private'}
-                          </span>
+                        {/* Owner Badge - Only show if user is owner */}
+                        <div className="mt-auto pt-3">
                           {forum.is_owner && (
                             <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">
                               Owner

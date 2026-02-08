@@ -183,7 +183,7 @@ const ForumDetailed = () => {
           </div>
 
           {/* Forum Stats and Info */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
               <FaComments className="w-6 h-6 text-blue-600" />
               <div>
@@ -198,56 +198,14 @@ const ForumDetailed = () => {
                 <p className="text-xl font-bold text-gray-900">{forum.members_count || 0}</p>
               </div>
             </div>
-            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-              <div className="w-6 h-6 flex items-center justify-center">
-                <span className="text-blue-600 text-xl">🔒</span>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Join Privacy</p>
-                <p className="text-lg font-semibold text-gray-900 capitalize">
-                  {forum.join_privacy || 'Unknown'}
-                </p>
-              </div>
-            </div>
           </div>
 
-          {/* Privacy Badges */}
-          <div className="flex flex-wrap gap-3 mb-6">
-            <span className={`px-3 py-1 text-sm font-medium rounded-full ${
-              forum.privacy === 'public'
-                ? 'bg-green-100 text-green-700'
-                : 'bg-orange-100 text-orange-700'
-            }`}>
-              {forum.privacy === 'public' ? 'Public Forum' : 'Private Forum'}
-            </span>
-            <span className={`px-3 py-1 text-sm font-medium rounded-full ${
-              forum.join_privacy === 'public'
-                ? 'bg-blue-100 text-blue-700'
-                : 'bg-purple-100 text-purple-700'
-            }`}>
-              {forum.join_privacy === 'public' ? 'Open Join' : 'Request to Join'}
-            </span>
-            {forum.category && (
-              <span className="px-3 py-1 text-sm font-medium rounded-full bg-gray-100 text-gray-700">
-                {forum.category}
+          {/* Owner Badge - Only show if user is owner */}
+          {forum.is_owner && (
+            <div className="mb-6">
+              <span className="px-3 py-1 text-sm font-medium rounded-full bg-blue-100 text-blue-700">
+                Owner
               </span>
-            )}
-          </div>
-
-          {/* Owner Section */}
-          {forum.owner && (
-            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg mb-6">
-              <Avatar
-                src={forum.owner.avatar_url}
-                name={forum.owner.username || 'Unknown'}
-                size="md"
-              />
-              <div>
-                <p className="text-sm text-gray-500">Created by</p>
-                <p className="text-lg font-semibold text-gray-900">
-                  {forum.owner.username || 'Unknown'}
-                </p>
-              </div>
             </div>
           )}
 
