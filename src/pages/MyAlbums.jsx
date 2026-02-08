@@ -6,6 +6,7 @@ import { baseUrl } from '../utils/constant';
 import { toast } from 'react-toastify';
 import Loader from '../components/loading/Loader';
 import axios from 'axios';
+import ImageSliderModal from '../components/ImageSliderModal';
 
 const MyAlbums = () => {
     const [currentView, setCurrentView] = useState('albums'); // 'albums' or 'fullAlbum'
@@ -121,12 +122,19 @@ const ImageGallery = ({
     onViewMore
 }) => {
     const navigate = useNavigate();
+    const [isSliderOpen, setIsSliderOpen] = useState(false);
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     
     // Extract images from image_urls array
     const images = album.image_urls || [];
     const albumTitle = album.album_name || "Untitled Album";
     const timeStamp = album.created_at || "Unknown time";
     const imageCount = album.images_count || images.length;
+
+    const handleImageClick = (index) => {
+        setSelectedImageIndex(index);
+        setIsSliderOpen(true);
+    };
 
     const handleMoreClick = () => {
         navigate(`/my-albums/${album.id}`, {
@@ -152,24 +160,41 @@ const ImageGallery = ({
     };
 
     const renderSingleImage = () => (
-        <div className="w-full h-96 overflow-hidden rounded-lg">
+        <div 
+            className="w-full h-96 overflow-hidden rounded-lg cursor-pointer group relative"
+            onClick={() => handleImageClick(0)}
+        >
             <img
                 src={images[0]}
                 alt="Album image"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
             />
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
+                <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-sm font-medium">
+                    View Image
+                </span>
+            </div>
         </div>
     );
 
     const renderDoubleImages = () => (
         <div className="grid grid-cols-2 gap-2">
             {images.map((image, index) => (
-                <div key={index} className="h-80 overflow-hidden rounded-lg">
+                <div 
+                    key={index} 
+                    className="h-80 overflow-hidden rounded-lg cursor-pointer group relative"
+                    onClick={() => handleImageClick(index)}
+                >
                     <img
                         src={image}
                         alt={`Album image ${index + 1}`}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                     />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
+                        <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-sm font-medium">
+                            View Image
+                        </span>
+                    </div>
                 </div>
             ))}
         </div>
@@ -178,12 +203,21 @@ const ImageGallery = ({
     const renderTripleImages = () => (
         <div className="grid grid-cols-3 gap-2">
             {images.map((image, index) => (
-                <div key={index} className="h-64 overflow-hidden rounded-lg">
+                <div 
+                    key={index} 
+                    className="h-64 overflow-hidden rounded-lg cursor-pointer group relative"
+                    onClick={() => handleImageClick(index)}
+                >
                     <img
                         src={image}
                         alt={`Album image ${index + 1}`}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                     />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
+                        <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-sm font-medium">
+                            View Image
+                        </span>
+                    </div>
                 </div>
             ))}
         </div>
@@ -192,12 +226,21 @@ const ImageGallery = ({
     const renderQuadImages = () => (
         <div className="grid grid-cols-2 gap-2">
             {images.map((image, index) => (
-                <div key={index} className="h-64 overflow-hidden rounded-lg">
+                <div 
+                    key={index} 
+                    className="h-64 overflow-hidden rounded-lg cursor-pointer group relative"
+                    onClick={() => handleImageClick(index)}
+                >
                     <img
                         src={image}
                         alt={`Album image ${index + 1}`}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                     />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
+                        <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-sm font-medium">
+                            View Image
+                        </span>
+                    </div>
                 </div>
             ))}
         </div>
@@ -206,21 +249,38 @@ const ImageGallery = ({
     const renderQuintImages = () => (
         <div className="grid gap-2 grid-cols-3">
             {/* Main large image */}
-            <div className="row-span-2 col-span-2 h-80 overflow-hidden rounded-lg">
+            <div 
+                className="row-span-2 col-span-2 h-80 overflow-hidden rounded-lg cursor-pointer group relative"
+                onClick={() => handleImageClick(0)}
+            >
                 <img
                     src={images[0]}
                     alt="Main image"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                 />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
+                    <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-sm font-medium">
+                        View Image
+                    </span>
+                </div>
             </div>
             {/* Side images */}
             {images.slice(1).map((image, index) => (
-                <div key={index} className="h-40 overflow-hidden rounded-lg">
+                <div 
+                    key={index} 
+                    className="h-40 overflow-hidden rounded-lg cursor-pointer group relative"
+                    onClick={() => handleImageClick(index + 1)}
+                >
                     <img
                         src={image}
                         alt={`Gallery image ${index + 1}`}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                     />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
+                        <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-sm font-medium">
+                            View Image
+                        </span>
+                    </div>
                 </div>
             ))}
         </div>
@@ -234,42 +294,64 @@ const ImageGallery = ({
         return (
             <div className="grid gap-2 grid-cols-3">
                 {/* Main large image */}
-                <div className="row-span-2 col-span-2 h-80 overflow-hidden rounded-lg">
+                <div 
+                    className="row-span-2 col-span-2 h-80 overflow-hidden rounded-lg cursor-pointer group relative"
+                    onClick={() => handleImageClick(0)}
+                >
                     <img
                         src={images[0]}
                         alt="Main image"
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                     />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
+                        <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-sm font-medium">
+                            View Image
+                        </span>
+                    </div>
                 </div>
                 {/* Grid images */}
                 {visibleImages.slice(1, 5).map((image, index) => (
-                    <div key={index} className="h-40 overflow-hidden rounded-lg">
+                    <div 
+                        key={index} 
+                        className="h-40 overflow-hidden rounded-lg cursor-pointer group relative"
+                        onClick={() => handleImageClick(index + 1)}
+                    >
                         <img
                             src={image}
                             alt={`Gallery image ${index + 1}`}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                         />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
+                            <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-sm font-medium">
+                                View Image
+                            </span>
+                        </div>
                     </div>
                 ))}
                 {/* Last image with overlay for remaining count */}
                 {visibleImages.length > 5 && (
-                    <div className="relative h-40 overflow-hidden rounded-lg">
+                    <div 
+                        className="relative h-40 overflow-hidden rounded-lg cursor-pointer group"
+                        onClick={() => handleImageClick(5)}
+                    >
                         <img
                             src={visibleImages[5]}
                             alt="Gallery image"
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                         />
                         {remainingCount > 0 && (
-                            <div
-                                className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center cursor-pointer hover:bg-opacity-60 transition-all"
-                                onClick={handleMoreClick}
-                            >
+                            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center group-hover:bg-opacity-60 transition-all">
                                 <div className="text-white text-center">
                                     <Plus className="w-6 h-6 mx-auto mb-1" />
                                     <span className="text-base font-semibold">+{remainingCount}</span>
                                 </div>
                             </div>
                         )}
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
+                            <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-sm font-medium">
+                                View All
+                            </span>
+                        </div>
                     </div>
                 )}
             </div>
@@ -321,6 +403,14 @@ const ImageGallery = ({
 
             {/* Dynamic Image Layout */}
             {renderImages()}
+
+            {/* Image Slider Modal */}
+            <ImageSliderModal
+                isOpen={isSliderOpen}
+                onClose={() => setIsSliderOpen(false)}
+                images={images}
+                initialIndex={selectedImageIndex}
+            />
         </div>
     );
 };

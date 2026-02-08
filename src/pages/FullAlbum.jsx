@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Heart, MessageCircle, Share, Bookmark, Send, Smile, MoreHorizontal, Pin } from 'lucide-react';
+import ImageSliderModal from '../components/ImageSliderModal';
 
 const FullAlbumView = () => {
     const [liked, setLiked] = useState(false);
     const [saved, setSaved] = useState(false);
     const [comment, setComment] = useState('');
+    const [isSliderOpen, setIsSliderOpen] = useState(false);
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const albumData = useLocation()?.state?.albumData;
     const albumTitle = useLocation()?.state?.albumTitle;
     const timeStamp = useLocation()?.state?.timeStamp;
@@ -27,6 +30,11 @@ const FullAlbumView = () => {
             console.log('Comment submitted:', comment);
             setComment('');
         }
+    };
+
+    const handleImageClick = (index) => {
+        setSelectedImageIndex(index);
+        setIsSliderOpen(true);
     };
 
     return (
@@ -85,15 +93,24 @@ const FullAlbumView = () => {
 
                 <div className="grid grid-cols-2 gap-3 w-full mx-auto pt-4">
                     {albumData?.map((image, index) => (
-                        <div key={index} className="aspect-square">
+                        <div 
+                            key={index} 
+                            className="aspect-square cursor-pointer group relative overflow-hidden rounded-lg"
+                            onClick={() => handleImageClick(index)}
+                        >
                             <img
                                 src={image}
                                 alt={`Album image ${index + 1}`}
-                                className="w-full h-full object-cover rounded-lg"
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                                 onError={(e) => {
                                     e.target.src = "/icons/album.png"; // Fallback image
                                 }}
                             />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
+                                <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-sm font-medium">
+                                    View Image
+                                </span>
+                            </div>
                         </div>
                     ))}
                 </div>
@@ -175,6 +192,14 @@ const FullAlbumView = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Image Slider Modal */}
+            <ImageSliderModal
+                isOpen={isSliderOpen}
+                onClose={() => setIsSliderOpen(false)}
+                images={albumData || []}
+                initialIndex={selectedImageIndex}
+            />
         </div>
     );
 };

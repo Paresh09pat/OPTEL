@@ -489,8 +489,11 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
   // Reset when modal opens/closes or user changes
   useEffect(() => {
     if (isOpen && currentUserStories && currentUserStories.length > 0) {
-      // Only reset story index if user changed, not on every render
+      // Reset story index to 0 when modal opens (unless user changed)
       if (currentUserIndex !== currentUserIndexRef.current) {
+        setCurrentStoryIndex(0);
+      } else {
+        // Also reset to 0 when reopening the same user's stories
         setCurrentStoryIndex(0);
       }
       setProgress(0);
@@ -510,7 +513,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
       
       // Try to play video after a short delay if it's a video story
       setTimeout(() => {
-        if (videoRef.current && currentUserStories[currentStoryIndex]?.type === 'video') {
+        if (videoRef.current && currentUserStories[0]?.type === 'video') {
           videoRef.current.play().catch(err => {
             console.log('Auto-play prevented, will play on user interaction:', err);
           });

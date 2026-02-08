@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { baseUrl } from "../utils/constant";
 import { toast } from "react-toastify";
 import Loader from "../components/loading/Loader";
-import { FiX } from 'react-icons/fi';
 
 const CreateAlbum = () => {
   const navigate = useNavigate();
@@ -37,7 +36,7 @@ const CreateAlbum = () => {
     }
 
     if (selectedFiles.length === 0) {
-      toast.error("Please select at least one photo or video");
+      toast.error("Please select at least one photo");
       return;
     }
 
@@ -96,57 +95,68 @@ const CreateAlbum = () => {
   return (
     <>
       {loading && <Loader />}
-      <div className="bg-white w-full h-full flex flex-col rounded-3xl shadow-2xl overflow-hidden">
-        <div className="w-full flex flex-col gap-4">
+      <div className="bg-[#EDF6F9] w-full min-h-screen flex items-center justify-start flex-col">
+        {/* Sticky Header */}
+        <div className="w-full h-[98px] sticky pt-8 top-0 z-10 bg-[#EDF6F9]">
+          <div className="flex items-center justify-between h-full px-4 md:px-7 flex-wrap gap-4">
+            <h1 className="text-2xl font-bold text-[#212121]">My Albums</h1>
+            <div className="flex gap-4 items-center">
+              <button 
+                onClick={() => navigate(-1)}
+                className="border border-[#808080] py-1.5 px-4 rounded-2xl flex items-center gap-2 text-[#808080] text-base font-medium cursor-pointer hover:bg-gray-100 transition"
+              >
+                Back to Albums
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Card */}
+        <div className="w-[95%] md:w-[90%] max-w-6xl bg-white flex flex-col gap-6 rounded-xl my-6 shadow-md overflow-hidden">
+          {/* Hero Banner */}
           <div className="relative h-64 flex items-start justify-end px-8 md:px-16">
-            {/* Close Button */}
-            <button
-              onClick={() => navigate(-1)}
-              className="z-10 absolute flex -right-2 -top-2 w-10 h-10 items-center justify-center cursor-pointer text-gray-600 bg-gray-100 rounded-full transition-colors hover:bg-gray-200"
-            >
-              <FiX className="w-6 h-6" />
-            </button>
-            
             {/* Wave SVG */}
             <img src="/Vectorgroup.svg" alt="vector" className='absolute bottom-0 right-0 top-0 w-full' />
             <h2 className="text-xl md:text-2xl font-bold text-white z-10 pt-6">Create Album</h2>
           </div>
 
           <form
-            className="w-full max-w-[800px] mx-auto flex flex-col gap-6 p-8"
+            className="w-full max-w-3xl mx-auto flex flex-col gap-6 p-4 md:p-8 pb-12"
             onSubmit={handleSubmit}
           >
             {/* Album Name */}
-            <div className="w-full flex flex-col gap-2">
+            <div className="flex flex-col gap-2">
               <label
                 htmlFor="album-name"
-                className="text-lg text-black flex items-center gap-2"
+                className="text-base text-gray-600 font-medium"
               >
-                Album Name : <span className="text-red-500">*</span>
+                Album Name
               </label>
               <input
                 type="text"
                 id="album-name"
-                className="w-full p-2 px-4 border border-[#d3d1d1] rounded-full"
+                className="w-full p-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter Album Name"
                 value={albumName}
                 onChange={(e) => setAlbumName(e.target.value)}
+                required
               />
+              <p className="text-sm text-gray-400">Your album title</p>
             </div>
 
             {/* Select Media */}
-            <div className="w-full flex flex-col gap-2">
+            <div className="flex flex-col gap-2">
               <label
                 htmlFor="album-media"
-                className="text-lg text-black flex items-center gap-2"
+                className="text-base text-gray-600 font-medium"
               >
-                Select : <span className="text-red-500">*</span>
+                Select Photos
               </label>
 
               <input
                 type="file"
                 id="album-media"
-                accept="image/*, video/*"
+                accept="image/*"
                 multiple
                 className="hidden"
                 onChange={handleFileChange}
@@ -154,7 +164,7 @@ const CreateAlbum = () => {
 
               <label
                 htmlFor="album-media"
-                className="w-full min-h-[200px] border border-[#d3d1d1] rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer text-[#555] p-4"
+                className="w-full min-h-[200px] border border-gray-300 rounded-lg flex flex-col items-center justify-center gap-2 cursor-pointer text-[#555] p-4 hover:border-blue-500 transition-colors"
               >
                 {selectedFiles.length === 0 ? (
                   <>
@@ -164,7 +174,7 @@ const CreateAlbum = () => {
                       className="w-14 h-14 opacity-70"
                     />
                     <span className="font-medium text-sm">
-                      Select photos & video
+                      Select photos
                     </span>
                   </>
                 ) : (
@@ -177,19 +187,11 @@ const CreateAlbum = () => {
                           className="relative group w-[100px] h-[100px] rounded overflow-hidden border"
                           onClick={(e) => e.preventDefault()}
                         >
-                          {file.type.startsWith("image") ? (
-                            <img
-                              src={fileURL}
-                              alt="preview"
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <video
-                              src={fileURL}
-                              className="w-full h-full object-cover"
-                              controls
-                            />
-                          )}
+                          <img
+                            src={fileURL}
+                            alt="preview"
+                            className="w-full h-full object-cover"
+                          />
                           <button
                             type="button"
                             onClick={(e) => {
@@ -230,15 +232,24 @@ const CreateAlbum = () => {
                   </span>
                 </div>
               )}
+              <p className="text-sm text-gray-400">Select photos for your album. Maximum total size: 2 MB</p>
             </div>
 
-            {/* Submit */}
-            <div className="w-full text-center">
+            {/* Submit and Cancel Buttons */}
+            <div className="flex items-center justify-center gap-4 flex-wrap">
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="w-[16rem] md:w-[15rem] h-[50px] border border-gray-400 text-gray-700 font-semibold text-[15px] md:text-[18px] py-2 px-8 rounded-lg hover:bg-gray-100 transition"
+              >
+                Cancel
+              </button>
               <button
                 type="submit"
-                className="w-[20rem] h-[50px] rounded-2xl border-2 border-blue-600 text-blue-600 bg-white font-semibold text-[20px] hover:bg-blue-600 hover:text-white transition-all duration-300 shadow-lg hover:shadow-xl"
+                disabled={loading}
+                className="w-[16rem] md:w-[15rem] h-[50px] bg-blue-600 text-white font-semibold text-[15px] md:text-[18px] py-2 px-8 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Publish Album
+                {loading ? 'Publishing...' : 'Publish Album'}
               </button>
             </div>
           </form>

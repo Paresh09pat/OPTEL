@@ -28,6 +28,36 @@ const Events = () => {
 
   const dropdownOptions = ['Events', 'Going', 'Invited', 'Interested', 'Past'];
 
+  // Format date to readable format (e.g., "Jan 15, 2024")
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString);
+      const options = { month: 'short', day: 'numeric', year: 'numeric' };
+      return date.toLocaleDateString('en-US', options);
+    } catch (error) {
+      return dateString;
+    }
+  };
+
+  // Format time to 12-hour format with AM/PM (e.g., "2:30 PM")
+  const formatTime = (timeString) => {
+    if (!timeString) return '';
+    try {
+      // Handle both "HH:MM:SS" and "HH:MM" formats
+      const [hours, minutes] = timeString.split(':');
+      const hour = parseInt(hours, 10);
+      const minute = minutes || '00';
+      
+      const period = hour >= 12 ? 'PM' : 'AM';
+      const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+      
+      return `${displayHour}:${minute} ${period}`;
+    } catch (error) {
+      return timeString;
+    }
+  };
+
   // Update eventOptions when selectedOption changes
   useEffect(() => {
     const mapping = {
@@ -479,7 +509,17 @@ const Events = () => {
          
           {myEvents?.map((event) => 
           <div className="flex flex-col gap-2 min-w-full bg-[#FFFFFF] shadow-2xl pb-3 px-0.5 shadow-[#21212140] rounded-lg border border-[#d3d1d1]" key={event?.id}>
-            <img src={event?.image_url || event?.cover_url || "/pagesCardImg.png"} alt="cardImg" className='w-full h-[160px] object-cover rounded-t-lg border-b border-[#d3d1d1]' />
+            <div className="w-full h-[220px] bg-gray-100 rounded-t-lg border-b border-[#d3d1d1] overflow-hidden">
+              <img 
+                src={event?.image_url || event?.cover_url || "/pagesCardImg.png"} 
+                alt="cardImg" 
+                className='w-full h-full object-contain'
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = "/pagesCardImg.png";
+                }}
+              />
+            </div>
             <div className="flex flex-col gap-2.5 w-full px-2.5">
               <h5 className='text-sm font-medium text-[#212121] w-full text-left'>{event?.name}</h5>
               <div className="flex flex-col gap-1.5">
@@ -494,7 +534,9 @@ const Events = () => {
                   <svg className="w-4 h-4 text-[#808080]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  <span className='text-[#808080] text-xs font-medium'>{event?.start_date} at {event?.start_time}</span>
+                  <span className='text-[#808080] text-xs font-medium'>
+                    {formatDate(event?.start_date)} at {formatTime(event?.start_time)}
+                  </span>
                 </div>
                 <div className="flex items-center gap-3 mt-1">
                   <div className="flex items-center gap-1">

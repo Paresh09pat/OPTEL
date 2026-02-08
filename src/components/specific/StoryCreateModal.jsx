@@ -11,19 +11,10 @@ const StoryCreateModal = ({ isOpen, onClose, onStoryCreated }) => {
   const [storyTitle, setStoryTitle] = useState('');
   const [storyDescription, setStoryDescription] = useState('');
   const [loading, setLoading] = useState(false);
-  const [selectedActivity, setSelectedActivity] = useState(null);
-  const [activityValue, setActivityValue] = useState('');
   const fileInputRef = useRef(null);
   const videoRef = useRef(null);
 
   const MAX_DESCRIPTION_LENGTH = 300;
-
-  const activityOptions = [
-    { type: 'travelling', label: 'Travelling', icon: '✈️', placeholder: 'Where are you travelling to?' },
-    { type: 'watching', label: 'Watching', icon: '📺', placeholder: 'What are you watching?' },
-    { type: 'listening', label: 'Listening', icon: '🎵', placeholder: 'What are you listening to?' },
-    { type: 'playing', label: 'Playing', icon: '🎮', placeholder: 'What are you playing?' },
-  ];
 
   
   useEffect(() => {
@@ -33,8 +24,6 @@ const StoryCreateModal = ({ isOpen, onClose, onStoryCreated }) => {
       setFileType(null);
       setStoryTitle('');
       setStoryDescription('');
-      setSelectedActivity(null);
-      setActivityValue('');
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -127,12 +116,6 @@ const StoryCreateModal = ({ isOpen, onClose, onStoryCreated }) => {
       return;
     }
 
-    // Validate activity value if activity is selected
-    if (selectedActivity && !activityValue.trim()) {
-      toast.error(`Please enter what you are ${selectedActivity.label.toLowerCase()}`);
-      return;
-    }
-
     setLoading(true);
 
     try {
@@ -143,18 +126,6 @@ const StoryCreateModal = ({ isOpen, onClose, onStoryCreated }) => {
       formData.append('file_type', fileType); // 'image' or 'video'
       formData.append('story_title', storyTitle.trim());
       formData.append('story_description', storyDescription.trim());
-
-      // Add activity data if selected
-      if (selectedActivity && activityValue.trim()) {
-        const activityText = `is ${selectedActivity.label.toLowerCase()} ${activityValue.trim()}`;
-        const activityPayload = {
-          type: selectedActivity.type,
-          label: selectedActivity.label,
-          value: activityValue.trim(),
-          text: activityText
-        };
-        formData.append('activity', JSON.stringify(activityPayload));
-      }
 
       const response = await fetch('https://admin.ouptel.in/api/v1/stories/create', {
         method: 'POST',
@@ -183,8 +154,6 @@ const StoryCreateModal = ({ isOpen, onClose, onStoryCreated }) => {
         setFileType(null);
         setStoryTitle('');
         setStoryDescription('');
-        setSelectedActivity(null);
-        setActivityValue('');
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
@@ -325,59 +294,6 @@ const StoryCreateModal = ({ isOpen, onClose, onStoryCreated }) => {
             </div>
           </div>
 
-          {/* Activity Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Add Activity (Optional)
-            </label>
-            <div className="grid grid-cols-2 gap-2 mb-3">
-              {activityOptions.map((activity) => (
-                <button
-                  key={activity.type}
-                  type="button"
-                  onClick={() => {
-                    if (selectedActivity?.type === activity.type) {
-                      setSelectedActivity(null);
-                      setActivityValue('');
-                    } else {
-                      setSelectedActivity(activity);
-                      setActivityValue('');
-                    }
-                  }}
-                  className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 transition-all ${
-                    selectedActivity?.type === activity.type
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-200 hover:border-gray-300 text-gray-700'
-                  }`}
-                >
-                  <span className="text-lg">{activity.icon}</span>
-                  <span className="text-sm font-medium">{activity.label}</span>
-                </button>
-              ))}
-            </div>
-            
-            {/* Activity Value Input */}
-            {selectedActivity && (
-              <div className="animate-in slide-in-from-top-2 duration-200">
-                <input
-                  type="text"
-                  value={activityValue}
-                  onChange={(e) => setActivityValue(e.target.value)}
-                  placeholder={selectedActivity.placeholder}
-                  className="w-full px-4 py-2 border border-[#d3d1d1] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Preview: <span className="font-medium text-gray-700">
-                    {activityValue.trim() 
-                      ? `is ${selectedActivity.label.toLowerCase()} ${activityValue.trim()}`
-                      : `is ${selectedActivity.label.toLowerCase()} ...`
-                    }
-                  </span>
-                </p>
-              </div>
-            )}
-          </div>
-
           {/* Submit Button */}
           <div className="flex gap-3">
             <button
@@ -389,7 +305,7 @@ const StoryCreateModal = ({ isOpen, onClose, onStoryCreated }) => {
             </button>
             <button
               type="submit"
-              disabled={loading || !file || !storyTitle.trim() || !storyDescription.trim() || storyDescription.length > MAX_DESCRIPTION_LENGTH || (selectedActivity && !activityValue.trim())}
+              disabled={loading || !file || !storyTitle.trim() || !storyDescription.trim() || storyDescription.length > MAX_DESCRIPTION_LENGTH}
               className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (
