@@ -117,7 +117,7 @@ const CreateAlbum = () => {
           <div className="relative h-64 flex items-start justify-end px-8 md:px-16">
             {/* Wave SVG */}
             <img src="/Vectorgroup.svg" alt="vector" className='absolute bottom-0 right-0 top-0 w-full' />
-            <h2 className="text-xl md:text-2xl font-bold text-white z-10 pt-6">Create Album</h2>
+            <h2 className="text-xl md:text-2xl font-bold text-white z-2 pt-6">Create Album</h2>
           </div>
 
           <form
