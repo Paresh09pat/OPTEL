@@ -1017,43 +1017,45 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
                 )}
               </div>
             ) : (
-              <img
-                src={currentStory?.thumbnail || currentStory?.media_url}
-                alt={currentStory?.title || 'Story'}
-                className="w-full max-h-[calc(100vh-350px)] object-contain cursor-pointer"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // Collapse description if expanded
-                  if (isDescriptionExpanded) {
-                    setIsDescriptionExpanded(false);
-                    setIsPaused(false);
-                    
-                    // Resume timer for image stories
-                    if (currentStory?.type !== 'video') {
-                      setTimeout(() => {
-                        if (progressIntervalRef.current) {
-                          clearInterval(progressIntervalRef.current);
-                        }
-                        
-                        const duration = 5000;
-                        const interval = 50;
-                        const increment = (100 / duration) * interval;
+              <div className="absolute top-32 bottom-0 left-0 right-0 flex items-center justify-center pb-40">
+                <img
+                  src={currentStory?.thumbnail || currentStory?.media_url}
+                  alt={currentStory?.title || 'Story'}
+                  className="max-w-full max-h-full object-contain cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Collapse description if expanded
+                    if (isDescriptionExpanded) {
+                      setIsDescriptionExpanded(false);
+                      setIsPaused(false);
+                      
+                      // Resume timer for image stories
+                      if (currentStory?.type !== 'video') {
+                        setTimeout(() => {
+                          if (progressIntervalRef.current) {
+                            clearInterval(progressIntervalRef.current);
+                          }
+                          
+                          const duration = 5000;
+                          const interval = 50;
+                          const increment = (100 / duration) * interval;
 
-                        progressIntervalRef.current = setInterval(() => {
-                          setProgress((prev) => {
-                            const newProgress = prev + increment;
-                            if (newProgress >= 100) {
-                              nextStory();
-                              return 0;
-                            }
-                            return newProgress;
-                          });
-                        }, interval);
-                      }, 0);
+                          progressIntervalRef.current = setInterval(() => {
+                            setProgress((prev) => {
+                              const newProgress = prev + increment;
+                              if (newProgress >= 100) {
+                                nextStory();
+                                return 0;
+                              }
+                              return newProgress;
+                            });
+                          }, interval);
+                        }, 0);
+                      }
                     }
-                  }
-                }}
-              />
+                  }}
+                />
+              </div>
             )}
 
             {/* Bottom Info Section - Description and Reactions */}
