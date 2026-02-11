@@ -132,7 +132,7 @@ const SideMenu = ({ onClose, isMobile = false }) => {
           </div>
           <div className="relative" ref={profileMenuRef}>
             <button 
-              className={`text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors ${profileMenuOpen ? 'bg-gray-100 text-gray-600' : ''}`}
+              className={`text-white hover:text-gray-100 p-2 rounded-lg bg-blue-500 hover:bg-blue-600 transition-colors shadow-sm ${profileMenuOpen ? 'bg-blue-600 text-white' : ''}`}
               onClick={(e) => {
                 e.stopPropagation()
                 setProfileMenuOpen((prev) => !prev)

@@ -191,8 +191,8 @@ const Notifications = ({ isOpen, onClose, containerRect, refreshCount }) => {
         <div
             className="fixed top-0 h-screen bg-white z-50 flex flex-col p-6 overflow-y-auto border border-[#d3d1d1] shadow-2xl"
             style={{
-                width: containerRect?.width || '100%',
-                left: containerRect?.left || 0
+                width: containerRect?.width ? containerRect.width * 2 : '100%', // 150% wider than container
+                left: containerRect?.left ? containerRect.left - (containerRect.width * 0.9) : 0 // Shift left by 75% of container width
             }}
         >
             <div className="flex items-center justify-between border-b border-[#e6e6e6] pb-4">

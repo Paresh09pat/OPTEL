@@ -359,7 +359,7 @@ const Chatbox = ({ onClose, isMobile = false }) => {
                   )}
                 </div>
                 <div
-                  className="grid place-items-center absolute -right-1 -bottom-1 bg-blue-600 w-6 h-6 rounded-full border-[2px] border-white cursor-pointer hover:bg-blue-700 transition-colors z-20 shadow-md"
+                  className="grid place-items-center absolute -right-0.5 -bottom-0.5 bg-blue-600 w-6 h-6 rounded-full border-[2px] border-white cursor-pointer hover:bg-blue-700 transition-colors z-20 shadow-md"
                   onClick={(e) => {
                     e.stopPropagation();
                     setStoryModalOpen(true);
