@@ -44,12 +44,12 @@ export const navigationItems = [
     path: '/events',
     icon: eventsIcon,
   },
-  {
-    id: 'forum',
-    name: 'Forum',
-    path: '/forum',
-    icon: forumIcon,
-  },
+  // {
+  //   id: 'forum',
+  //   name: 'Forum',
+  //   path: '/forum',
+  //   icon: forumIcon,
+  // },
   {
     id: 'my-groups',
     name: 'My Groups',

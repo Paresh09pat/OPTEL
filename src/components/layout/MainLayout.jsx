@@ -71,7 +71,7 @@ const MainLayout = () => {
 
       <div className="flex h-auto">
         {/* Desktop Left Sidebar - Fixed */}
-        <div className="hidden lg:block lg:w-60 xl:w-80 flex-shrink-0 fixed left-0 top-0 h-full z-30 stable-layout">
+        <div className="hidden lg:block lg:w-52 xl:w-64 flex-shrink-0 fixed left-0 top-0 h-full z-30 stable-layout">
           <SideMenu />
         </div>
 
@@ -94,12 +94,12 @@ const MainLayout = () => {
         </div>
 
         {/* Main Content */}
-        <main className="flex-1 mr-0 lg:ml-60 xl:ml-80 lg:mr-60 xl:mr-90 h-screen lg:h-screen lg:pt-0 overflow-y-auto scrollbar-hide smooth-scroll">
+        <main className="flex-1 mr-0 lg:ml-52 xl:ml-64 lg:mr-52 xl:mr-64 h-screen lg:h-screen lg:pt-0 overflow-y-auto scrollbar-hide smooth-scroll">
           <Outlet /> 
         </main>
 
         {/* Desktop Right Sidebar - Fixed */}
-        <div className="hidden lg:block lg:w-60 xl:w-90 flex-shrink-0 fixed right-0 top-0 h-full z-30">
+        <div className="hidden lg:block lg:w-52 xl:w-64 flex-shrink-0 fixed right-0 top-0 h-full z-30">
           <Chatbox />
         </div>
       </div>

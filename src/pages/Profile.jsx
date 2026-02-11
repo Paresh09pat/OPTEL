@@ -49,6 +49,7 @@ const Profile = () => {
     const [activeFilter, setActiveFilter] = useState(null); // Track active filter for UI
     const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
     const fileInputRef = useRef(null);
+    const [showAvatarPreview, setShowAvatarPreview] = useState(false);
     const navigate = useNavigate();
     const { userId: urlUserId } = useParams();
 
@@ -920,7 +921,14 @@ const Profile = () => {
     const handleAvatarClick = () => {
         if (isOwnProfile && fileInputRef.current) {
             fileInputRef.current.click();
+        } else {
+            // For non-own profiles or when not uploading, show preview
+            setShowAvatarPreview(true);
         }
+    };
+
+    const handleAvatarPreview = () => {
+        setShowAvatarPreview(true);
     };
 
     // Get counts directly from user_data
@@ -1430,14 +1438,19 @@ const Profile = () => {
                     {/* Avatar and Name */}
                     <div className="flex flex-col items-center text-center mb-6">
                         <div className="relative">
-                            <Avatar 
-                                src={userData?.user_data?.avatar_url} 
-                                name={userData?.user_data?.first_name && userData?.user_data?.last_name ? `${userData.user_data.first_name} ${userData.user_data.last_name}` : 'User'}
-                                email={userData?.user_data?.email || ''}
-                                alt="profile photo" 
-                                size="2xl"
-                                className='mt-[-5rem] z-10 border-4 border-white shadow-xl' 
-                            />
+                            <div 
+                                className="cursor-pointer hover:opacity-90 transition-opacity"
+                                onClick={handleAvatarPreview}
+                            >
+                                <Avatar 
+                                    src={userData?.user_data?.avatar_url} 
+                                    name={userData?.user_data?.first_name && userData?.user_data?.last_name ? `${userData.user_data.first_name} ${userData.user_data.last_name}` : 'User'}
+                                    email={userData?.user_data?.email || ''}
+                                    alt="profile photo" 
+                                    size="2xl"
+                                    className='mt-[-5rem] z-10 border-4 border-white shadow-xl' 
+                                />
+                            </div>
                             {isOwnProfile && (
                                 <>
                                     <input
@@ -1828,14 +1841,19 @@ const Profile = () => {
                     {/* Profile Info Section */}
                     <div className="flex items-center gap-4 lg:gap-6 mb-6">
                         <div className="relative">
-                            <Avatar 
-                                src={userData?.user_data?.avatar_url} 
-                                name={userData?.user_data?.first_name && userData?.user_data?.last_name ? `${userData.user_data.first_name} ${userData.user_data.last_name}` : 'User'}
-                                email={userData?.user_data?.email || ''}
-                                alt="profile photo" 
-                                size="2xl"
-                                className='mt-[-6rem] z-10 border-4 border-white shadow-xl' 
-                            />
+                            <div 
+                                className="cursor-pointer hover:opacity-90 transition-opacity"
+                                onClick={handleAvatarPreview}
+                            >
+                                <Avatar 
+                                    src={userData?.user_data?.avatar_url} 
+                                    name={userData?.user_data?.first_name && userData?.user_data?.last_name ? `${userData.user_data.first_name} ${userData.user_data.last_name}` : 'User'}
+                                    email={userData?.user_data?.email || ''}
+                                    alt="profile photo" 
+                                    size="2xl"
+                                    className='mt-[-6rem] z-10 border-4 border-white shadow-xl' 
+                                />
+                            </div>
                             {isOwnProfile && (
                                 <button
                                     onClick={handleAvatarClick}
@@ -2698,6 +2716,45 @@ const Profile = () => {
                     />
                 </svg>
             </button>
+        )}
+
+        {/* Avatar Preview Modal */}
+        {showAvatarPreview && userData?.user_data?.avatar_url && (
+            <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
+                <div className="relative max-w-2xl max-h-full w-full h-full flex items-center justify-center">
+                    {/* Close button */}
+                    <button
+                        onClick={() => setShowAvatarPreview(false)}
+                        className="absolute top-4 right-4 z-10 text-white hover:text-gray-300 text-2xl font-bold bg-black/50 rounded-full w-10 h-10 flex items-center justify-center transition-colors"
+                    >
+                        ×
+                    </button>
+
+                    {/* Profile Image */}
+                    <div className="text-center">
+                        <img
+                            src={userData.user_data.avatar_url}
+                            alt={`${userData?.user_data?.first_name || ''} ${userData?.user_data?.last_name || ''} profile picture`}
+                            className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl"
+                            onError={(e) => {
+                                e.target.src = "https://img.freepik.com/premium-vector/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4866.jpg?semt=ais_hybrid&w=740&q=80";
+                            }}
+                        />
+                        
+                        {/* User Info */}
+                        <div className="mt-4 text-white text-center">
+                            <h3 className="text-xl font-semibold">
+                                {userData?.user_data?.first_name && userData?.user_data?.last_name 
+                                    ? `${userData.user_data.first_name} ${userData.user_data.last_name}` 
+                                    : 'User'}
+                            </h3>
+                            {userData?.user_data?.username && (
+                                <p className="text-gray-300 text-sm mt-1">@{userData.user_data.username}</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
         )}
 
         {/* Report Post Modal */}

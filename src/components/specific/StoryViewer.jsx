@@ -867,7 +867,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
           {/* Story Image Container - Centered */}
           <div className="relative w-full h-full flex items-center justify-center">
             {/* Progress Bars - Instagram Style */}
-            <div className="absolute top-0 left-0 right-0 z-50 p-3">
+            <div className="absolute top-0 left-0 right-0 z-50 pt-2">
               {/* Story Progress Bars */}
               <div className="flex gap-2 mb-2">
                 {currentUserStories.map((story, index) => (
@@ -900,7 +900,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
 
             {/* User Info - Top Left (Instagram Style) */}
             <div 
-              className="absolute top-20 left-3 flex items-center gap-3 z-50 cursor-pointer hover:opacity-80 transition-opacity"
+              className="absolute top-8 left-3 flex items-center gap-3 z-50 cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => {
                 const userId = currentUserInfo?.user_id || currentUserInfo?.id;
                 if (userId) {
@@ -912,7 +912,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
               <img
                 src={currentUserInfo?.avatar_url || currentUserInfo?.avatar || '/user.png'}
                 alt={currentUserInfo?.name || currentUserInfo?.username || 'User'}
-                className="w-10 h-10 rounded-full border-2 border-white object-cover"
+                className="w-9 h-9 rounded-full border-2 border-white object-cover"
                 onError={(e) => {
                   e.target.onerror = null;
                   e.target.src = '/user.png';
@@ -944,7 +944,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
                 }}
                 onMouseDown={(e) => e.stopPropagation()}
                 onMouseUp={(e) => e.stopPropagation()}
-                className="absolute top-20 right-3 flex items-center gap-1.5 text-white text-xs font-semibold z-50 bg-black/40 hover:bg-black/60 px-2.5 py-1.5 rounded-full transition-colors backdrop-blur-sm min-w-[60px] justify-center"
+                className="absolute top-8 right-3 flex items-center gap-1.5 text-white text-xs font-semibold z-50 bg-black/40 hover:bg-black/60 px-2.5 py-1.5 rounded-full transition-colors backdrop-blur-sm min-w-[60px] justify-center"
               >
                 <Eye className="w-3.5 h-3.5" />
                 {loadingViewsCounts[currentStory.id] ? (
@@ -956,15 +956,15 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
             )}
 
             {/* Top gradient overlay for better visibility */}
-            <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/70 via-black/30 to-transparent pointer-events-none z-40" />
+            <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-black/70 via-black/30 to-transparent pointer-events-none z-40" />
 
             {/* Centered Story Media - Image or Video */}
             {currentStory?.type === 'video' ? (
-              <div className="relative w-full max-h-[70vh] flex items-center justify-center">
+              <div className="relative w-full max-h-[74vh] flex items-center justify-center -mt-10">
                 <video
                   ref={videoRef}
                   src={currentStory?.media_url}
-                  className="w-full max-h-[70vh] object-contain cursor-pointer"
+                  className="w-full max-h-[74vh] object-contain cursor-pointer"
                   playsInline
                   autoPlay
                   preload="auto"
@@ -1017,7 +1017,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
                 )}
               </div>
             ) : (
-              <div className="absolute top-32 bottom-0 left-0 right-0 flex items-center justify-center pb-40">
+              <div className="absolute top-20 bottom-32 left-0 right-0 flex items-center justify-center px-2">
                 <img
                   src={currentStory?.thumbnail || currentStory?.media_url}
                   alt={currentStory?.title || 'Story'}
@@ -1059,13 +1059,13 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
             )}
 
             {/* Bottom Info Section - Description and Reactions */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent backdrop-blur-sm p-6 z-50">
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent backdrop-blur-sm p-4 z-50">
               {currentStory?.title && (
-                <h4 className="text-white font-medium mb-2 drop-shadow-lg">{currentStory.title}</h4>
+                <h4 className="text-white font-medium mb-1.5 drop-shadow-lg text-sm">{currentStory.title}</h4>
               )}
               {currentStory?.description && (
                 <div 
-                  className={`text-white/90 text-sm drop-shadow-md mb-4 ${isDescriptionExpanded ? 'description-expanded-area' : ''}`}
+                  className={`text-white/90 text-sm drop-shadow-md mb-3 ${isDescriptionExpanded ? 'description-expanded-area' : ''}`}
                 >
                   {isDescriptionExpanded ? (
                     <div>
@@ -1084,7 +1084,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
                               videoRef.current.play();
                             }
                           }}
-                          className="text-white/70 hover:text-white font-medium mt-1 inline-block"
+                          className="text-white/70 hover:text-white font-medium mt-1 inline-block text-xs"
                         >
                           Show less
                         </button>
@@ -1109,7 +1109,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
                               videoRef.current.pause();
                             }
                           }}
-                          className="text-white/70 hover:text-white font-medium mt-1 inline-block"
+                          className="text-white/70 hover:text-white font-medium mt-1 inline-block text-xs"
                         >
                           Read more
                         </button>
@@ -1123,7 +1123,7 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
               <div className="relative flex items-center gap-2">
                 <button
                   data-story-reaction-button
-                  className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-black/30 hover:bg-black/50 transition-all duration-200 cursor-pointer ${storyReactions[currentStory?.id] ? 'text-blue-400' : 'text-white'
+                  className={`inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-black/30 hover:bg-black/50 transition-all duration-200 cursor-pointer ${storyReactions[currentStory?.id] ? 'text-blue-400' : 'text-white'
                     }`}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -1139,13 +1139,13 @@ const StoryViewer = ({ isOpen, onClose, stories, currentUser, onStoryDeleted, is
                 >
                   {storyReactions[currentStory?.id] ? (
                     <>
-                      <span className="text-xl">{getReactionEmoji(storyReactions[currentStory?.id])}</span>
-                      <span className="text-sm font-medium">{getReactionLabel(storyReactions[currentStory?.id])}</span>
+                      <span className="text-lg">{getReactionEmoji(storyReactions[currentStory?.id])}</span>
+                      <span className="text-xs font-medium">{getReactionLabel(storyReactions[currentStory?.id])}</span>
                     </>
                   ) : (
                     <>
-                      <ThumbsUp className="w-5 h-5" />
-                      <span className="text-sm font-medium">React</span>
+                      <ThumbsUp className="w-4 h-4" />
+                      <span className="text-xs font-medium">React</span>
                     </>
                   )}
                 </button>

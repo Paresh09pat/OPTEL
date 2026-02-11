@@ -813,7 +813,8 @@ const PostCard = ({ id, user, content, image, video, audio, file, likes, comment
         }
       );
       const data = response.data;
-      if (data?.ok === true) {
+      // Check for both ok: true and api_status: 200
+      if (data?.ok === true || data?.api_status === 200) {
         setCommentInput('');
         setShowOptionsMenu(false);
         setShowEmojiPicker(false);

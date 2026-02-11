@@ -3,7 +3,7 @@ import { BsImage, BsCameraVideo, BsFolder } from 'react-icons/bs';
 import { BiBarChartAlt2 } from 'react-icons/bi';
 import { CiCirclePlus } from 'react-icons/ci';
 import { Icon } from '@iconify/react';
-import { BarChart3, MapPin, Send, Smile, X } from 'lucide-react';
+import { BarChart3, MapPin, Send, Smile, X, Globe, Users, Lock, ChevronDown } from 'lucide-react';
 import { Palette } from 'lucide-react';
 import axios from 'axios';
 import { useUser } from '../../../context/UserContext';
@@ -931,20 +931,21 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
                         placeholder={showPoll ? "Share something with a poll..." : isPagePost ? "Share something on this page..." : "Share something"}
                         value={postText}
                         onChange={(e) => setPostText(e.target.value)}
+                        onClick={() => setShowPopup(true)}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                                 createNewPost(postText, selectedFiles, { showPoll, pollQuestion, pollOptions, pollDuration }, true);
                             }
                         }}
-                        className="w-full pl-16 pr-12 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full pl-16 pr-12 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                        readOnly
                     />
 
                     <button
                         onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            // Don't open modal, just try to create post
-                            createNewPost(postText, selectedFiles, { showPoll, pollQuestion, pollOptions, pollDuration }, true);
+                            setShowPopup(true);
                         }}
                         className="absolute right-3 top-1/2 -translate-y-1/2 bg-white cursor-pointer"
                     >
@@ -983,7 +984,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
                 {/* Action Buttons */}
                 <div className="flex justify-around px-2 pt-4 text-sm text-gray-600">
                     <button
-                        onClick={() => handleFileSelect('image')}
+                        onClick={() => setShowPopup(true)}
                         className="flex flex-col items-center hover:text-green-600 cursor-pointer"
                     >
                         <BsImage className="w-5 h-5 text-green-500" />
@@ -991,7 +992,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
                     </button>
 
                     <button
-                        onClick={() => handleFileSelect('video')}
+                        onClick={() => setShowPopup(true)}
                         className="flex flex-col items-center hover:text-blue-600 cursor-pointer"
                     >
                         <BsCameraVideo className="w-5 h-5 text-blue-500" />
@@ -999,7 +1000,7 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
                     </button>
 
                     <button
-                        onClick={() => handleFileSelect('file')}
+                        onClick={() => setShowPopup(true)}
                         className="flex flex-col items-center hover:text-orange-600 cursor-pointer"
                     >
                         <BsFolder className="w-5 h-5 text-orange-500" />
@@ -1232,6 +1233,11 @@ const CreatePostSection = ({ fetchNewFeeds, showNotification, pageId, isPagePost
                 // Page post props
                 isPagePost={isPagePost}
                 pageId={pageId}
+                // File handling props
+                selectedFiles={selectedFiles}
+                setSelectedFiles={setSelectedFiles}
+                handleFileSelect={handleFileSelect}
+                handleRemoveFile={handleRemoveFile}
             />
         </>
     );
@@ -1262,15 +1268,15 @@ const CreatePostPopup = ({
     coloredBackgrounds, fetchColoredBackgrounds, showColoredPostModal, setShowColoredPostModal,
     selectedColorBg, setSelectedColorBg, coloredPostText, setColoredPostText,
     // Page post props
-    isPagePost = false, pageId
+    isPagePost = false, pageId,
+    // File handling props
+    selectedFiles, setSelectedFiles, handleFileSelect, handleRemoveFile
 }) => {
     const { userData } = useUser();
     const [postText, setPostText] = useState('');
     const [showSharing, setShowSharing] = useState(false);
     const [commentsEnabled, setCommentsEnabled] = useState(false);
     const [showColorSection, setShowColorSection] = useState(false);
-
-    const [selectedFiles, setSelectedFiles] = useState([]);
 
     // Fetch colored backgrounds when popup opens
     useEffect(() => {
@@ -1279,66 +1285,6 @@ const CreatePostPopup = ({
         }
     }, [isOpen, coloredBackgrounds.length, fetchColoredBackgrounds]);
 
-    const handleFileSelect = (type) => {
-        const input = document.createElement('input');
-        input.type = 'file';
-
-        if (type === 'image') {
-            input.accept = 'image/*';
-            input.multiple = true;
-        } else if (type === 'video') {
-            input.accept = 'video/*';
-        } else if (type === 'audio') {
-            input.accept = 'audio/*';
-        } else {
-            input.accept = '*';
-        }
-
-        input.onchange = (e) => {
-            const files = Array.from(e.target.files);
-            console.log("Popup file selection - type:", type, "files:", files);
-            if (files.length) {
-                if (type === 'image') {
-                    // Add all images
-                    const newFiles = files.map((file) => ({
-                        name: file.name,
-                        type,
-                        file,
-                        preview: URL.createObjectURL(file), // Create preview URL once
-                    }));
-                    console.log("Popup adding image files:", newFiles);
-                    setSelectedFiles((prev) => {
-                        const updated = [...prev, ...newFiles];
-                        console.log("Popup selectedFiles updated:", updated);
-                        return updated;
-                    });
-                } else {
-                    // Replace existing for video/audio/file
-                    const newFile = {
-                        name: files[0].name,
-                        type,
-                        file: files[0],
-                        preview: URL.createObjectURL(files[0]) // Create preview URL once
-                    };
-                    console.log("Popup replacing with file:", newFile);
-                    setSelectedFiles([newFile]);
-                }
-            }
-        };
-
-        input.click();
-    };
-
-    const removeFile = (index) => {
-        setSelectedFiles((prev) => {
-            const fileToRemove = prev[index];
-            // Revoke the object URL to prevent memory leaks
-            if (fileToRemove && fileToRemove.preview) {
-                URL.revokeObjectURL(fileToRemove.preview);
-            }
-            return prev.filter((_, i) => i !== index);
-        });
-    };
     // Handle Escape key to close popup
     useEffect(() => {
         const handleEscape = (e) => {
@@ -1395,7 +1341,7 @@ const CreatePostPopup = ({
             >
                 {/* Header */}
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 md:p-6 border-b border-gray-200 gap-3">
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-3 w-full md:w-auto">
                         <img
                             src={userData?.avatar_url || "https://img.freepik.com/premium-vector/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4866.jpg?semt=ais_hybrid&w=740&q=80"}
                             alt="Profile"
@@ -1404,15 +1350,16 @@ const CreatePostPopup = ({
                                 e.target.src = "https://img.freepik.com/premium-vector/man-avatar-profile-picture-isolated-background-avatar-profile-picture-man_1293239-4866.jpg?semt=ais_hybrid&w=740&q=80";
                             }}
                         />
-                        <div className="flex items-center space-x-2">
+                        <div className="flex flex-col flex-1">
                             <h2 className="text-xl font-semibold text-gray-800">Create a Post</h2>
-                            {showPoll && (
-                                <div className="flex items-center px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
-                                    <BiBarChartAlt2 className="w-3 h-3 mr-1" />
-                                    Poll ({pollOptions.filter(opt => opt.trim()).length} options)
-                                </div>
-                            )}
+                            <PrivacySelector postPrivacy={postPrivacy} setPostPrivacy={setPostPrivacy} compact />
                         </div>
+                        {showPoll && (
+                            <div className="flex items-center px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+                                <BiBarChartAlt2 className="w-3 h-3 mr-1" />
+                                Poll ({pollOptions.filter(opt => opt.trim()).length} options)
+                            </div>
+                        )}
                     </div>
                     <div className="flex items-center space-x-2 md:space-x-4">
                         <button
@@ -1757,7 +1704,7 @@ const CreatePostPopup = ({
 
                                                 {/* Remove Button */}
                                                 <button
-                                                    onClick={() => removeFile(index)}
+                                                    onClick={() => handleRemoveFile(index)}
                                                     className="ml-2 p-1 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
                                                     title="Remove"
                                                 >
@@ -1773,10 +1720,10 @@ const CreatePostPopup = ({
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                             {/* Image */}
                             <button
-                                className="flex items-center space-x-3 p-3 cursor-pointer"
+                                className="flex items-center space-x-3 p-3 cursor-pointer transition-all duration-200 hover:bg-green-50 rounded-lg"
                                 onClick={() => handleFileSelect('image')}
                             >
-                                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center transition-colors group-hover:bg-green-200">
                                     <BsImage className="w-5 h-5 text-green-600" />
                                 </div>
                                 <span className="text-gray-700 font-medium">Image</span>
@@ -1784,10 +1731,10 @@ const CreatePostPopup = ({
 
                             {/* Video */}
                             <button
-                                className="flex items-center space-x-3 p-3 cursor-pointer"
+                                className="flex items-center space-x-3 p-3 cursor-pointer transition-all duration-200 hover:bg-blue-50 rounded-lg"
                                 onClick={() => handleFileSelect('video')}
                             >
-                                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center transition-colors group-hover:bg-blue-200">
                                     <BsCameraVideo className="w-5 h-5 text-blue-600" />
                                 </div>
                                 <span className="text-gray-700 font-medium">Video</span>
@@ -1795,10 +1742,10 @@ const CreatePostPopup = ({
 
                             {/* File */}
                             <button
-                                className="flex items-center space-x-3 p-3 cursor-pointer"
+                                className="flex items-center space-x-3 p-3 cursor-pointer transition-all duration-200 hover:bg-orange-50 rounded-lg"
                                 onClick={() => handleFileSelect('file')}
                             >
-                                <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                                <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center transition-colors group-hover:bg-orange-200">
                                     <BsFolder className="w-5 h-5 text-orange-600" />
                                 </div>
                                 <span className="text-gray-700 font-medium">File</span>
@@ -1806,7 +1753,7 @@ const CreatePostPopup = ({
 
                             {/* Poll */}
                             <button
-                                className={`flex items-center space-x-3 p-3 cursor-pointer transition-all duration-200 ${showPoll ? 'bg-purple-100 rounded-lg border-2 border-purple-300' : 'hover:bg-purple-50'
+                                className={`flex items-center space-x-3 p-3 cursor-pointer transition-all duration-200 ${showPoll ? 'bg-purple-100 rounded-lg border-2 border-purple-300' : 'hover:bg-purple-50 rounded-lg'
                                     }`}
                                 onClick={() => {
                                     console.log("showPoll", showPoll)
@@ -1833,10 +1780,10 @@ const CreatePostPopup = ({
 
                             {/* Audio */}
                             <button
-                                className="flex items-center space-x-3 p-3 cursor-pointer"
+                                className="flex items-center space-x-3 p-3 cursor-pointer transition-all duration-200 hover:bg-red-50 rounded-lg"
                                 onClick={() => handleFileSelect('audio')}
                             >
-                                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center transition-colors group-hover:bg-red-200">
                                     <Icon icon="mdi:music" className="w-5 h-5 text-red-600" />
                                 </div>
                                 <span className="text-gray-700 font-medium">Audio</span>
@@ -1844,7 +1791,7 @@ const CreatePostPopup = ({
 
                             {/* Reactions/Activities - Main Button */}
                             <button
-                                className={`flex items-center space-x-3 p-3 cursor-pointer transition-all duration-200 ${selectedFeeling || selectedActivity ? 'bg-teal-100 rounded-lg border-2 border-teal-300' : 'hover:bg-teal-50'
+                                className={`flex items-center space-x-3 p-3 cursor-pointer transition-all duration-200 ${selectedFeeling || selectedActivity ? 'bg-teal-100 rounded-lg border-2 border-teal-300' : 'hover:bg-teal-50 rounded-lg'
                                     }`}
                                 onClick={() => {
                                     // Clear other selections when opening reactions modal
@@ -2745,6 +2692,73 @@ const ColoredPostModal = ({ isOpen, onClose, colorBg, postText, setPostText, onP
                     </button>
                 </div>
             </div>
+        </div>
+    );
+};
+
+// Privacy Selector Component
+const PrivacySelector = ({ postPrivacy, setPostPrivacy, compact = false }) => {
+    const [isOpen, setIsOpen] = useState(false);
+
+    const privacyOptions = [
+        { value: '0', label: 'Anyone', icon: Globe, description: 'Public post visible to everyone' },
+        { value: '1', label: 'Friends', icon: Users, description: 'Only visible to your friends' },
+        { value: '2', label: 'Only Me', icon: Lock, description: 'Only you can see this post' }
+    ];
+
+    const selectedOption = privacyOptions.find(opt => opt.value === postPrivacy) || privacyOptions[0];
+    const SelectedIcon = selectedOption.icon;
+
+    return (
+        <div className="relative">
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className={`flex items-center gap-2 ${compact ? 'text-xs text-gray-600 hover:text-gray-800' : 'px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50'} transition-colors`}
+            >
+                <SelectedIcon className={compact ? "w-3 h-3" : "w-4 h-4"} />
+                <span className="font-medium">{selectedOption.label}</span>
+                <ChevronDown className={`${compact ? "w-3 h-3" : "w-4 h-4"} transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isOpen && (
+                <>
+                    <div
+                        className="fixed inset-0 z-10"
+                        onClick={() => setIsOpen(false)}
+                    />
+                    <div className="absolute left-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-20 overflow-hidden">
+                        {privacyOptions.map((option) => {
+                            const Icon = option.icon;
+                            return (
+                                <button
+                                    key={option.value}
+                                    onClick={() => {
+                                        setPostPrivacy(option.value);
+                                        setIsOpen(false);
+                                    }}
+                                    className={`w-full flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors ${postPrivacy === option.value ? 'bg-blue-50' : ''
+                                        }`}
+                                >
+                                    <Icon className={`w-5 h-5 mt-0.5 flex-shrink-0 ${postPrivacy === option.value ? 'text-blue-600' : 'text-gray-600'
+                                        }`} />
+                                    <div className="flex-1 text-left">
+                                        <div className={`font-medium ${postPrivacy === option.value ? 'text-blue-600' : 'text-gray-800'
+                                            }`}>
+                                            {option.label}
+                                        </div>
+                                        <div className="text-xs text-gray-500 mt-0.5">
+                                            {option.description}
+                                        </div>
+                                    </div>
+                                    {postPrivacy === option.value && (
+                                        <Icon icon="mdi:check" className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </>
+            )}
         </div>
     );
 };

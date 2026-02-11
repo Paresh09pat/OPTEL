@@ -305,7 +305,7 @@ const Chatbox = ({ onClose, isMobile = false }) => {
 
 
   return (
-    <div ref={containerRef} className={`relative bg-[#EDF6F9] px-6 py-8 h-full overflow-y-auto scrollbar-hide smooth-scroll pt-0  ${isMobile ? 'w-full' : 'w-full'
+    <div ref={containerRef} className={`relative bg-[#EDF6F9] px-1 py-8 h-full overflow-y-auto scrollbar-hide smooth-scroll pt-0  ${isMobile ? 'w-full' : 'w-full'
       }`}>
       {/* Mobile Close Button */}
       {isMobile && (
