@@ -13,7 +13,7 @@ const BlogCard = ({ blog, onClick }) => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-md overflow-hidden border hover:shadow-lg transition cursor-pointer" onClick={onClick}>
+    <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-300 hover:shadow-lg transition cursor-pointer" onClick={onClick}>
       {/* Thumbnail */}
       <div className="relative">
         <img

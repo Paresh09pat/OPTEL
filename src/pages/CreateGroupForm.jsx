@@ -249,21 +249,30 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
 
 
   return (
-    <div className="min-h-screen  flex items-center justify-center relative ">
-      <div className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl ">
+    <div className="bg-[#EDF6F9] w-full min-h-screen flex items-center justify-start flex-col">
+      {/* Sticky Header */}
+      <div className="w-full h-[98px] sticky pt-8 top-0 z-11 bg-[#EDF6F9]">
+        <div className="flex items-center justify-between h-full px-4 md:px-7 flex-wrap gap-4">
+          <h1 className="text-2xl font-bold text-[#212121]">Create Group</h1>
+          <div className="flex gap-4 items-center">
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="border border-[#808080] py-1.5 px-4 rounded-2xl flex items-center gap-2 text-[#808080] text-base font-medium cursor-pointer hover:bg-gray-100 transition"
+              >
+                ← Back to Groups
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Card */}
+      <div className="w-[95%] md:w-[90%] max-w-6xl bg-white flex flex-col gap-6 rounded-xl my-6 shadow-md overflow-hidden">
         {/* Header with Wave Pattern */}
-        <div className="relative  h-64 flex items-start justify-end px-8 md:px-16">
-        {onClose && (
-            <button
-              onClick={onClose}
-              className="z-10 absolute flex -right-2 -top-2 w-10 h-10 items-center justify-center cursor-pointer text-gray-600 bg-gray-100 rounded-full transition-colors"
-            >
-                
-              <FiX className="w-6 h-6" />
-            </button>
-          )}
+        <div className="relative h-64 flex items-start justify-end px-8 md:px-16">
           {/* Wave SVG */}
-       <img src="/Vectorgroup.svg" alt="vector" className='absolute bottom-0 right-0 top-0 w-full' />
+          <img src="/Vectorgroup.svg" alt="vector" className='absolute bottom-0 right-0 top-0 w-full' />
           <h1 className="text-xl md:text-2xl font-bold text-white z-10 pt-6">
             Create Group
           </h1>
@@ -282,7 +291,7 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
               value={formData.groupName}
               onChange={handleChange}
               placeholder="Group Name"
-              className="w-full p-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-transparent"
+              className="w-full p-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -324,7 +333,7 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
               onChange={handleChange}
               placeholder="Group Description"
               rows={5}
-              className="w-full p-3 px-4 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-transparent"
+              className="w-full p-3 px-4 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -338,7 +347,7 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
                 name="groupType"
                 value={formData.groupType}
                 onChange={handleChange}
-                className="w-full p-3 px-4 border border-gray-300 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-transparent"
+                className="w-full p-3 px-4 border border-gray-300 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 {privacyOptions.map((option) => (
                   <option key={option} value={option}>
@@ -374,7 +383,7 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
                 name="joinPrivacy"
                 value={formData.joinPrivacy}
                 onChange={handleChange}
-                className="w-full p-3 px-4 border border-gray-300 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-transparent"
+                className="w-full p-3 px-4 border border-gray-300 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 {joinPrivacyOptions.map((option) => (
                   <option key={option} value={option}>
@@ -417,7 +426,7 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
                     groupSubCategory: '' // Reset subcategory when category changes
                   }));
                 }}
-                className="w-full p-3 px-4 border border-gray-300 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-transparent"
+                className="w-full p-3 px-4 border border-gray-300 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Select category</option>
                 {categories.map((category) => (
@@ -455,7 +464,7 @@ const CreateGroupForm = ({ onClose, onSuccess }) => {
                   name="groupSubCategory"
                   value={formData.groupSubCategory}
                   onChange={handleChange}
-                  className="w-full p-3 px-4 border border-gray-300 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-transparent"
+                  className="w-full p-3 px-4 border border-gray-300 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="">Select sub category</option>
                   {subCategories.map((subCategory) => (

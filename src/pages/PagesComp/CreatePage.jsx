@@ -187,10 +187,13 @@ const CreatePage = () => {
             {/* Sticky Header */}
             <div className="w-full h-[98px] sticky pt-8 top-0 z-11 bg-[#EDF6F9]">
                 <div className="flex items-center justify-between h-full px-4 md:px-7 flex-wrap gap-4">
-                    <h1 className="text-2xl font-bold text-[#212121]">My Pages</h1>
+                    <h1 className="text-2xl font-bold text-[#212121]">Create Page</h1>
                     <div className="flex gap-4 items-center">
-                        <button className="border border-[#808080] py-1.5 px-4 rounded-2xl flex items-center gap-2 text-[#808080] text-base font-medium cursor-pointer hover:bg-gray-100 transition">
-                            <MdOutlineAddPhotoAlternate className="text-lg" /> Create Page
+                        <button
+                            onClick={() => navigate('/pagescomp/mainpages')}
+                            className="border border-[#808080] py-1.5 px-4 rounded-2xl flex items-center gap-2 text-[#808080] text-base font-medium cursor-pointer hover:bg-gray-100 transition"
+                        >
+                            ← Back to Pages
                         </button>
                     </div>
                 </div>
@@ -224,7 +227,7 @@ const CreatePage = () => {
                         <input
                             type="text"
                             id="page-name"
-                            className="w-full p-3 px-4  border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-transparent"
+                            className="w-full p-3 px-4  border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder=""
                             value={pageName}
                             onChange={(e) => setPageName(e.target.value)}
@@ -272,7 +275,7 @@ const CreatePage = () => {
                         <div className="relative">
                             <select
                                 id="page-category"
-                                className="w-full p-3 px-4  border border-gray-300 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-transparent"
+                                className="w-full p-3 px-4  border border-gray-300 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 value={selectedCategoryId}
                                 onChange={(e) => {
                                     const selectedId = e.target.value;
@@ -326,7 +329,7 @@ const CreatePage = () => {
                         <div className="relative">
                             <select
                                 id="sub-category"
-                                className="w-full p-3 px-4  border border-gray-300 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full p-3 px-4  border border-gray-300 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                                 value={selectedSubCategoryId}
                                 onChange={(e) => {
                                     setSelectedSubCategoryId(e.target.value);
@@ -370,7 +373,7 @@ const CreatePage = () => {
                         <textarea
                             id="page-description"
                             rows="5"
-                            className="w-full p-3 px-4  border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-black-500 focus:border-transparent"
+                            className="w-full p-3 px-4  border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder=""
                             value={pageDescription}
                             onChange={(e) => setPageDescription(e.target.value)}

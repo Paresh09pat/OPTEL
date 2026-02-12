@@ -177,14 +177,14 @@ const CreateBlog = () => {
                     <div className="flex flex-col gap-2">
                         <label
                             htmlFor="blog-title"
-                            className="text-lg text-black flex items-center gap-2"
+                            className="text-base text-gray-600 font-medium"
                         >
-                            Title : <span className="text-red-500">*</span>
+                            Title
                         </label>
                         <input
                             type="text"
                             id="blog-title"
-                            className="w-full p-2 px-4 border border-[#212121] rounded-full"
+                            className="w-full p-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder="Enter blog title"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
@@ -196,14 +196,14 @@ const CreateBlog = () => {
                     <div className="flex flex-col gap-2">
                         <label
                             htmlFor="blog-description"
-                            className="text-lg text-black flex items-center gap-2"
+                            className="text-base text-gray-600 font-medium"
                         >
-                            Description : <span className="text-red-500">*</span>
+                            Description
                         </label>
                         <textarea
                             id="blog-description"
                             rows="3"
-                            className="w-full p-2 px-4 border border-[#212121] rounded-xl"
+                            className="w-full p-3 px-4 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder="Enter short description"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
@@ -215,14 +215,14 @@ const CreateBlog = () => {
                     <div className="flex flex-col gap-2">
                         <label
                             htmlFor="blog-content"
-                            className="text-lg text-black flex items-center gap-2"
+                            className="text-base text-gray-600 font-medium"
                         >
-                            Content : <span className="text-red-500">*</span>
+                            Content
                         </label>
                         <textarea
                             id="blog-content"
                             rows="10"
-                            className="w-full p-2 px-4 border border-[#212121] rounded-xl"
+                            className="w-full p-3 px-4 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder="Enter full blog content..."
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
@@ -234,14 +234,14 @@ const CreateBlog = () => {
                     <div className="flex flex-col gap-2">
                         <label
                             htmlFor="blog-category"
-                            className="text-lg text-black flex items-center gap-2"
+                            className="text-base text-gray-600 font-medium"
                         >
-                            Category : <span className="text-red-500">*</span>
+                            Category
                         </label>
                         <div className="relative">
                             <select
                                 id="blog-category"
-                                className="w-full p-2 px-4 border border-[#212121] rounded-full appearance-none cursor-pointer"
+                                className="w-full p-3 px-4 border border-gray-300 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 value={category}
                                 onChange={(e) => setCategory(e.target.value)}
                                 required
@@ -278,25 +278,25 @@ const CreateBlog = () => {
                     <div className="flex flex-col gap-2">
                         <label
                             htmlFor="blog-tags"
-                            className="text-lg text-black flex items-center gap-2"
+                            className="text-base text-gray-600 font-medium"
                         >
-                            Tags :
+                            Tags
                         </label>
                         <input
                             type="text"
                             id="blog-tags"
-                            className="w-full p-2 px-4 border border-[#212121] rounded-full"
+                            className="w-full p-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder="Enter tags separated by commas (e.g., tech,programming)"
                             value={tags}
                             onChange={(e) => setTags(e.target.value)}
                         />
-                        <p className="text-sm text-gray-500">Separate multiple tags with commas</p>
+                        <p className="text-sm text-gray-400">Separate multiple tags with commas</p>
                     </div>
 
                     {/* Active Status */}
                     <div className="flex flex-col gap-2">
-                        <label className="text-lg text-black flex items-center gap-2">
-                            Status :
+                        <label className="text-base text-gray-600 font-medium">
+                            Status
                         </label>
                         <div className="flex items-center gap-4">
                             <label className="flex items-center gap-2 cursor-pointer">
@@ -308,7 +308,7 @@ const CreateBlog = () => {
                                     onChange={(e) => setActive(parseInt(e.target.value))}
                                     className="cursor-pointer"
                                 />
-                                <span>Active</span>
+                                <span className="text-gray-700">Active</span>
                             </label>
                             <label className="flex items-center gap-2 cursor-pointer">
                                 <input
@@ -319,17 +319,17 @@ const CreateBlog = () => {
                                     onChange={(e) => setActive(parseInt(e.target.value))}
                                     className="cursor-pointer"
                                 />
-                                <span>Draft</span>
+                                <span className="text-gray-700">Draft</span>
                             </label>
                         </div>
                     </div>
 
                     {/* Submit Button */}
-                    <div className="text-center">
+                    <div className="flex items-center justify-center">
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-[16rem] md:w-[20rem] h-[50px] border border-[#4A90E2] text-[#4A90E2] font-semibold text-[18px] md:text-[20px] py-2 px-8 rounded-lg hover:bg-[#4A90E2] hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-[16rem] md:w-[15rem] h-[50px] bg-blue-600 text-white font-semibold text-[15px] md:text-[18px] py-2 px-8 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {loading ? 'Publishing...' : 'Publish Blog'}
                         </button>

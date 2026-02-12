@@ -359,7 +359,7 @@ const Chatbox = ({ onClose, isMobile = false }) => {
                   )}
                 </div>
                 <div
-                  className="grid place-items-center absolute -right-0.5 -bottom-0.5 bg-blue-600 w-6 h-6 rounded-full border-[2px] border-white cursor-pointer hover:bg-blue-700 transition-colors z-20 shadow-md"
+                  className="grid place-items-center absolute left-1/2 -translate-x-1/2 -bottom-0.5 bg-blue-600 w-6 h-6 rounded-full border-[2px] border-white cursor-pointer hover:bg-blue-700 transition-colors z-20 shadow-md"
                   onClick={(e) => {
                     e.stopPropagation();
                     setStoryModalOpen(true);
@@ -533,12 +533,12 @@ const Chatbox = ({ onClose, isMobile = false }) => {
           <div className="flex items-center gap-4">
             <button
               onClick={() => setActiveSection('individual')}
-              className={`relative flex items-center gap-2 border xl:px-4 lg:px-2 px-2 py-1 rounded-xl cursor-pointer transition-all duration-200 ${activeSection === 'individual'
+              className={`group relative flex items-center gap-2 border xl:px-4 lg:px-2 px-2 py-1 rounded-xl cursor-pointer transition-all duration-200 ${activeSection === 'individual'
                 ? 'border-[#212121] bg-[#f0f0f0]'
-                : 'border-[#d3d1d1] bg-white'
+                : 'border-[#d3d1d1] bg-white hover:border-blue-500'
                 }`}
             >
-              <FaUser className={`size-[20px] xl:size-[24px] lg:size-[20px] ${activeSection === 'individual' ? 'text-[#212121]' : 'text-[#808080]'
+              <FaUser className={`size-[20px] xl:size-[24px] lg:size-[20px] transition-colors ${activeSection === 'individual' ? 'text-[#212121]' : 'text-[#808080] group-hover:text-blue-500'
                 }`} />
               {activeSection === 'individual' && (
                 <span className="text-sm font-medium text-[#212121]">Individual</span>
@@ -547,12 +547,12 @@ const Chatbox = ({ onClose, isMobile = false }) => {
 
             <button
               onClick={() => setActiveSection('groups')}
-              className={`relative flex items-center gap-2 border xl:px-4 lg:px-2 px-2 py-1 rounded-xl cursor-pointer transition-all duration-200 ${activeSection === 'groups'
+              className={`group relative flex items-center gap-2 border xl:px-4 lg:px-2 px-2 py-1 rounded-xl cursor-pointer transition-all duration-200 ${activeSection === 'groups'
                 ? 'border-[#212121] bg-[#f0f0f0]'
-                : 'border-[#d3d1d1] bg-white'
+                : 'border-[#d3d1d1] bg-white hover:border-blue-500'
                 }`}
             >
-              <FaUsers className={`size-[20px] xl:size-[24px] lg:size-[20px] ${activeSection === 'groups' ? 'text-[#212121]' : 'text-[#808080]'
+              <FaUsers className={`size-[20px] xl:size-[24px] lg:size-[20px] transition-colors ${activeSection === 'groups' ? 'text-[#212121]' : 'text-[#808080] group-hover:text-blue-500'
                 }`} />
               {activeSection === 'groups' && (
                 <span className="text-sm font-medium text-[#212121]">Groups</span>

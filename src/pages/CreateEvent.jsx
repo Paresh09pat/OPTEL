@@ -95,42 +95,48 @@ const CreateEvent = () => {
   };
 
   return (
-    <div className="bg-[#EDF6F9] w-full min-h-screen py-8 flex flex-col gap-4">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 md:px-7 flex-col md:flex-row gap-4">
-        <h1 className="text-2xl font-bold text-[#212121]">Create Event</h1>
-        <button
-          onClick={() => navigate('/events')}
-          className="border border-[#d3d1d1] cursor-pointer py-1.5 px-3.5 rounded-2xl flex items-center gap-1.5 hover:bg-white transition-colors"
-        >
-          <span className="text-[#808080] text-base font-medium">Back to Events</span>
-        </button>
+    <div className="bg-[#EDF6F9] w-full min-h-screen flex items-center justify-start flex-col">
+      {/* Sticky Header */}
+      <div className="w-full h-[98px] sticky pt-8 top-0 z-11 bg-[#EDF6F9]">
+        <div className="flex items-center justify-between h-full px-4 md:px-7 flex-wrap gap-4">
+          <h1 className="text-2xl font-bold text-[#212121]">Create Event</h1>
+          <div className="flex gap-4 items-center">
+            <button
+              onClick={() => navigate('/events')}
+              className="border border-[#808080] py-1.5 px-4 rounded-2xl flex items-center gap-2 text-[#808080] text-base font-medium cursor-pointer hover:bg-gray-100 transition"
+            >
+              ← Back to Events
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Form Container */}
-      <div className="w-[90%] lg:w-full mx-auto flex flex-col gap-4 bg-white rounded-lg overflow-hidden">
-        {/* Hero Section with Wave Background */}
-        <div className="relative w-full h-[10rem] md:h-[18rem] flex items-start justify-end p-6 md:p-16 overflow-hidden">
-          <img 
-            src="/Vectorgroup.svg" 
-            alt="vector" 
-            className='absolute bottom-0 right-0 top-0 left-0 w-full h-full object-cover' 
-          />
-          <h2 className="text-3xl text-white font-bold z-10 relative">Create Event</h2>
+      {/* Main Card */}
+      <div className="w-[95%] md:w-[90%] max-w-6xl bg-white flex flex-col gap-6 rounded-xl my-6 shadow-md overflow-hidden">
+        {/* Hero Banner */}
+        <div className="relative h-64 flex items-start justify-end px-8 md:px-16">
+          {/* Wave SVG */}
+          <img src="/Vectorgroup.svg" alt="vector" className='absolute bottom-0 right-0 top-0 w-full' />
+          <h2 className="text-xl md:text-2xl font-bold text-white z-10 pt-6">
+            Create Event
+          </h2>
         </div>
 
-        {/* Form */}
-        <form className="w-full mx-auto flex flex-col gap-6 p-8" onSubmit={handleSubmit}>
+        {/* Form Section */}
+        <form
+          onSubmit={handleSubmit}
+          className="w-full max-w-3xl mx-auto flex flex-col gap-6 p-4 md:p-8"
+        >
           {/* Event Name */}
-          <div className="w-full flex flex-col gap-2">
-            <label htmlFor="event-name" className="text-lg text-black flex items-center gap-2">
-              Event Name : <span className="text-red-500">*</span>
+          <div className="flex flex-col gap-2">
+            <label htmlFor="event-name" className="text-base text-gray-600 font-medium">
+              Event Name
             </label>
             <input
               type="text"
               id="event-name"
-              className="w-full p-2 px-4 border border-[#d3d1d1] rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Event Name"
+              className="w-full p-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Enter event name"
               value={eventName}
               onChange={(e) => setEventName(e.target.value)}
               required
@@ -138,14 +144,15 @@ const CreateEvent = () => {
           </div>
 
           {/* Event Description */}
-          <div className="w-full flex flex-col gap-2">
-            <label htmlFor="event-description" className="text-lg text-black flex items-center gap-2">
-              Event Description : <span className="text-red-500">*</span>
+          <div className="flex flex-col gap-2">
+            <label htmlFor="event-description" className="text-base text-gray-600 font-medium">
+              Event Description
             </label>
             <textarea
               id="event-description"
-              className="w-full p-2 px-4 border border-[#d3d1d1] rounded-xl min-h-[100px] resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Event Description"
+              rows="5"
+              className="w-full p-3 px-4 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Enter event description"
               value={eventDescription}
               onChange={(e) => setEventDescription(e.target.value)}
               required
@@ -153,15 +160,15 @@ const CreateEvent = () => {
           </div>
 
           {/* Event Location */}
-          <div className="w-full flex flex-col gap-2">
-            <label htmlFor="event-location" className="text-lg text-black flex items-center gap-2">
-              Event Location : <span className="text-red-500">*</span>
+          <div className="flex flex-col gap-2">
+            <label htmlFor="event-location" className="text-base text-gray-600 font-medium">
+              Event Location
             </label>
             <input
               type="text"
               id="event-location"
-              className="w-full p-2 px-4 border border-[#d3d1d1] rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Event Location"
+              className="w-full p-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Enter event location"
               value={eventLocation}
               onChange={(e) => setEventLocation(e.target.value)}
               required
@@ -169,16 +176,16 @@ const CreateEvent = () => {
           </div>
 
           {/* Start Date and Time */}
-          <div className="w-full flex flex-col md:flex-row gap-4">
-            <div className="w-full flex flex-col gap-2">
-              <label htmlFor="start-date" className="text-lg text-black flex items-center gap-2">
-                Start Date : <span className="text-red-500">*</span>
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 flex flex-col gap-2">
+              <label htmlFor="start-date" className="text-base text-gray-600 font-medium">
+                Start Date
               </label>
               <div className="relative">
                 <input
                   type="date"
                   id="start-date"
-                  className="w-full p-2 px-4 border border-[#d3d1d1] rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-4 [&::-webkit-calendar-picker-indicator]:w-5 [&::-webkit-calendar-picker-indicator]:h-5 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                  className="w-full p-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-4 [&::-webkit-calendar-picker-indicator]:w-5 [&::-webkit-calendar-picker-indicator]:h-5 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                   required
@@ -188,25 +195,27 @@ const CreateEvent = () => {
                 </svg>
               </div>
             </div>
-            <TimePicker
-              value={startTime}
-              onChange={setStartTime}
-              label="Start Time :"
-              required
-            />
+            <div className="flex-1">
+              <TimePicker
+                value={startTime}
+                onChange={setStartTime}
+                label="Start Time"
+                required
+              />
+            </div>
           </div>
 
           {/* End Date and Time */}
-          <div className="w-full flex flex-col md:flex-row gap-4">
-            <div className="w-full flex flex-col gap-2">
-              <label htmlFor="end-date" className="text-lg text-black flex items-center gap-2">
-                End Date : <span className="text-red-500">*</span>
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 flex flex-col gap-2">
+              <label htmlFor="end-date" className="text-base text-gray-600 font-medium">
+                End Date
               </label>
               <div className="relative">
                 <input
                   type="date"
                   id="end-date"
-                  className="w-full p-2 px-4 border border-[#d3d1d1] rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-4 [&::-webkit-calendar-picker-indicator]:w-5 [&::-webkit-calendar-picker-indicator]:h-5 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                  className="w-full p-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-4 [&::-webkit-calendar-picker-indicator]:w-5 [&::-webkit-calendar-picker-indicator]:h-5 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
                   required
@@ -216,18 +225,20 @@ const CreateEvent = () => {
                 </svg>
               </div>
             </div>
-            <TimePicker
-              value={endTime}
-              onChange={setEndTime}
-              label="End Time :"
-              required
-            />
+            <div className="flex-1">
+              <TimePicker
+                value={endTime}
+                onChange={setEndTime}
+                label="End Time"
+                required
+              />
+            </div>
           </div>
 
           {/* Media Upload Section */}
-          <div className="w-full flex flex-col gap-2">
-            <label className="text-lg text-black flex items-center gap-2">
-              Event Media : <span className="text-red-500">*</span>
+          <div className="flex flex-col gap-2">
+            <label className="text-base text-gray-600 font-medium">
+              Event Image
             </label>
 
             <input
@@ -238,7 +249,7 @@ const CreateEvent = () => {
               onChange={handleFileChange}
             />
 
-            <div className="w-full min-h-[200px] border border-[#d3d1d1] rounded-xl flex flex-col items-center justify-center gap-2 text-[#555] p-4">
+            <div className="w-full min-h-[200px] border border-gray-300 rounded-lg flex flex-col items-center justify-center gap-2 text-gray-600 p-4">
               {!selectedFile ? (
                 <div className="flex flex-col items-center justify-center gap-2">
                   <img
@@ -250,14 +261,14 @@ const CreateEvent = () => {
                   <button
                     type="button"
                     onClick={() => document.getElementById('event-media').click()}
-                    className="mt-2 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
+                    className="mt-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
                   >
                     Choose File
                   </button>
                 </div>
               ) : (
                 <div className="flex justify-center w-full">
-                  <div className="relative group w-[200px] h-[200px] rounded overflow-hidden border">
+                  <div className="relative group w-[200px] h-[200px] rounded overflow-hidden border border-gray-300">
                     <img
                       src={URL.createObjectURL(selectedFile)}
                       alt="preview"
@@ -277,7 +288,7 @@ const CreateEvent = () => {
                     <button
                       type="button"
                       onClick={() => document.getElementById('event-media').click()}
-                      className="absolute bottom-2 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors shadow-lg"
+                      className="absolute bottom-2 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-lg"
                     >
                       Change Image
                     </button>
@@ -287,14 +298,14 @@ const CreateEvent = () => {
             </div>
           </div>
 
-          {/* Submit */}
-          <div className="w-full text-center">
+          {/* Submit Button */}
+          <div className="flex items-center justify-center">
             <button
               type="submit"
               disabled={formLoading}
-              className="w-full max-w-[20rem] cursor-pointer h-[50px] bg-blue-500 text-white font-semibold text-[20px] py-2 px-8 rounded-lg hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-[16rem] md:w-[15rem] h-[50px] bg-blue-600 text-white font-semibold text-[15px] md:text-[18px] py-2 px-8 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {formLoading ? "Creating Event..." : "Publish Event"}
+              {formLoading ? "Publishing..." : "Publish Event"}
             </button>
           </div>
         </form>
